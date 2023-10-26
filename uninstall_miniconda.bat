@@ -1,1 +1,0 @@
-%UserProfile%\Miniconda3\Uninstall-Miniconda3.exe
