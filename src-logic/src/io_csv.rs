@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use csv;
-use std::ops::Index;
 use std::fs::File;
 
 #[derive(Debug)]
@@ -56,25 +55,49 @@ impl CSVReader {
 }
 
 pub trait FromCSV {
-    fn from_csv(file: String) -> Self;
+    fn from_csv(file_path: String) -> Self;
 }
 
-impl FromCSV for Dem1D {
+impl FromCSV for Dem2D {
     fn from_csv(file_path: String) -> Self {
         let csv = CSVReader::new(file_path, None);
-        let mut dem = Dem1D::default();
+        let mut dem = Dem2D::default();
         dem.x = csv.get_data(String::from("x"));
         dem.z = csv.get_data(String::from("z"));
         dem
     }
 }
 
-impl FromCSV for Surface1D {
+impl FromCSV for Surface2D {
     fn from_csv(file_path: String) -> Self {
         let csv = CSVReader::new(file_path, None);
-        let mut surface = Surface1D::default();
+        let mut surface = Surface2D::default();
+        let _x = csv.get_data(String::from("x"));
         surface.z = csv.get_data(String::from("z"));
         surface
+    }
+}
+
+impl FromCSV for DispData {
+    fn from_csv(file_path: String) -> Self {
+        let csv = CSVReader::new(file_path, None);
+        let mut disp_data = DispData::default();
+        disp_data.x = csv.get_data(String::from("x"));
+        disp_data.amplitude = csv.get_data(String::from("disp"));
+        disp_data
+    }
+}
+
+impl FromCSV for DispProfile {
+    fn from_csv(file_path: String) -> Self {
+        let csv = CSVReader::new(file_path, None);
+        let mut disp_profile = DispProfile::default();
+        let x = csv.get_data(String::from("x"));
+        let z = csv.get_data(String::from("z"));
+        disp_profile.origin = (0..x.len()).into_iter().map(|i| Point2D::new(x[i], z[i])).collect();
+        disp_profile.amplitude = csv.get_data(String::from("amplitude"));
+        disp_profile.slope = csv.get_data(String::from("slope"));
+        disp_profile
     }
 }
 
