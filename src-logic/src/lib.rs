@@ -5,10 +5,10 @@
 //! failure surfaces. Compares the profile of displacement with SAR data, or other displacement measures
 //! located on the section.
 
-pub mod project;
-pub mod slide;
+// pub mod project;
+// pub mod slide;
 pub mod prelude;
-pub mod model;
+// pub mod model;
 pub mod io_csv;
 
 pub fn add(left: u64, right: u64) -> u64 {
