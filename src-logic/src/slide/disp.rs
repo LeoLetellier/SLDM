@@ -1,12 +1,12 @@
 //! Additionnal functions to compute some slope and segment intersection
 
-use crate::types::{self, PropOnSection};
+use crate::prelude::{self, PropOnSection};
 use std::f64::consts::PI;
 
 use super::*;
 
 /// Computes the slope of a property along the section and the given DEM
-pub(super) fn slope(dem: &types::Dem, z: &PropOnSection) -> PropOnSection {
+pub(super) fn slope(dem: &prelude::Dem1D, z: &PropOnSection) -> PropOnSection {
     assert_eq!(dem.len, z.prop.len());
     let mut slope_v: Vec<f64> = vec![];
     slope_v.push(((z.prop[1] - z.prop[0]) / (dem.x[1] - dem.x[0])).atan()); // half slope
@@ -20,7 +20,7 @@ pub(super) fn slope(dem: &types::Dem, z: &PropOnSection) -> PropOnSection {
 
 /// Computes the displacement projected from the failure surface into the topography (DEM) perpendicularly 
 /// to the slope of the failure surface
-pub(super) fn pilar_slope(config: &SlideConfig, surface: &PropOnSection, slope: &PropOnSection, dem: &types::Dem) -> (PropOnSection, PropOnSection) {
+pub(super) fn pilar_slope(config: &SlideConfig, surface: &PropOnSection, slope: &PropOnSection, dem: &prelude::Dem1D) -> (PropOnSection, PropOnSection) {
     let mut pilarx_v = dem.x.clone();
     let mut pilarz_v = dem.z.clone();
 
@@ -59,7 +59,7 @@ fn get_intersection_point(xk: (f64, f64), zk: (f64, f64), xx: (f64, f64), zz: (f
 }
 
 /// Compute the intersection between a segment and a set of segment, if exist
-fn intersection_on_topo(dem: &types::Dem, xx :(f64, f64), zz: (f64, f64)) -> Option<(f64, f64)> {
+fn intersection_on_topo(dem: &prelude::Dem1D, xx :(f64, f64), zz: (f64, f64)) -> Option<(f64, f64)> {
     assert_eq!(dem.x.len(), dem.z.len());
     for k in 1..dem.x.len() {
         // got x overlap
@@ -92,7 +92,7 @@ pub(super) fn slope2vec(slope: &PropOnSection, dir: i8, first_index: usize, last
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::Dem;
+    use crate::prelude::Dem1D;
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
@@ -100,7 +100,7 @@ mod tests {
         let x = vec![0., 100., 200., 300., 400., 500., 600.];
         let z = vec![0., 10., 30., 35., 45., 50., 60.];
         let prop = vec![0., 10., 14., 22., 34., 50., 60.];
-        let dem = Dem::new(x, z);
+        let dem = Dem1D::new(x, z);
 
         let prop_sec = PropOnSection::new(String::from("test"), prop);
         

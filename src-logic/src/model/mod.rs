@@ -10,7 +10,7 @@ use std::f64::consts::PI;
 use nnls::nnls;
 use ndarray::prelude::*;
 
-use crate::types::{PropOnSection, Orientation};
+use crate::prelude::{PropOnSection, Orientation};
 use crate::slide::Slide;
 
 /// Parameters and variable of a displacement model
@@ -144,7 +144,7 @@ fn rmse(x: &Vec<f64>) -> f64 {
 
 #[cfg(test)]
 mod test{
-    use crate::types::Orientation;
+    use crate::prelude::Orientation;
     use super::local_projection;
 
     #[test]

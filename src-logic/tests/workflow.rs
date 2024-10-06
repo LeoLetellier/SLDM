@@ -1,6 +1,6 @@
 use src_logic::project::*;
 use src_logic::slide::*;
-use src_logic::types::Orientation;
+use src_logic::prelude::Orientation;
 
 #[test]
 fn workflow() {

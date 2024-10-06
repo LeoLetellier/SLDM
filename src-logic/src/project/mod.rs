@@ -4,7 +4,7 @@
 //! capacity to handle multiple projects at once.
 
 
-use crate::{model::DispModel, slide::{Slide, SlideConfig, SlideMethod}, types::{self, Dem, Localisation, PropOnSection}};
+use crate::{model::DispModel, slide::{Slide, SlideConfig, SlideMethod}, prelude::{self, Dem1D, Localisation, PropOnSection}};
 pub(crate) mod infile;
 use std::sync::Arc;
 
@@ -73,16 +73,16 @@ impl ProjectSession {
 pub struct ProjectUnit {
     // manage adding, removing, moving parts in projects, and projects themselves
     pub(crate) name: String,
-    pub(crate) dem: Arc<Dem>,
+    pub(crate) dem: Arc<Dem1D>,
     pub slides: Vec<Arc<Slide>>,
     pub model: Option<DispModel>,
     pub sar_disp: Option<Vec<PropOnSection>>,
-    pub orientation: Option<types::Orientation>,
-    pub localisation: Option<types::Localisation>,
+    pub orientation: Option<prelude::Orientation>,
+    pub localisation: Option<prelude::Localisation>,
 }
 
 impl ProjectUnit {
-    fn new(name:String, dem: Dem) -> ProjectUnit {
+    fn new(name:String, dem: Dem1D) -> ProjectUnit {
         ProjectUnit {
             name,
             dem: Arc::new(dem),
@@ -95,7 +95,7 @@ impl ProjectUnit {
     }
 
     fn new_from_dem(name: String, dem_path: String) -> ProjectUnit {
-        let dem = types::Dem::read_from_file(dem_path);
+        let dem = prelude::Dem1D::read_from_file(dem_path);
         Self::new(name, dem)
     }
 
@@ -118,7 +118,7 @@ impl ProjectUnit {
     }
 
     pub fn set_orientation(&mut self, azimuth: f64) {
-        self.orientation = Some(types::Orientation::new(azimuth, 0.));
+        self.orientation = Some(prelude::Orientation::new(azimuth, 0.));
     }
 
     pub fn set_location(&mut self, lat1: f64, long1: f64, lat2: f64, long2: f64) {

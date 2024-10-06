@@ -7,8 +7,9 @@
 
 pub mod project;
 pub mod slide;
-pub mod types;
+pub mod prelude;
 pub mod model;
+pub mod io_csv;
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right

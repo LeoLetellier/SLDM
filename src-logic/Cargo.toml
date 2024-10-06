@@ -1,7 +1,9 @@
 [package]
 name = "src-logic"
 version = "0.1.0"
+authors = ["Leo Letellier"]
 edition = "2021"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 assert_approx_eq = "1.1.0"

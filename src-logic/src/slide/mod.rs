@@ -6,7 +6,7 @@
 //! * SLBL (fast matrix solving)
 //! * SLBL (customizable iterative solving)
 
-use crate::types::{self, PropOnSection, Dem};
+use crate::prelude::{self, PropOnSection, Dem1D};
 use std::f64::consts::PI;
 use std::sync::Arc;
 mod disp;
@@ -16,7 +16,7 @@ mod disp;
 /// Given a reference to a DEM, it can reconstruct a failure surface with the SLBL method.
 #[derive(Debug)]
 pub struct Slide {
-    dem: Arc<Dem>,
+    dem: Arc<Dem1D>,
     config: SlideConfig,
     pub surface: Option<PropOnSection>,
     pub slope: Option<PropOnSection>,
@@ -29,7 +29,7 @@ pub struct Slide {
 // TODO suppr
 impl Slide {
     /// Initialize the slide
-    pub fn new(dem: Arc<Dem>, config: SlideConfig) -> Slide {
+    pub fn new(dem: Arc<Dem1D>, config: SlideConfig) -> Slide {
         let local_dem = dem.clone();
         Slide {
             dem: dem,
@@ -106,7 +106,7 @@ impl SlideConfig {
 }
 
 /// Select the function to compute SLBL given a configuration
-fn compute_slide(config: &SlideConfig, dem: &types::Dem) -> types::PropOnSection {
+fn compute_slide(config: &SlideConfig, dem: &prelude::Dem1D) -> prelude::PropOnSection {
     let z_slide: Vec<f64> = match config.method {
         SlideMethod::RoutineSimple => slbl_routine_simple(dem, config),
         //SlideMethod::RoutineThreshold => (),
@@ -119,7 +119,7 @@ fn compute_slide(config: &SlideConfig, dem: &types::Dem) -> types::PropOnSection
 /// Compute the SLBL surface with matrix inversion
 /// 
 /// Implement with fast resolution of tridiagonal matrix
-fn slbl_matrix(dem: &types::Dem, config: &SlideConfig) -> Vec<f64> {
+fn slbl_matrix(dem: &prelude::Dem1D, config: &SlideConfig) -> Vec<f64> {
     let dim: usize = config.last_pnt - config.first_pnt - 1;
     let sub_diag: Vec<f64> = vec![-0.5 ; dim-1];
     let mut main_diag: Vec<f64> = vec![1. ; dim];
@@ -135,7 +135,7 @@ fn slbl_matrix(dem: &types::Dem, config: &SlideConfig) -> Vec<f64> {
 }
 
 /// Compute the SLBL surface with the simple iterative method
-fn slbl_routine_simple(dem: &types::Dem, config: &SlideConfig) -> Vec<f64> {
+fn slbl_routine_simple(dem: &prelude::Dem1D, config: &SlideConfig) -> Vec<f64> {
     //z_topo: &Vec<f64>, n_it: usize, tol: f64
     let mut m_result = dem.z[config.first_pnt..=config.last_pnt].to_owned();
     let mut result = dem.z.to_owned();
