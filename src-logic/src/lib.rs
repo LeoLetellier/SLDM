@@ -7,10 +7,16 @@
 
 // pub mod project;
 pub mod slide;
-pub mod prelude;
+pub mod types;
 // pub mod profile;
 // pub mod data;
 pub mod io_csv;
+pub mod plotter;
+
+pub mod prelude {
+    pub use crate::types;
+    // pub use crate::project;
+}
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right

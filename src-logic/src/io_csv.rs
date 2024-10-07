@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::types::*;
 use csv;
 use std::fs::File;
 
@@ -58,20 +58,20 @@ pub trait FromCSV {
     fn from_csv(file_path: String) -> Self;
 }
 
-impl FromCSV for Dem2D {
+impl FromCSV for Dem1D {
     fn from_csv(file_path: String) -> Self {
         let csv = CSVReader::new(file_path, None);
-        let mut dem = Dem2D::default();
+        let mut dem = Dem1D::default();
         dem.x = csv.get_data(String::from("x"));
         dem.z = csv.get_data(String::from("z"));
         dem
     }
 }
 
-impl FromCSV for Surface2D {
+impl FromCSV for Surface1D {
     fn from_csv(file_path: String) -> Self {
         let csv = CSVReader::new(file_path, None);
-        let mut surface = Surface2D::default();
+        let mut surface = Surface1D::default();
         let _x = csv.get_data(String::from("x"));
         surface.z = csv.get_data(String::from("z"));
         surface
@@ -94,8 +94,8 @@ impl FromCSV for DispProfile {
         let mut disp_profile = DispProfile::default();
         disp_profile.origin_x = csv.get_data(String::from("x"));
         disp_profile.origin_z = csv.get_data(String::from("z"));
-        disp_profile.amplitude = csv.get_data(String::from("amplitude"));
-        disp_profile.slope = csv.get_data(String::from("slope"));
+        disp_profile.amplitude_vec = csv.get_data(String::from("amplitude"));
+        disp_profile.slope_vec = csv.get_data(String::from("slope"));
         disp_profile
     }
 }

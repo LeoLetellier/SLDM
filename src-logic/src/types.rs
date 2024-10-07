@@ -5,43 +5,62 @@ pub fn test_lib() -> String {
 }
 
 #[derive(Default, PartialEq, Debug, Clone)]
-pub struct Dem2D {
+pub struct Dem1D {
     pub orientation: Orientation,
     pub x: Vec<f32>,
     pub z: Vec<f32>,
 }
 
-impl Dem2D {
+impl Dem1D {
     pub(crate) fn new(orientation: Orientation, x: Vec<f32>, z: Vec<f32>) -> Self {
         if x.len() != z.len() {
             panic!("Length of x and z vectors does not match when creating Dem struct.")
         } else {
-            Dem2D {orientation, x, z}
+            Dem1D {orientation, x, z}
         }
     }
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct Surface2D {
+pub struct Surface1D {
     pub z: Vec<f32>,
     pub slope: Option<Vec<f32>>,
 }
 
-impl Surface2D {
+impl Surface1D {
     pub fn new(z: Vec<f32>) -> Self {
-        Surface2D { z: z, slope: None }
+        Surface1D { z: z, slope: None }
     }
 }
 
 #[derive(Default, Debug)]
 pub struct DispProfile {
-    pub slope: Vec<f32>,
-    pub amplitude: Vec<f32>,
+    pub slope_vec: Vec<f32>,
+    pub amplitude_vec: Vec<f32>,
     pub origin_x: Vec<f32>,
     pub origin_z: Vec<f32>,
     // portion seen into a LOS
-    pub proj_slope: Option<Vec<f32>>,
-    pub proj_amplitude: Option<Vec<f32>>,
+    pub proj_slope_vec: Option<Vec<f32>>,
+    pub proj_amplitude_vec: Option<Vec<f32>>,
+}
+
+impl DispProfile {
+    pub fn new(slope_vec: Vec<f32>, amplitude_vec: Vec<f32>, origin_x: Vec<f32>, origin_z: Vec<f32>) -> Self {
+        DispProfile {
+            slope_vec: slope_vec,
+            amplitude_vec: amplitude_vec,
+            origin_x: origin_x,
+            origin_z: origin_z,
+            proj_slope_vec: None,
+            proj_amplitude_vec: None,
+        }
+    }
+
+    pub fn get_xz_vec(&self) -> (Vec<f32>, Vec<f32>) {
+        let vec_x: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].cos() * self.amplitude_vec[k]).collect();
+        let vec_z: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].sin() * self.amplitude_vec[k]).collect();
+        (vec_x, vec_z)
+    }
 }
 
 #[derive(Default, Debug)]
@@ -49,6 +68,23 @@ pub struct DispData {
     pub x: Vec<f32>,
     pub orientation: Orientation,
     pub amplitude: Vec<f32>,
+    // portion seen into the 2D section
+    pub proj_slope_vec: Option<Vec<f32>>,
+    pub proj_amplitude_vec: Option<Vec<f32>>,
+}
+
+impl DispData {
+    // pub fn get_xz_vec(&self) -> (Vec<f32>, Vec<f32>) {
+    //     let vec_x: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].cos() * self.amplitude_vec[k]).collect();
+    //     let vec_z: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].sin() * self.amplitude_vec[k]).collect();
+    //     (vec_x, vec_z)
+    // }
+}
+
+#[derive(Default, Debug)]
+struct DispModel {
+    pub profile: DispProfile,
+    pub data: DispData,
 }
 
 

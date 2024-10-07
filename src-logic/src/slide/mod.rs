@@ -1,4 +1,6 @@
-use crate::prelude::*;
+use disp::pilar_slope;
+
+use crate::types::*;
 use std::f32::consts::PI;
 mod disp;
 
@@ -43,7 +45,7 @@ impl SlideConfig {
 }
 
 /// Select the function to compute SLBL given a configuration
-fn compute_slide(config: &SlideConfig, dem: &Dem2D) -> Vec<f32> {
+fn compute_slide(config: &SlideConfig, dem: &Dem1D) -> Vec<f32> {
     let z_slide: Vec<f32> = match config.method {
         SlideMethod::RoutineSimple => slbl_routine_simple(dem, config),
         //SlideMethod::RoutineThreshold => (),
@@ -56,7 +58,7 @@ fn compute_slide(config: &SlideConfig, dem: &Dem2D) -> Vec<f32> {
 /// Compute the SLBL surface with matrix inversion
 /// 
 /// Implement with fast resolution of tridiagonal matrix
-fn slbl_matrix(dem: &Dem2D, config: &SlideConfig) -> Vec<f32> {
+fn slbl_matrix(dem: &Dem1D, config: &SlideConfig) -> Vec<f32> {
     let dim: usize = config.last_pnt - config.first_pnt - 1;
     let sub_diag: Vec<f32> = vec![-0.5 ; dim-1];
     let mut main_diag: Vec<f32> = vec![1. ; dim];
@@ -72,7 +74,7 @@ fn slbl_matrix(dem: &Dem2D, config: &SlideConfig) -> Vec<f32> {
 }
 
 /// Compute the SLBL surface with the simple iterative method
-fn slbl_routine_simple(dem: &Dem2D, config: &SlideConfig) -> Vec<f32> {
+fn slbl_routine_simple(dem: &Dem1D, config: &SlideConfig) -> Vec<f32> {
     //z_topo: &Vec<f32>, n_it: usize, tol: f32
     let mut m_result = dem.z[config.first_pnt..=config.last_pnt].to_owned();
     let mut result = dem.z.to_owned();
@@ -163,15 +165,24 @@ fn tridiag_matrix_non_conservative(dim: usize, low_d: &Vec<f32>, main_d: &mut Ve
     result
 }
 
-impl Surface2D {
-    fn get_slope(&mut self, dem: &Dem2D) -> &Self {
+impl Surface1D {
+    fn get_slope(&mut self, dem: &Dem1D) -> &Self {
         self.slope = Some(disp::slope1d(&dem.x, &self.z));
         self
     }
 
-    fn from_slbl(config: &SlideConfig, dem: &Dem2D) -> Self {
+    fn from_slbl(config: &SlideConfig, dem: &Dem1D) -> Self {
         let z_slbl = compute_slide(config, dem);
-        Surface2D::new(z_slbl)
+        Surface1D::new(z_slbl)
+    }
+}
+
+impl DispProfile {
+    fn from_surface(surface: &Surface1D, dem: &Dem1D, first_x: usize, last_x: usize) -> Self {
+        let slope = surface.slope.clone().unwrap();
+        let len = slope.len();
+        let origin = pilar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.z);
+        DispProfile::new(slope, vec![1.; len], origin.0, origin.1)
     }
 }
 
