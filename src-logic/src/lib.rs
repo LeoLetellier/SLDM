@@ -6,9 +6,10 @@
 //! located on the section.
 
 // pub mod project;
-// pub mod slide;
+pub mod slide;
 pub mod prelude;
-// pub mod model;
+// pub mod profile;
+// pub mod data;
 pub mod io_csv;
 
 pub fn add(left: u64, right: u64) -> u64 {

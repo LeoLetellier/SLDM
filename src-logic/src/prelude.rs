@@ -9,7 +9,6 @@ pub struct Dem2D {
     pub orientation: Orientation,
     pub x: Vec<f32>,
     pub z: Vec<f32>,
-    pub len: usize,
 }
 
 impl Dem2D {
@@ -17,8 +16,7 @@ impl Dem2D {
         if x.len() != z.len() {
             panic!("Length of x and z vectors does not match when creating Dem struct.")
         } else {
-            let len = x.len();
-            Dem2D {orientation, x, z, len}
+            Dem2D {orientation, x, z}
         }
     }
 }
@@ -29,11 +27,18 @@ pub struct Surface2D {
     pub slope: Option<Vec<f32>>,
 }
 
+impl Surface2D {
+    pub fn new(z: Vec<f32>) -> Self {
+        Surface2D { z: z, slope: None }
+    }
+}
+
 #[derive(Default, Debug)]
 pub struct DispProfile {
     pub slope: Vec<f32>,
     pub amplitude: Vec<f32>,
-    pub origin: Vec<Point2D>,
+    pub origin_x: Vec<f32>,
+    pub origin_z: Vec<f32>,
     // portion seen into a LOS
     pub proj_slope: Option<Vec<f32>>,
     pub proj_amplitude: Option<Vec<f32>>,
@@ -44,21 +49,6 @@ pub struct DispData {
     pub x: Vec<f32>,
     pub orientation: Orientation,
     pub amplitude: Vec<f32>,
-}
-
-#[derive(Default, Debug)]
-pub struct Point2D {
-    x: f32,
-    y: f32,
-}
-
-impl Point2D {
-    pub fn new(x: f32, y: f32) -> Self {
-        Point2D {
-            x: x,
-            y: y,
-        }
-    }
 }
 
 

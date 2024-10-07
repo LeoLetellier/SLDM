@@ -92,9 +92,8 @@ impl FromCSV for DispProfile {
     fn from_csv(file_path: String) -> Self {
         let csv = CSVReader::new(file_path, None);
         let mut disp_profile = DispProfile::default();
-        let x = csv.get_data(String::from("x"));
-        let z = csv.get_data(String::from("z"));
-        disp_profile.origin = (0..x.len()).into_iter().map(|i| Point2D::new(x[i], z[i])).collect();
+        disp_profile.origin_x = csv.get_data(String::from("x"));
+        disp_profile.origin_z = csv.get_data(String::from("z"));
         disp_profile.amplitude = csv.get_data(String::from("amplitude"));
         disp_profile.slope = csv.get_data(String::from("slope"));
         disp_profile
