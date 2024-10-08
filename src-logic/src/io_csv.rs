@@ -63,7 +63,7 @@ impl FromCSV for Dem1D {
         let csv = CSVReader::new(file_path, None);
         let mut dem = Dem1D::default();
         dem.x = csv.get_data(String::from("x"));
-        dem.z = csv.get_data(String::from("z"));
+        dem.surface.z = csv.get_data(String::from("z"));
         dem
     }
 }

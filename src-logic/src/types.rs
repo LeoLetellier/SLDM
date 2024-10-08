@@ -4,11 +4,11 @@ pub fn test_lib() -> String {
     String::from("Hello Lib!")
 }
 
-#[derive(Default, PartialEq, Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Dem1D {
     pub orientation: Orientation,
     pub x: Vec<f32>,
-    pub z: Vec<f32>,
+    pub surface: Surface1D,
 }
 
 impl Dem1D {
@@ -16,7 +16,8 @@ impl Dem1D {
         if x.len() != z.len() {
             panic!("Length of x and z vectors does not match when creating Dem struct.")
         } else {
-            Dem1D {orientation, x, z}
+            let surface = Surface1D::new(z);
+            Dem1D {orientation, x, surface}
         }
     }
 }

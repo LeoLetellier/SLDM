@@ -1,28 +1,16 @@
 use std::char;
 
 use image::{ImageBuffer, Rgb};
-use plotters::{backend::RGBPixel, prelude::*};
+use plotters::prelude::*;
 use plotters_arrows::ThinArrow;
 type Chart<'a> = ChartContext<'a, BitMapBackend<'a>, Cartesian2d<plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64>>;
 
 use crate::types::{Dem1D, DispData, DispProfile, Surface1D};
 
-// section graph / profile graph / correlation graph
-// option path -> None = use buffer
-pub fn graph_init_from_memory(size: (u32, u32)) {
-    let mut graph_buffer = vec![0; size.0 as usize * size.1 as usize * 3];
-    // height width rgb
-    let root = BitMapBackend::with_buffer(&mut graph_buffer, size);
-}
-
-pub fn graph_init(path: &str, size: (u32, u32)) {
-
-}
-
-pub fn plot_section(size: (u32, u32), dem: &Dem1D, surfaces: Vec<&Surface1D>, disp_profiles: Vec<&DispProfile>, disp_datas: Vec<&DispData>) -> image::ImageBuffer<Rgb<u8>, Vec<u8>> {
+pub fn plot_section(size: (u32, u32), dem: (&Dem1D, ShapeStyle), surfaces: Vec<(&Surface1D, ShapeStyle)>, disp_profiles: Vec<&DispProfile>, disp_datas: Vec<&DispData>) -> image::ImageBuffer<Rgb<u8>, Vec<u8>> {
     let mut graph_buffer = ImageBuffer::new(size.0, size.1);
-    // let mut graph_buffer = vec![0; size.0 as usize * size.1 as usize * 3];
     {
+        let (dem, dem_style) = (dem.0, dem.1);
         // init graph
         let graph_root = BitMapBackend::with_buffer(&mut graph_buffer, size);
         let drawing_area = graph_root.into_drawing_area();
@@ -31,10 +19,10 @@ pub fn plot_section(size: (u32, u32), dem: &Dem1D, surfaces: Vec<&Surface1D>, di
         // boundaries
         let x_margin = (dem.x.last().unwrap() - dem.x.first().unwrap()) * 0.05;
         let x_spec = ((dem.x.first().unwrap() - x_margin) as f64)..((dem.x.last().unwrap() + x_margin) as f64);
-        let mut y_min = dem.z[0];
-        let mut y_max = dem.z[0];
-        let mut all_y = vec![&dem.z];
-        surfaces.iter().for_each(|s| all_y.push(&s.z));
+        let mut y_min = dem.surface.z[0];
+        let mut y_max = dem.surface.z[0];
+        let mut all_y = vec![&dem.surface.z];
+        surfaces.iter().for_each(|(s, style)| all_y.push(&s.z));
         for s in all_y {
             s.iter().for_each(|k| 
                 match k.to_owned() {
@@ -64,8 +52,8 @@ pub fn plot_section(size: (u32, u32), dem: &Dem1D, surfaces: Vec<&Surface1D>, di
         let mut chart_extended = ChartExtended::new(chart, dem.x.to_owned());
         disp_datas.iter().for_each(|d| d.plot_arrows(&mut chart_extended));
         disp_profiles.iter().for_each(|p| p.plot_arrows(&mut chart_extended));
-        surfaces.iter().for_each(|s| s.plot(&mut chart_extended));
-        dem.plot(&mut chart_extended);
+        surfaces.iter().for_each(|(s, style)| s.plot(&mut chart_extended, *style));
+        dem.surface.plot(&mut chart_extended, dem_style);
         
         // do all pending tasks
         drawing_area.present().expect("draw please");
@@ -77,6 +65,19 @@ struct ChartExtended<'a> {
     pub chart: Chart<'a>,
     pub x_support: Vec<f32>,
 }
+// let style = ShapeStyle {
+//     color: self.color.mix(self.color_opacity),
+//     filled: self.is_shape_filled,
+//     stroke_width: self.line_width,
+// }
+
+pub fn get_style(color: RGBColor, opacity: f64, is_filled: bool, width: u32) -> ShapeStyle {
+    ShapeStyle {
+        color: color.mix(opacity),
+        filled: is_filled,
+        stroke_width: width,
+    }
+}
 
 impl<'a> ChartExtended<'a> {
     pub fn new(chart: Chart<'a>, x_support: Vec<f32>) -> Self {
@@ -84,18 +85,10 @@ impl<'a> ChartExtended<'a> {
     }
 }
 
-impl Dem1D {
-    fn plot(&self, chart_extended: &mut ChartExtended<'_>) {
-        let nb = chart_extended.x_support.len();
-        let line = LineSeries::new((0..nb).map(|k| (chart_extended.x_support[k] as f64, self.z[k] as f64)), &BLACK);
-        chart_extended.chart.draw_series(line).unwrap();
-    }
-}
-
 impl Surface1D {
-    fn plot(&self, chart_extended: &mut ChartExtended<'_>) {
+    fn plot(&self, chart_extended: &mut ChartExtended<'_>, shape_style: ShapeStyle) {
         let nb = chart_extended.x_support.len();
-        let line = LineSeries::new((0..nb).map(|k| (chart_extended.x_support[k] as f64, self.z[k] as f64)), &BLUE);
+        let line = LineSeries::new((0..nb).map(|k| (chart_extended.x_support[k] as f64, self.z[k] as f64)), shape_style);
         chart_extended.chart.draw_series(line).unwrap();
     }
 }

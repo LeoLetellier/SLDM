@@ -1,7 +1,7 @@
 use disp::pilar_slope;
 
 use crate::types::*;
-use std::f32::consts::PI;
+use std::{f32::consts::PI, ops::Deref};
 mod disp;
 
 
@@ -63,10 +63,10 @@ fn slbl_matrix(dem: &Dem1D, config: &SlideConfig) -> Vec<f32> {
     let sub_diag: Vec<f32> = vec![-0.5 ; dim-1];
     let mut main_diag: Vec<f32> = vec![1. ; dim];
     let mut rhs: Vec<f32> = vec![-config.tol ; dim];
-    rhs[0] += dem.z[config.first_pnt] / 2.;
-    rhs[dim-1] += dem.z[config.last_pnt] / 2.;
+    rhs[0] += dem.surface.z[config.first_pnt] / 2.;
+    rhs[dim-1] += dem.surface.z[config.last_pnt] / 2.;
     let m_result = tridiag_matrix_non_conservative(dim, &sub_diag, &mut main_diag, &sub_diag, &mut rhs);
-    let mut result = dem.z.to_owned();
+    let mut result = dem.surface.z.to_owned();
     for i in (config.first_pnt + 1)..config.last_pnt {
         result[i] = m_result[i - config.first_pnt - 1]
     }
@@ -76,8 +76,8 @@ fn slbl_matrix(dem: &Dem1D, config: &SlideConfig) -> Vec<f32> {
 /// Compute the SLBL surface with the simple iterative method
 fn slbl_routine_simple(dem: &Dem1D, config: &SlideConfig) -> Vec<f32> {
     //z_topo: &Vec<f32>, n_it: usize, tol: f32
-    let mut m_result = dem.z[config.first_pnt..=config.last_pnt].to_owned();
-    let mut result = dem.z.to_owned();
+    let mut m_result = dem.surface.z[config.first_pnt..=config.last_pnt].to_owned();
+    let mut result = dem.surface.z.to_owned();
     let Some(it) = config.n_it else {
         panic!("Missing parameter (n_it) for slbl_routine_simple");
     };
@@ -171,18 +171,22 @@ impl Surface1D {
         self
     }
 
-    fn from_slbl(config: &SlideConfig, dem: &Dem1D) -> Self {
+    pub fn from_slbl(config: &SlideConfig, dem: &Dem1D) -> Self {
         let z_slbl = compute_slide(config, dem);
         Surface1D::new(z_slbl)
     }
 }
 
 impl DispProfile {
-    fn from_surface(surface: &Surface1D, dem: &Dem1D, first_x: usize, last_x: usize) -> Self {
+    pub fn from_surface(surface: &mut Surface1D, dem: &Dem1D, first_x: usize, last_x: usize) -> Self {
+        match surface.slope {
+            None => {surface.get_slope(dem); ()},
+            _ => (),
+        };
         let slope = surface.slope.clone().unwrap();
         let len = slope.len();
-        let origin = pilar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.z);
-        DispProfile::new(slope, vec![1.; len], origin.0, origin.1)
+        let origin = pilar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z);
+        DispProfile::new(slope, vec![-1.; len], origin.0, origin.1)
     }
 }
 
