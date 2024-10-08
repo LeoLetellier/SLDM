@@ -1,4 +1,4 @@
-use disp::pilar_slope;
+use disp::pillar_slope;
 
 use crate::types::*;
 use std::{f32::consts::PI, ops::Deref};
@@ -185,8 +185,14 @@ impl DispProfile {
         };
         let slope = surface.slope.clone().unwrap();
         let len = slope.len();
-        let origin = pilar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z);
-        DispProfile::new(slope, vec![-1.; len], origin.0, origin.1)
+        let origin = pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z);
+        let mut amplitude: Vec<f32> = Vec::new();
+        (0..len).for_each(|k| match k {
+            k if k < first_x => amplitude.push(0.),
+            k if k > last_x => amplitude.push(0.),
+            _ => amplitude.push(1.),
+        });
+        DispProfile::new(slope, amplitude, origin.0, origin.1)
     }
 }
 

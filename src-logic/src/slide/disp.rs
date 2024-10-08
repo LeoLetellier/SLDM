@@ -2,6 +2,9 @@
 
 use std::f32::consts::PI;
 
+use assert_approx_eq::assert_approx_eq;
+use log::debug;
+
 /// Computes the slope of a property along the section and the given DEM
 pub(super) fn slope1d(x: &Vec<f32>, z: &Vec<f32>) -> Vec<f32> {
     assert_eq!(x.len(), z.len());
@@ -17,7 +20,7 @@ pub(super) fn slope1d(x: &Vec<f32>, z: &Vec<f32>) -> Vec<f32> {
 
 /// Computes the displacement projected from the failure surface into the topography (DEM) perpendicularly 
 /// to the slope of the failure surface
-pub(super) fn pilar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &Vec<f32>, x: &Vec<f32>, z: &Vec<f32>) -> (Vec<f32>, Vec<f32>) {
+pub(super) fn pillar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &Vec<f32>, x: &Vec<f32>, z: &Vec<f32>) -> (Vec<f32>, Vec<f32>) {
     let mut ground_proj_x = x.clone();
     let mut ground_proj_z = z.clone();
 
@@ -29,7 +32,7 @@ pub(super) fn pilar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slo
             _ => panic!("Not expecting a slope between pi/2 and 3pi/2 in pilar_slope."),
         };
         let xx: (f32, f32) = (x.first().unwrap().to_owned(), x.last().unwrap().to_owned());
-        let zz: (f32, f32) = (slide_z[k] + coeff_dir * (xx.0 - x[k]), slide_z[k] + coeff_dir * (xx.1 - x[k]));
+        let zz: (f32, f32) = (slide_z[k] + coeff_dir.tan() * (xx.0 - x[k]), slide_z[k] + coeff_dir.tan() * (xx.1 - x[k]));
         let intercept = intersection_on_topo(x, z, xx, zz);
         if intercept.is_none() {
             panic!("No intersection found in pilar_slope at point {}", k);

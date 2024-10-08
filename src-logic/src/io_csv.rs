@@ -38,11 +38,11 @@ impl CSVReader {
         }
         
         CSVReader {
-            file_path: file_path,
-            delimiter: delimiter,
-            reader: reader,
-            headers: headers,
-            data: data,
+            file_path,
+            delimiter,
+            reader,
+            headers,
+            data,
         }
     }
 

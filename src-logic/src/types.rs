@@ -58,14 +58,8 @@ impl DispProfile {
     }
 
     pub fn get_xz_vec(&self) -> (Vec<f32>, Vec<f32>) {
-        // the slope gives the line, but not the orientation on the line
-        // q : vertical ?
-        // let cor = match facing_right {
-        //     true => 1,
-        //     _ => -1,
-        // };
-        let vec_x: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].cos() * self.amplitude_vec[k] * self.slope_vec[k].signum()).collect();
-        let vec_z: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].sin() * self.amplitude_vec[k] * self.slope_vec[k].signum()).collect();
+        let vec_x: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].cos() * -self.amplitude_vec[k] * self.slope_vec[k].signum()).collect();
+        let vec_z: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].sin() * -self.amplitude_vec[k] * self.slope_vec[k].signum()).collect();
         (vec_x, vec_z)
     }
 }

@@ -1,5 +1,6 @@
 use std::char;
 
+use approx::abs_diff_ne;
 use image::{ImageBuffer, Rgb};
 use plotters::prelude::*;
 use plotters_arrows::ThinArrow;
@@ -34,6 +35,10 @@ pub fn plot_section(size: (u32, u32), dem: (&Dem1D, ShapeStyle), surfaces: Vec<(
         };
         let y_margin = (y_max - y_min) * 0.05;
         let y_spec = ((y_min - y_margin) as f64)..((y_max + y_margin) as f64);
+        
+        // Decomment for pseudo orthonormal grid
+        // let x_spec = (0.)..(600.);
+        // let y_spec = (-150.)..(150.);
 
         // init mesh
         let mut chart = ChartBuilder::on(&drawing_area)
@@ -50,13 +55,13 @@ pub fn plot_section(size: (u32, u32), dem: (&Dem1D, ShapeStyle), surfaces: Vec<(
 
         // draw
         let mut chart_extended = ChartExtended::new(chart, dem.x.to_owned());
+        surfaces.iter().for_each(|(s, style)| s.plot(&mut chart_extended, *style));
+        dem.surface.plot(&mut chart_extended, dem_style);
         disp_datas.iter().for_each(|d| d.plot_arrows(&mut chart_extended));
         disp_profiles.iter().for_each(|p| p.plot_arrows(&mut chart_extended));
         let mut surface = Vec::new();
         surfaces.iter().for_each(|(s, _style)| surface.push(s.z.clone()));
         disp_profiles.iter().enumerate().for_each(|(i, p)| p.plot_pillars(&mut chart_extended, surface[i].clone()));
-        surfaces.iter().for_each(|(s, style)| s.plot(&mut chart_extended, *style));
-        dem.surface.plot(&mut chart_extended, dem_style);
         
         // do all pending tasks
         drawing_area.present().expect("draw please");
@@ -67,6 +72,7 @@ pub fn plot_section(size: (u32, u32), dem: (&Dem1D, ShapeStyle), surfaces: Vec<(
 struct ChartExtended<'a> {
     pub chart: Chart<'a>,
     pub x_support: Vec<f32>,
+    // pub full_mesh: Option<bool>, // None: no mesh, true full mesh, false light mesh // TODO
 }
 
 pub fn get_style(color: RGBColor, opacity: f64, is_filled: bool, width: u32) -> ShapeStyle {
@@ -95,11 +101,14 @@ impl DispProfile {
     fn plot_arrows(&self, chart_extended: &mut ChartExtended<'_>) {
         let nb = chart_extended.x_support.len();
         let (vec_x, vec_z) = self.get_xz_vec();
-        let arrows = (0..nb).map(|k| {
-            let origin = (self.origin_x[k] as f64, self.origin_z[k] as f64);
-            let target = ((self.origin_x[k] + vec_x[k]) as f64, (self.origin_z[k] + vec_z[k]) as f64);
-            ThinArrow::new(origin, target, &BLACK)
-        });
+        let arrows = (0..nb)
+            .filter(|k| abs_diff_ne!(self.amplitude_vec[*k], 0.))
+            .map(|k| {
+                let origin = (self.origin_x[k] as f64, self.origin_z[k] as f64);
+                let target = ((self.origin_x[k] + vec_x[k]) as f64, (self.origin_z[k] + vec_z[k]) as f64);
+                ThinArrow::new(origin, target, &RED)
+            }
+        );
         chart_extended.chart.draw_series(arrows).unwrap();
     }
 
