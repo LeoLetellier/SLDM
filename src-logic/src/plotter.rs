@@ -52,6 +52,9 @@ pub fn plot_section(size: (u32, u32), dem: (&Dem1D, ShapeStyle), surfaces: Vec<(
         let mut chart_extended = ChartExtended::new(chart, dem.x.to_owned());
         disp_datas.iter().for_each(|d| d.plot_arrows(&mut chart_extended));
         disp_profiles.iter().for_each(|p| p.plot_arrows(&mut chart_extended));
+        let mut surface = Vec::new();
+        surfaces.iter().for_each(|(s, _style)| surface.push(s.z.clone()));
+        disp_profiles.iter().enumerate().for_each(|(i, p)| p.plot_pillars(&mut chart_extended, surface[i].clone()));
         surfaces.iter().for_each(|(s, style)| s.plot(&mut chart_extended, *style));
         dem.surface.plot(&mut chart_extended, dem_style);
         
@@ -65,11 +68,6 @@ struct ChartExtended<'a> {
     pub chart: Chart<'a>,
     pub x_support: Vec<f32>,
 }
-// let style = ShapeStyle {
-//     color: self.color.mix(self.color_opacity),
-//     filled: self.is_shape_filled,
-//     stroke_width: self.line_width,
-// }
 
 pub fn get_style(color: RGBColor, opacity: f64, is_filled: bool, width: u32) -> ShapeStyle {
     ShapeStyle {
@@ -107,7 +105,12 @@ impl DispProfile {
 
     fn plot_pillars(&self, chart_extended: &mut ChartExtended<'_>, z_slide: Vec<f32>) {
         let nb = chart_extended.x_support.len();
-        // let x
+        (0..nb).for_each(|k|{
+            let line = LineSeries::new(
+                vec![(chart_extended.x_support[k] as f64, z_slide[k] as f64), (self.origin_x[k] as f64, self.origin_z[k] as f64)], 
+                &BLACK);
+            chart_extended.chart.draw_series(line).unwrap();
+        });
     }
 }
 

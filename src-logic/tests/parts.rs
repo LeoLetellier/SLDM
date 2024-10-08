@@ -43,13 +43,16 @@ fn test_plot_arrows() {
     let mut surface = Surface1D::from_csv(slbl_path);
 
     let slide_config = SlideConfig::new(SlideMethod::ExactMatrix, 1, 4, 2.0);
-    let surface2 = Surface1D::from_slbl(&slide_config, &dem);
+    let mut surface2 = Surface1D::from_slbl(&slide_config, &dem);
 
     let mut disp = DispProfile::from_surface(&mut surface, &dem, 1, 5);
-    let mut disp2 = DispProfile::from_surface(&mut surface, &dem, 1, 4);
+    let mut disp2 = DispProfile::from_surface(&mut surface2, &dem, 1, 4);
     disp.amplitude_vec = disp.amplitude_vec.iter().map(|k| k * 10.).collect();
     disp2.amplitude_vec = disp2.amplitude_vec.iter().map(|k| k * 20.).collect();
 
-    let graph_buffer = plot_section((1024, 768), (&dem, get_style(BLACK, 1., true, 2)), vec![(&surface, get_style(BLUE, 1., true, 1)), (&surface2, get_style(GREEN, 1., true, 1))], vec![&disp, &disp2], vec![]);
+    let graph_buffer = plot_section((1600, 1000), (&dem, get_style(BLACK, 1., true, 2)), vec![(&surface, get_style(BLUE, 1., true, 1)), (&surface2, get_style(GREEN, 1., true, 1))], vec![&disp, &disp2], vec![]);
     graph_buffer.save("figures/test2.png").unwrap();
+
+    println!("surface: {:?}\ndisp profile: {:?}", surface, disp);
+    println!("surface: {:?}\ndisp profile: {:?}", surface2, disp2);
 }
