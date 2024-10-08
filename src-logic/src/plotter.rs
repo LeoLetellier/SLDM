@@ -1,6 +1,7 @@
 use std::char;
 
-use plotters::prelude::*;
+use image::{ImageBuffer, Rgb};
+use plotters::{backend::RGBPixel, prelude::*};
 use plotters_arrows::ThinArrow;
 type Chart<'a> = ChartContext<'a, BitMapBackend<'a>, Cartesian2d<plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64>>;
 
@@ -18,9 +19,69 @@ pub fn graph_init(path: &str, size: (u32, u32)) {
 
 }
 
+pub fn plot_section(size: (u32, u32), dem: &Dem1D, surfaces: Vec<&Surface1D>, disp_profiles: Vec<&DispProfile>, disp_datas: Vec<&DispData>) -> image::ImageBuffer<Rgb<u8>, Vec<u8>> {
+    let mut graph_buffer = ImageBuffer::new(size.0, size.1);
+    // let mut graph_buffer = vec![0; size.0 as usize * size.1 as usize * 3];
+    {
+        // init graph
+        let graph_root = BitMapBackend::with_buffer(&mut graph_buffer, size);
+        let drawing_area = graph_root.into_drawing_area();
+        drawing_area.fill(&WHITE).unwrap();
+
+        // boundaries
+        let x_margin = (dem.x.last().unwrap() - dem.x.first().unwrap()) * 0.05;
+        let x_spec = ((dem.x.first().unwrap() - x_margin) as f64)..((dem.x.last().unwrap() + x_margin) as f64);
+        let mut y_min = dem.z[0];
+        let mut y_max = dem.z[0];
+        let mut all_y = vec![&dem.z];
+        surfaces.iter().for_each(|s| all_y.push(&s.z));
+        for s in all_y {
+            s.iter().for_each(|k| 
+                match k.to_owned() {
+                    y if y > y_max => y_max = y,
+                    y if y < y_min => y_min = y,
+                    _ => (), 
+                }
+            );
+        };
+        let y_margin = (y_max - y_min) * 0.05;
+        let y_spec = ((y_min - y_margin) as f64)..((y_max + y_margin) as f64);
+
+        // init mesh
+        let mut chart = ChartBuilder::on(&drawing_area)
+            .margin(8)
+            .x_label_area_size(40)
+            .y_label_area_size(40)
+            .build_cartesian_2d(x_spec, y_spec).unwrap();
+
+        chart
+            .configure_mesh()
+            .disable_mesh()
+            .draw().unwrap();
+
+
+        // draw
+        let mut chart_extended = ChartExtended::new(chart, dem.x.to_owned());
+        disp_datas.iter().for_each(|d| d.plot_arrows(&mut chart_extended));
+        disp_profiles.iter().for_each(|p| p.plot_arrows(&mut chart_extended));
+        surfaces.iter().for_each(|s| s.plot(&mut chart_extended));
+        dem.plot(&mut chart_extended);
+        
+        // do all pending tasks
+        drawing_area.present().expect("draw please");
+    }
+    graph_buffer
+}
+
 struct ChartExtended<'a> {
     pub chart: Chart<'a>,
     pub x_support: Vec<f32>,
+}
+
+impl<'a> ChartExtended<'a> {
+    pub fn new(chart: Chart<'a>, x_support: Vec<f32>) -> Self {
+        ChartExtended { chart, x_support }
+    }
 }
 
 impl Dem1D {
