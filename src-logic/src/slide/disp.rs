@@ -2,9 +2,6 @@
 
 use std::f32::consts::PI;
 
-use assert_approx_eq::assert_approx_eq;
-use log::debug;
-
 /// Computes the slope of a property along the section and the given DEM
 pub(super) fn slope1d(x: &Vec<f32>, z: &Vec<f32>) -> Vec<f32> {
     assert_eq!(x.len(), z.len());

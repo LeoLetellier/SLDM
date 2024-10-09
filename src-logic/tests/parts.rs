@@ -49,6 +49,8 @@ fn test_plot_arrows() {
     let mut disp2 = DispProfile::from_surface(&mut surface2, &dem, 1, 4);
     disp.amplitude_vec = disp.amplitude_vec.iter().map(|k| k * 10.).collect();
     disp2.amplitude_vec = disp2.amplitude_vec.iter().map(|k| k * 20.).collect();
+    disp.amplitude_regul = disp.amplitude_regul.iter().map(|k| k * 10.).collect();
+    disp2.amplitude_regul = disp2.amplitude_regul.iter().map(|k| k * 20.).collect();
 
     let graph_buffer = plot_section((1600, 1000), (&dem, get_style(BLACK, 1., true, 2)), vec![(&surface, get_style(BLUE, 1., true, 1)), (&surface2, get_style(GREEN, 1., true, 1))], vec![&disp, &disp2], vec![]);
     graph_buffer.save("figures/test2.png").unwrap();

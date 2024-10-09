@@ -40,6 +40,9 @@ pub struct DispProfile {
     pub amplitude_vec: Vec<f32>,
     pub origin_x: Vec<f32>,
     pub origin_z: Vec<f32>,
+    // back into x support
+    pub slope_regul: Vec<f32>,
+    pub amplitude_regul: Vec<f32>,
     // portion seen into a LOS
     pub proj_slope_vec: Option<Vec<f32>>,
     pub proj_amplitude_vec: Option<Vec<f32>>,
@@ -52,6 +55,8 @@ impl DispProfile {
             amplitude_vec: amplitude_vec,
             origin_x: origin_x,
             origin_z: origin_z,
+            slope_regul: Vec::new(),
+            amplitude_regul: Vec::new(),
             proj_slope_vec: None,
             proj_amplitude_vec: None,
         }
@@ -60,6 +65,12 @@ impl DispProfile {
     pub fn get_xz_vec(&self) -> (Vec<f32>, Vec<f32>) {
         let vec_x: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].cos() * -self.amplitude_vec[k] * self.slope_vec[k].signum()).collect();
         let vec_z: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].sin() * -self.amplitude_vec[k] * self.slope_vec[k].signum()).collect();
+        (vec_x, vec_z)
+    }
+
+    pub fn get_xz_vec_regul(&self) -> (Vec<f32>, Vec<f32>) {
+        let vec_x: Vec<f32> = (0..self.slope_regul.len()).map(|k| self.slope_regul[k].cos() * -self.amplitude_regul[k] * self.slope_regul[k].signum()).collect();
+        let vec_z: Vec<f32> = (0..self.slope_regul.len()).map(|k| self.slope_regul[k].sin() * -self.amplitude_regul[k] * self.slope_regul[k].signum()).collect();
         (vec_x, vec_z)
     }
 }
@@ -72,14 +83,6 @@ pub struct DispData {
     // portion seen into the 2D section
     pub proj_slope_vec: Option<Vec<f32>>,
     pub proj_amplitude_vec: Option<Vec<f32>>,
-}
-
-impl DispData {
-    // pub fn get_xz_vec(&self) -> (Vec<f32>, Vec<f32>) {
-    //     let vec_x: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].cos() * self.amplitude_vec[k]).collect();
-    //     let vec_z: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].sin() * self.amplitude_vec[k]).collect();
-    //     (vec_x, vec_z)
-    // }
 }
 
 #[derive(Default, Debug)]
