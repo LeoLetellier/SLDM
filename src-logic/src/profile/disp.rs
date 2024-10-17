@@ -2,22 +2,9 @@
 
 use std::f32::consts::PI;
 
-/// Computes the slope of a property along the section and the given DEM
-pub(super) fn slope1d(x: &Vec<f32>, z: &Vec<f32>) -> Vec<f32> {
-    assert_eq!(x.len(), z.len());
-    let len = x.len();
-    let mut slope_v: Vec<f32> = vec![];
-    slope_v.push(((z[1] - z[0]) / (x[1] - x[0])).atan()); // half slope
-    for i in 1..(len - 1) {
-        slope_v.push(((z[i+1] - z[i-1]) / (x[i+1] - x[i-1])).atan()); // rad
-    }
-    slope_v.push(((z[len - 1] - z[len - 2]) / (x[len - 1] - x[len - 2])).atan()); // half slope
-    slope_v
-}
-
 /// Computes the displacement projected from the failure surface into the topography (DEM) perpendicularly 
 /// to the slope of the failure surface
-pub(super) fn pillar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &Vec<f32>, x: &Vec<f32>, z: &Vec<f32>) -> (Vec<f32>, Vec<f32>) {
+pub fn pillar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &Vec<f32>, x: &Vec<f32>, z: &Vec<f32>) -> (Vec<f32>, Vec<f32>) {
     let mut ground_proj_x = x.clone();
     let mut ground_proj_z = z.clone();
 
@@ -89,24 +76,6 @@ pub(super) fn slope2vec(slope: &Vec<f32>, dir: i8, first_index: usize, last_inde
 #[cfg(test)]
 mod tests {
     use super::*;
-    // use crate::prelude::*;
-    // use assert_approx_eq::assert_approx_eq;
-
-    // #[test]
-    // fn test_slope() {
-    //     let x = vec![0., 100., 200., 300., 400., 500., 600.];
-    //     let z = vec![0., 10., 30., 35., 45., 50., 60.];
-    //     let prop = vec![0., 10., 14., 22., 34., 50., 60.];
-    //     let dem = Dem1D::new(x, z);
-
-    //     let prop_sec = PropOnSection::new(String::from("test"), prop);
-        
-    //     let res = slope(&dem, &prop_sec).prop;
-    //     let expect = [0.0996687, 0.069886, 0.0599282, 0.0996687, 0.1390959, 0.129275, 0.0996687];
-    //     for i in 0..res.len() {
-    //         assert_approx_eq!(res[i], expect[i]);
-    //     }
-    // }
 
     #[test]
     fn test_intercept() {

@@ -30,12 +30,13 @@ fn test_plot_dem() {
     let surface = Surface1D::from_csv(slbl_path);
 
     let graph_buffer = plot_section((1024, 768), (&dem, get_style(BLACK, 1., true, 2)), vec![(&surface, get_style(BLUE, 1., true, 1))], vec![], vec![]);
-    graph_buffer.save("figures/test1.png").unwrap();
+    // graph_buffer.save("figures/test1.png").unwrap();
 }
 
 #[test]
 fn test_plot_arrows() {
     use src_logic::plotter::*;
+    use std::fs;
 
     let dem_path = String::from("./test_data/dem.csv");
     let slbl_path = String::from("./test_data/slbl.csv");
@@ -53,7 +54,9 @@ fn test_plot_arrows() {
     disp2.amplitude_regul = disp2.amplitude_regul.iter().map(|k| k * 20.).collect();
 
     let graph_buffer = plot_section((1600, 1000), (&dem, get_style(BLACK, 1., true, 2)), vec![(&surface, get_style(BLUE, 1., true, 1)), (&surface2, get_style(GREEN, 1., true, 1))], vec![&disp, &disp2], vec![]);
-    graph_buffer.save("figures/test2.png").unwrap();
+    println!("{}", graph_buffer);
+
+    fs::write("./figures/test.svg", graph_buffer).unwrap();
 
     println!("surface: {:?}\ndisp profile: {:?}", surface, disp);
     println!("surface: {:?}\ndisp profile: {:?}", surface2, disp2);

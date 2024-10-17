@@ -63,17 +63,30 @@ impl DispProfile {
     }
 
     pub fn get_xz_vec(&self) -> (Vec<f32>, Vec<f32>) {
-        let vec_x: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].cos() * -self.amplitude_vec[k] * self.slope_vec[k].signum()).collect();
-        let vec_z: Vec<f32> = (0..self.slope_vec.len()).map(|k| self.slope_vec[k].sin() * -self.amplitude_vec[k] * self.slope_vec[k].signum()).collect();
-        (vec_x, vec_z)
+        slope_ampl_to_vx_vz(&self.slope_vec, &self.amplitude_vec)
     }
 
     pub fn get_xz_vec_regul(&self) -> (Vec<f32>, Vec<f32>) {
-        let vec_x: Vec<f32> = (0..self.slope_regul.len()).map(|k| self.slope_regul[k].cos() * -self.amplitude_regul[k] * self.slope_regul[k].signum()).collect();
-        let vec_z: Vec<f32> = (0..self.slope_regul.len()).map(|k| self.slope_regul[k].sin() * -self.amplitude_regul[k] * self.slope_regul[k].signum()).collect();
-        (vec_x, vec_z)
+        slope_ampl_to_vx_vz(&self.slope_regul, &self.amplitude_regul)
     }
 }
+
+pub(crate) fn slope_ampl_to_vx_vz(slope: &Vec<f32>, amplitude: &Vec<f32>) -> (Vec<f32>, Vec<f32>) {
+    (0..slope.len()).map(|k| slope_ampl_to_vx_vz_unit(slope[k], amplitude[k])).collect()
+}
+
+pub(crate) fn slope_ampl_to_vx_vz_unit(slope: f32, amplitude: f32) -> (f32, f32) {
+    let vec_x = slope.cos() * -amplitude * slope.signum();
+    let vec_z = slope.sin() * -amplitude * slope.signum(); // is sign here right ?
+    (vec_x, vec_z)
+}
+
+// TODO
+// pub(crate) fn vx_vz_to_slope_ampl_unit(slope: f32, amplitude: f32) -> (f32, f32) {
+//     let vec_x = slope.cos() * -amplitude * slope.signum();
+//     let vec_z = slope.sin() * -amplitude * slope.signum();
+//     (vec_x, vec_z)
+// }
 
 #[derive(Default, Debug)]
 pub struct DispData {

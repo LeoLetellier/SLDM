@@ -1,8 +1,5 @@
-use disp::pillar_slope;
-
 use crate::types::*;
 use std::{f32::consts::PI, ops::Deref};
-mod disp;
 
 
 /// Method selected to compute the SLBL failure surface
@@ -166,8 +163,8 @@ fn tridiag_matrix_non_conservative(dim: usize, low_d: &Vec<f32>, main_d: &mut Ve
 }
 
 impl Surface1D {
-    fn get_slope(&mut self, dem: &Dem1D) -> &Self {
-        self.slope = Some(disp::slope1d(&dem.x, &self.z));
+    pub(crate) fn get_slope(&mut self, dem: &Dem1D) -> &Self {
+        self.slope = Some(slope1d(&dem.x, &self.z));
         self
     }
 
@@ -177,97 +174,15 @@ impl Surface1D {
     }
 }
 
-impl DispProfile {
-    pub fn from_surface(surface: &mut Surface1D, dem: &Dem1D, first_x: usize, last_x: usize) -> Self {
-        match surface.slope {
-            None => {surface.get_slope(dem); ()},
-            _ => (),
-        };
-        let slope = surface.slope.clone().unwrap();
-        let len = slope.len();
-        let origin = pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z);
-        let mut amplitude: Vec<f32> = Vec::new();
-        (0..len).for_each(|k| match k {
-            k if k < first_x => amplitude.push(0.),
-            k if k > last_x => amplitude.push(0.),
-            _ => amplitude.push(1.),
-        });
-        let mut disp_profile = DispProfile::new(slope, amplitude, origin.0, origin.1);
-        disp_profile.interp_to_support(dem);
-        disp_profile
-
+/// Computes the slope of a property along the section and the given DEM
+pub(super) fn slope1d(x: &Vec<f32>, z: &Vec<f32>) -> Vec<f32> {
+    assert_eq!(x.len(), z.len());
+    let len = x.len();
+    let mut slope_v: Vec<f32> = vec![];
+    slope_v.push(((z[1] - z[0]) / (x[1] - x[0])).atan()); // half slope
+    for i in 1..(len - 1) {
+        slope_v.push(((z[i+1] - z[i-1]) / (x[i+1] - x[i-1])).atan()); // rad
     }
-
-    fn interp_to_support(&mut self, dem: &Dem1D) -> &Self {
-        self.slope_regul = interpol_linear(&self.origin_x, &self.slope_vec, &dem.x);
-        self.amplitude_regul = interpol_linear(&self.origin_x, &self.amplitude_vec, &dem.x);
-        self
-    }
-}
-
-fn interpol_linear(x_old: &Vec<f32>, y_old: &Vec<f32>, x_new: &Vec<f32>) -> Vec<f32> {
-    let length = x_old.len();
-    assert_eq!(x_old.len(), y_old.len());
-
-    let mut left_index: usize = 1;
-    let mut y_new: Vec<f32> = Vec::new();
-
-    (0..x_new.len()).for_each(|k| {
-        let y = match x_new[k] {
-            x if x <= x_old[0] => y_old[0],
-            x if x >= x_old[length - 1] => y_old[length - 1],
-            x if x < x_old[left_index] => {
-                interpol_linear_local(x_old[left_index - 1], x_old[left_index], y_old[left_index - 1], y_old[left_index], x_new[k])
-            },
-            x if x > x_old[left_index] => {
-                while !(x < x_old[left_index]) & (left_index < length - 1) {
-                    left_index += 1;
-                }
-                interpol_linear_local(x_old[left_index - 1], x_old[left_index], y_old[left_index - 1], y_old[left_index], x_new[k])
-            },
-            _ => y_old[left_index],
-        };
-        y_new.push(y);
-    });
-    y_new
-}
-
-fn interpol_linear_local(x1: f32, x2: f32, y1: f32, y2: f32, xn: f32) -> f32 {
-    y1 + (xn - x1) * (y2 - y1) / (x2 - x1)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use assert_approx_eq::assert_approx_eq;
-
-    #[test]
-    fn test_local_interp() {
-        let result = interpol_linear_local(1., 5., 10., 35., 4.);
-        let expect:f32 = 28.75;
-        assert_approx_eq!(result, expect);
-    }
-
-    #[test]
-    fn test_linear_interp() {
-        let x: Vec<f32> = vec![1., 3., 5., 7., 9., 11., 13.];
-        let y: Vec<f32> = vec![12., 56., 23., 45., 56., 45., 23.];
-        let x_new: Vec<f32> = vec![0., 2., 4., 6., 8., 10.];
-        let result = interpol_linear(&x, &y, &x_new);
-        let expect: Vec<f32> = vec![12., 34., 39.5, 34., 50.5, 50.5];
-        println!("result: {:?}\nexpect: {:?}", result, expect);
-        (0..result.len()).for_each(|k|
-            assert_approx_eq!(result[k], expect[k])
-        );
-
-        let x: Vec<f32> = vec![1., 3., 5., 7., 9., 11., 13.];
-        let y: Vec<f32> = vec![12., 56., 23., 45., 56., 45., 23.];
-        let x_new: Vec<f32> = vec![4., 6., 8., 10., 12., 14., 16.];
-        let result = interpol_linear(&x, &y, &x_new);
-        let expect: Vec<f32> = vec![39.5, 34., 50.5, 50.5, 34., 23., 23.];
-        println!("result: {:?}\nexpect: {:?}", result, expect);
-        (0..result.len()).for_each(|k|
-            assert_approx_eq!(result[k], expect[k])
-        );
-    }
+    slope_v.push(((z[len - 1] - z[len - 2]) / (x[len - 1] - x[len - 2])).atan()); // half slope
+    slope_v
 }

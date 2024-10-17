@@ -5,16 +5,16 @@ use full_palette::ORANGE;
 use image::{ImageBuffer, Rgb};
 use plotters::{chart, prelude::*};
 use plotters_arrows::ThinArrow;
-type Chart<'a> = ChartContext<'a, BitMapBackend<'a>, Cartesian2d<plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64>>;
+type Chart<'a> = ChartContext<'a, SVGBackend<'a>, Cartesian2d<plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64>>;
 
 use crate::types::{Dem1D, DispData, DispProfile, Surface1D};
 
-pub fn plot_section(size: (u32, u32), dem: (&Dem1D, ShapeStyle), surfaces: Vec<(&Surface1D, ShapeStyle)>, disp_profiles: Vec<&DispProfile>, disp_datas: Vec<&DispData>) -> image::ImageBuffer<Rgb<u8>, Vec<u8>> {
-    let mut graph_buffer = ImageBuffer::new(size.0, size.1);
+pub fn plot_section(size: (u32, u32), dem: (&Dem1D, ShapeStyle), surfaces: Vec<(&Surface1D, ShapeStyle)>, disp_profiles: Vec<&DispProfile>, disp_datas: Vec<&DispData>) -> String {
+    let mut graph_buffer = String::new();
     {
         let (dem, dem_style) = (dem.0, dem.1);
         // init graph
-        let graph_root = BitMapBackend::with_buffer(&mut graph_buffer, size);
+        let graph_root = SVGBackend::with_string(&mut graph_buffer, size);
         let drawing_area = graph_root.into_drawing_area();
         drawing_area.fill(&WHITE).unwrap();
 
@@ -38,8 +38,8 @@ pub fn plot_section(size: (u32, u32), dem: (&Dem1D, ShapeStyle), surfaces: Vec<(
         let y_spec = ((y_min - y_margin) as f64)..((y_max + y_margin) as f64);
         
         // Decomment for pseudo orthonormal grid
-        // let x_spec = (0.)..(600.);
-        // let y_spec = (-150.)..(150.);
+        let x_spec = (0.)..(600.);
+        let y_spec = (-150.)..(150.);
 
         // init mesh
         let mut chart = ChartBuilder::on(&drawing_area)

@@ -1,159 +1,116 @@
-//! Compute a displacement for a landslide based on geometric assumptions.
-//! 
-//! Considering that the displacement in the section is propagating along the failure surface, this 
-//! displacement is estimated as unit vectors along this slope. Multiple failure surfaces can be combined
-//! to contribute to a global model. The amplitude of the model can be dimensionned by user input or
-//! extern displacement data located on the section.
+use crate::types::*;
+pub mod disp;
+use disp::*;
 
-use std::sync::Arc;
-use std::f64::consts::PI;
-use nnls::nnls;
-use ndarray::prelude::*;
+impl DispProfile {
+    pub fn from_surface(surface: &mut Surface1D, dem: &Dem1D, first_x: usize, last_x: usize) -> Self {
+        match surface.slope {
+            None => {surface.get_slope(dem); ()},
+            _ => (),
+        };
+        let slope = surface.slope.clone().unwrap();
+        let len = slope.len();
+        let origin = pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z);
+        let mut amplitude: Vec<f32> = Vec::new();
+        (0..len).for_each(|k| match k {
+            k if k < first_x => amplitude.push(0.),
+            k if k > last_x => amplitude.push(0.),
+            _ => amplitude.push(1.),
+        });
+        let mut disp_profile = DispProfile::new(slope, amplitude, origin.0, origin.1);
+        disp_profile.interp_to_support(dem);
+        disp_profile
 
-use crate::prelude::{PropOnSection, Orientation};
-use crate::slide::Slide;
-
-/// Parameters and variable of a displacement model
-#[derive(Debug)]
-pub struct DispModel {
-    mdl_vec: (PropOnSection, PropOnSection),
-    vec_slope: PropOnSection,
-    main_slide: Arc<Slide>,
-    mdl_los_disp: Option<PropOnSection>,
-    ground_perspective: bool,
-    sar_displacement: Option<PropOnSection>,
-}
-
-impl DispModel {
-    /// Build a model given a list of slides and their respective contribution (ratio)
-    pub(crate) fn build(slide_list: &Vec<Arc<Slide>>, main_slide: Arc<Slide>, len: usize) -> DispModel {
-        let mut vec_x = vec![0.; len];
-        let mut vec_z = vec![0.; len];
-        let mut vec_slope = vec![0.; len];
-        // Sum all displacements at each point, weighted by their ratios
-        for slide in slide_list {
-            let vector = slide.vector_slope.as_ref().unwrap();
-            let ratio = slide.ratio;
-            for k in 0..len {
-                vec_x[k] += vector.0.prop[k] * ratio;
-                vec_z[k] += vector.1.prop[k] * ratio;
-            }
-        }
-
-        // Computing the associated slope and incidence angle for the new displacement vectors
-        for k in 0..len {
-            vec_slope[k] = match vec_x[k] {
-                i if i != 0. => (vec_z[k] / vec_x[k].abs()).atan() * slide_list.len() as f64,
-                _ => 0.,
-            };
-        }
-        
-        let mdl_vec = (
-            PropOnSection::new(String::from("mdl_vec_x"),vec_x),
-            PropOnSection::new(String::from("mdl_vec_z"),vec_z)
-            );
-
-        let slope_prop = PropOnSection::new(String::from("model slope"), vec_slope);
-             
-        DispModel {
-            mdl_vec,
-            vec_slope: slope_prop,
-            main_slide: Arc::clone(&main_slide),
-            mdl_los_disp: None,
-            ground_perspective: true, // inverse the sign so that ground going down corresponds to negative displacement
-            sar_displacement: None,
-        }
     }
 
-    /// Compute the displacement previously computed by the model in a Line Of Sight (LOS)
-    pub fn compute_mdl_disp_in_los(&mut self, section_orientation: &Orientation, sar_geometry: &Orientation) {
-        let mut disp_in_los = vec![0.; self.vec_slope.prop.len()];
-        for k in 0..self.vec_slope.prop.len() {
-            let slope = self.vec_slope.prop[k];
-            // If the vector is going towards negative x-axis, the azimuth should be corrected
-            let dir = match self.mdl_vec.0.prop[k] {
-                i if i >= 0. => true,
-                _ => false,
-            };
-            let amplitude = (self.mdl_vec.0.prop[k] * self.mdl_vec.0.prop[k] + self.mdl_vec.1.prop[k] * self.mdl_vec.1.prop[k]).sqrt();
-            // projection of SEC (displacement in the section) into the LOS is 
-            // Amplitude of displacement * inner_product(unit SEC vector, unit LOS vector)
-            disp_in_los[k] = amplitude * local_projection(slope, dir, &section_orientation, &sar_geometry);
-            // The calculated projection is set by the LOS (facing down)
-            if self.ground_perspective{
-                disp_in_los[k] *= -1.; // to match sign convention, considering from the ground perspective and not the satellite
-            }
-        }
-        self.mdl_los_disp = Some(PropOnSection::new(String::from("disp_in_los"), disp_in_los));
+    fn interp_to_support(&mut self, dem: &Dem1D) -> &Self {
+        self.slope_regul = interpol_linear(&self.origin_x, &self.slope_vec, &dem.x);
+        self.amplitude_regul = interpol_linear(&self.origin_x, &self.amplitude_vec, &dem.x);
+        self
     }
 
-    pub(crate) fn build_and_fit() {
-        
-    }
+    // TODO
+    // pub fn from_profiles(profiles: Vec<DispProfile>, weights: Vec<f32>) -> Self {
+    //     assert_eq!(profiles.len(), weights.len());
+    //     let length = profiles[0].slope_regul.len();
+    //     let mut profile = DispProfile::default();
+    //     (0..length).for_each(|k| {
+    //         let (vx, vz) = (0..profiles.len()).fold((0., 0.), |acc, p|
+    //             slope_ampl_to_vx_vz_unit(profiles[p].slope_regul[k], profiles[p].amplitude_regul[k])
+    //         );
+    //         let sum_slope = (0..profiles.len()).fold(0., |acc, p|
+    //             weights[p] * profiles[p].slope_regul[k]
+    //         );
+    //         let sum_amplitude = (0..profiles.len()).fold(0., |acc, p|
+    //             weights[p] * profiles[p].amplitude_regul[k]
+    //         );
+    //     });
+    // }
 }
 
-/// Performs the local projection of two unit vectors, simplify into inner product
-fn local_projection(local_slope: f64, dir_az: bool, section_orientation: &Orientation, sar_geometry: &Orientation) -> f64 {
-    // if the vector is not oriented in the same direction as the section axis x, it is not oriented as azimuth but rather -azimuth
-    // thus parameter dir is set to false to set azimuth to -azimuth
-    let sec_az = match dir_az {
-        true => section_orientation.azimuth,
-        _ => section_orientation.azimuth + PI,
-    };
-    let sec_in = match local_slope {
-        i if i >= 0. => PI / 2. + i.abs(),
-        i => PI / 2. - i.abs(),
-    };
-    let vec_section = geometry3d_to_vector3d(sec_az, sec_in);
+fn interpol_linear(x_old: &Vec<f32>, y_old: &Vec<f32>, x_new: &Vec<f32>) -> Vec<f32> {
+    let length = x_old.len();
+    assert_eq!(x_old.len(), y_old.len());
 
-    let sar_in = sar_geometry.incidence;
-    let sar_az = sar_geometry.azimuth;
-    let vec_sar = geometry3d_to_vector3d(sar_az, sar_in);
-    
-    inner_product_3(vec_section, vec_sar)
+    let mut left_index: usize = 1;
+    let mut y_new: Vec<f32> = Vec::new();
+
+    (0..x_new.len()).for_each(|k| {
+        let y = match x_new[k] {
+            x if x <= x_old[0] => y_old[0],
+            x if x >= x_old[length - 1] => y_old[length - 1],
+            x if x < x_old[left_index] => {
+                interpol_linear_local(x_old[left_index - 1], x_old[left_index], y_old[left_index - 1], y_old[left_index], x_new[k])
+            },
+            x if x > x_old[left_index] => {
+                while !(x < x_old[left_index]) & (left_index < length - 1) {
+                    left_index += 1;
+                }
+                interpol_linear_local(x_old[left_index - 1], x_old[left_index], y_old[left_index - 1], y_old[left_index], x_new[k])
+            },
+            _ => y_old[left_index],
+        };
+        y_new.push(y);
+    });
+    y_new
 }
 
-/// Translate 3D geometry into 3D vectors before performing the inner product
-fn geometry3d_to_vector3d(azimuth: f64, incidence: f64) -> [f64; 3] {
-    [azimuth.cos() * incidence.sin(), azimuth.sin() * incidence.sin(), -incidence.cos()]
+fn interpol_linear_local(x1: f32, x2: f32, y1: f32, y2: f32, xn: f32) -> f32 {
+    y1 + (xn - x1) * (y2 - y1) / (x2 - x1)
 }
-
-fn fit_ratios(slide_list: &Vec<Arc<Slide>>, sar_disp: &Vec<PropOnSection>) {
-    let n_slide = slide_list.len();
-    let n_points = sar_disp[0].prop.len();
-    let a: Array<f64, _> = Array2::zeros((n_slide, n_points));
-    let b: Array<f64, _> = Array1::zeros(n_points);
-    for s in 0..n_slide {
-        for p in 0..n_points {
-            // a[s, p] = slide_list[s].
-            // need also prjecting here 
-        }
-    }
-}
-
-/// Performs the inner product between two 3d vectors
-fn inner_product_3(x: [f64; 3], y: [f64; 3]) -> f64 {
-    x[0] * y[0] + x[1] * y[1] + x[2] * y[2]
-}
-
-fn rmse(x: &Vec<f64>) -> f64 {
-    let res = x.iter().fold(0., |acc, el| acc + el * el / x.len() as f64).sqrt();
-    res
-}
-
 
 #[cfg(test)]
-mod test{
-    use crate::prelude::Orientation;
-    use super::local_projection;
+mod tests {
+    use super::*;
+    use assert_approx_eq::assert_approx_eq;
 
     #[test]
-    fn test_local_proj(){
-        let incidence = 1.56;
-        let dir = false;
-        let section = Orientation::new(1.919, 0.);
-        let sar = Orientation::new(4.974, 0.610);
-        let prod = local_projection(incidence, dir, &section, &sar);
-        dbg!(prod);
+    fn test_local_interp() {
+        let result = interpol_linear_local(1., 5., 10., 35., 4.);
+        let expect:f32 = 28.75;
+        assert_approx_eq!(result, expect);
+    }
+
+    #[test]
+    fn test_linear_interp() {
+        let x: Vec<f32> = vec![1., 3., 5., 7., 9., 11., 13.];
+        let y: Vec<f32> = vec![12., 56., 23., 45., 56., 45., 23.];
+        let x_new: Vec<f32> = vec![0., 2., 4., 6., 8., 10.];
+        let result = interpol_linear(&x, &y, &x_new);
+        let expect: Vec<f32> = vec![12., 34., 39.5, 34., 50.5, 50.5];
+        println!("result: {:?}\nexpect: {:?}", result, expect);
+        (0..result.len()).for_each(|k|
+            assert_approx_eq!(result[k], expect[k])
+        );
+
+        let x: Vec<f32> = vec![1., 3., 5., 7., 9., 11., 13.];
+        let y: Vec<f32> = vec![12., 56., 23., 45., 56., 45., 23.];
+        let x_new: Vec<f32> = vec![4., 6., 8., 10., 12., 14., 16.];
+        let result = interpol_linear(&x, &y, &x_new);
+        let expect: Vec<f32> = vec![39.5, 34., 50.5, 50.5, 34., 23., 23.];
+        println!("result: {:?}\nexpect: {:?}", result, expect);
+        (0..result.len()).for_each(|k|
+            assert_approx_eq!(result[k], expect[k])
+        );
     }
 }
