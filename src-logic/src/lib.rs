@@ -5,7 +5,7 @@
 //! failure surfaces. Compares the profile of displacement with SAR data, or other displacement measures
 //! located on the section.
 
-// pub mod project;
+pub mod project;
 pub mod slide;
 pub mod types;
 pub mod io_csv;
