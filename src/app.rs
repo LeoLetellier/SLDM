@@ -4,7 +4,18 @@ use crate::explorer::Explorer;
 use crate::viewer::Viewer;
 use crate::settings::Settings;
 use crate::documentation::Documentation;
+use src_logic::project::Project;
 
+// Wrap the project object as well as parameters and settings
+#[derive(Debug, Default)]
+pub(crate) struct ProjectHandler {
+    pub(crate) project: Project,
+    pub(crate) focus: OnWindow,
+    pub(crate) counter_one: u16,
+    pub(crate) counter_two: u16,
+}
+
+// Capture which screen has to be displayed
 #[derive(Default, Debug)]
 pub(crate) enum OnWindow {
     #[default]
@@ -13,6 +24,7 @@ pub(crate) enum OnWindow {
     Documentation,
 }
 
+// All different inputs
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum Message {
     IncrementMenus,
@@ -20,45 +32,34 @@ pub(crate) enum Message {
     IncrementViewer,
 }
 
-pub(crate) trait UiComponent {
-    fn update(&mut self, message: Message);
-
-    fn view(&self) -> Element<Message>;
-}
-
-#[derive(Default, Debug)]
-struct Project {
-    title: String,
-}
-
 #[derive(Default, Debug)]
 pub(crate) struct App {
-    pub(crate) focus: OnWindow,
-    project: Project,
+    handler: ProjectHandler,
     working_space: WorkingSpace,
     settings: Settings,
     documentation: Documentation,
 }
 
-impl UiComponent for App {
-    fn update(&mut self, message: Message) {
-        self.working_space.update(message);
+impl App {
+    pub(crate) fn update(&mut self, message: Message) {
+        self.working_space.update(message, &mut self.handler);
+        self.settings.update(message, &mut self.handler);
+        
     }
 
-    fn view(&self) -> Element<Message> {
-        let display_focus = match self.focus {
-            OnWindow::WorkingSpace => self.working_space.view(),
-            OnWindow::Documentation => self.documentation.view(),
-            OnWindow::Settings => self.settings.view(),
+    pub(crate) fn view(&self) -> Element<Message> {
+        let display_focus = match self.handler.focus {
+            OnWindow::WorkingSpace => self.working_space.view(&self.handler),
+            OnWindow::Documentation => self.documentation.view(&self.handler),
+            OnWindow::Settings => self.settings.view(&self.handler),
         };
-        column![display_focus]
-            .into()
+        display_focus.into()
     }
 }
 
 impl App {
     pub(crate) fn title(&self) -> String {
-        format!("Slide Displacement Analysis - {}", self.project.title)
+        format!("Slide Displacement Analysis - {}", self.handler.project.title)
     }
 }
 
@@ -69,17 +70,17 @@ pub(crate) struct WorkingSpace {
     viewer: Viewer,
 }
 
-impl UiComponent for WorkingSpace {
-    fn update(&mut self, message: Message) {
-        self.menus.update(message);
-        self.explorer.update(message);
-        self.viewer.update(message);
+impl WorkingSpace {
+    pub(crate) fn update(&mut self, message: Message, handler: &mut ProjectHandler) {
+        self.menus.update(message, handler);
+        self.explorer.update(message, handler);
+        self.viewer.update(message, handler);
     }
 
-    fn view(&self) -> Element<Message> {
+    pub(crate) fn view(&self, handler: &ProjectHandler) -> Element<Message> {
         column![
-            self.menus.view(),
-            row![self.explorer.view(), self.viewer.view()]
+            self.menus.view(handler),
+            row![self.explorer.view(handler), self.viewer.view(handler)]
         ].into()
     }
 }

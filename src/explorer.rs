@@ -1,22 +1,22 @@
 use iced::widget::{button, column, text, Column};
-use crate::app::{UiComponent, Message, App};
+use crate::app::*;
 
 #[derive(Default, Debug)]
 pub(crate) struct Explorer {
     counter: u32,
 }
 
-impl UiComponent for Explorer {
-    fn update(&mut self, message: Message) {
+impl Explorer {
+    pub(crate) fn update(&mut self, message: Message, handler: &mut ProjectHandler) {
         match message {
-            Message::IncrementExplorer => self.counter += 1,
+            Message::IncrementExplorer => handler.counter_two += 1,
             _ => (),
         }
     }
 
-    fn view(&self) -> iced::Element<Message> {
+    pub(crate) fn view(&self, handler: &ProjectHandler) -> iced::Element<Message> {
         column![
-            text(self.counter),
+            text(handler.counter_two),
             button("+").on_press(Message::IncrementExplorer),
         ].into()
     }

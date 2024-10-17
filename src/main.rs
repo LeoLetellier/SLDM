@@ -6,7 +6,7 @@ mod viewer;
 mod settings;
 mod documentation;
 
-use app::{App, UiComponent};
+use app::App;
 use iced::{Size, Theme};
 
 fn main() -> iced::Result {

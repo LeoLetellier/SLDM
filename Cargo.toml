@@ -9,9 +9,8 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 iced = { version = "0.13.1", features = ["canvas"] }
 
-
 [workspace]
 members = ["src-logic"]
 
-[workspace.dependencies]
-src-logic = {path = "./src-logic"}
+[dependencies.src-logic]
+path = "./src-logic"

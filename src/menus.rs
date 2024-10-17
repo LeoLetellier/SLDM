@@ -6,17 +6,17 @@ pub(crate) struct Menus {
     counter: u32,
 }
 
-impl UiComponent for Menus {
-    fn update(&mut self, message: Message) {
+impl Menus {
+    pub(crate) fn update(&mut self, message: Message, handler: &mut ProjectHandler) {
         match message {
-            Message::IncrementMenus => self.counter += 1,
+            Message::IncrementMenus => handler.counter_one += 1,
             _ => (),
         }
     }
 
-    fn view(&self) -> iced::Element<Message> {
+    pub(crate) fn view(&self, handler: &ProjectHandler) -> iced::Element<Message> {
         column![
-            text(self.counter),
+            text(handler.counter_one),
             button("+").on_press(Message::IncrementMenus),
         ].into()
     }
