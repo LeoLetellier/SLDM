@@ -1,7 +1,7 @@
 #![windows_subsystem = "windows"]
 mod app;
 mod menus;
-mod explorer;
+mod side_panel;
 mod viewer;
 mod settings;
 mod documentation;

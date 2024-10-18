@@ -1,23 +1,23 @@
-use iced::widget::{button, column, text, Column};
+use iced::widget::{button, column, container, row, text, Button};
+use iced::{Length, Alignment};
 use crate::app::*;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum MessageMenus {
+}
 
 #[derive(Default, Debug)]
 pub(crate) struct Menus {
-    counter: u32,
 }
 
 impl Menus {
-    pub(crate) fn update(&mut self, message: Message, handler: &mut ProjectHandler) {
+    pub(crate) fn update(&mut self, message: MessageMenus, handler: &mut ProjectHandler) {
         match message {
-            Message::IncrementMenus => handler.counter_one += 1,
             _ => (),
         }
     }
 
     pub(crate) fn view(&self, handler: &ProjectHandler) -> iced::Element<Message> {
-        column![
-            text(handler.counter_one),
-            button("+").on_press(Message::IncrementMenus),
-        ].into()
+        text("Menus").into()
     }
 }

@@ -7,7 +7,8 @@ license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-iced = { version = "0.13.1", features = ["canvas"] }
+iced = { version = "0.13.1", features = ["markdown", "svg"] }
+plotters-iced = "0.11.0"
 
 [workspace]
 members = ["src-logic"]
