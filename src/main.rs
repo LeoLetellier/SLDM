@@ -1,5 +1,4 @@
 mod app;
-
 use app::AppDM;
 
 fn main() {

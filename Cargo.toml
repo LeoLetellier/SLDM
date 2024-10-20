@@ -1,5 +1,5 @@
 [package]
-name = "ICDM"
+name = "SLDM"
 version = "0.1.0"
 authors = ["Leo Letellier"]
 edition = "2021"
