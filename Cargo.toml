@@ -1,5 +1,5 @@
 [package]
-name = "slbl-ui"
+name = "ICDM"
 version = "0.1.0"
 authors = ["Leo Letellier"]
 edition = "2021"
@@ -7,8 +7,12 @@ license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-iced = { version = "0.13.1", features = ["markdown", "svg"] }
-plotters-iced = "0.11.0"
+eframe = { version = "0.29.1", features = ["wgpu"] }
+egui = { version = "0.29.1", features = ["log", "rayon"] }
+egui-phosphor = "0.7.3"
+egui_commonmark = "0.18.0"
+egui_plot = "0.29.0"
+env_logger = "0.11.5"
 
 [workspace]
 members = ["src-logic"]

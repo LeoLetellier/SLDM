@@ -1,18 +1,8 @@
-#![windows_subsystem = "windows"]
 mod app;
-mod menus;
-mod side_panel;
-mod viewer;
-mod settings;
-mod documentation;
 
-use app::App;
-use iced::{Size, Theme};
+use app::AppDM;
 
-fn main() -> iced::Result {
-    iced::application(App::title, App::update, App::view)
-    .theme(|_| Theme::Nord)
-    .centered()
-    .window_size(Size::new(1280., 720.))
-    .run()
+fn main() {
+    let native_options = eframe::NativeOptions::default();
+    let _ = eframe::run_native("Slow Landslide Displacement Model", native_options, Box::new(|cc| Ok(Box::new(AppDM::new(cc)))));
 }
