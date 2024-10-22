@@ -105,10 +105,10 @@ impl ContextMenus {
         let header_new_satellite_geometry = Self::header(Phosphor::COMPASS_TOOL.to_string() + " New satellite geometry");
         let header_displacement_data = Self::header(Phosphor::ARROWS_OUT_CARDINAL.to_string() + " Displacement data");
 
-        if ui.button(Self::header("New satellite geometry")).clicked() {
+        if ui.button(header_new_satellite_geometry).clicked() {
             // TODO
         }
-        ui.menu_button(Self::header("Displacement data"), |ui| {
+        ui.menu_button(header_displacement_data, |ui| {
             if ui.button(Self::header("From file")).clicked() {
                 // TODO
             }

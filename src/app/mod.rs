@@ -4,14 +4,16 @@ mod viewer;
 
 use context_menu::ContextMenus;
 use action_panel::ActionPanel;
-use egui::vec2;
+use egui::Layout;
 use viewer::Viewer;
+use crate::project::Project;
 
 #[derive(Debug, Default)]
 pub(crate) struct AppDM {
     context_menu: ContextMenus,
     action_panel: ActionPanel,
     viewer: Viewer,
+    handler: Handler,
 }
 
 impl eframe::App for AppDM {
@@ -23,26 +25,24 @@ impl eframe::App for AppDM {
                 self.context_menu.ui(ui);
             });
         egui::SidePanel::left("header_panel")
-            .default_width(57.)
+            .exact_width(57.)
             .resizable(false)
             .show(ctx, |ui| {
                 self.action_panel.ui_panel(ui);
             });
         egui::SidePanel::left("action_panel")
             .resizable(true)
+            .min_width(57.)
+            .max_width(660.)
+            .default_width(220.)
             .show(ctx, |ui| {
                 self.action_panel.ui(ui);
             });
-        
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center).with_cross_justify(true), |ui| {
                 self.viewer.ui(ui);
+            });
         });
-        
-        // egui::Window::new("wild")
-        //     .default_width(600.)
-        //     .default_height(400.)
-        //     .vscroll(true)
-        //     .show(ctx, |ui| ui.label("some text"));
     }
 }
 
@@ -58,4 +58,13 @@ impl AppDM {
 
 trait View {
     fn ui(&mut self, ui: &mut egui::Ui);
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct Settings {}
+
+#[derive(Debug, Default)]
+pub(crate) struct Handler {
+    project: Project,
+    settings: Settings,
 }

@@ -1,5 +1,4 @@
 use eframe::egui;
-use egui::Response;
 use super::View;
 use egui_phosphor::regular as Phosphor;
 
@@ -19,20 +18,28 @@ pub(crate) struct ActionPanel {
 
 impl View for ActionPanel {
     fn ui(&mut self, ui: &mut egui::Ui) {
-        match self.current_panel {
-            Panel::Settings => {
-                ui.label("Settings");
-            },
-            Panel::Explorer => {
-                ui.label("Explorer");
-            },
-            Panel::Command => {
-                ui.label("Command");
-            },
-            Panel::Documentation => {
-                ui.label("Docs");
-            },
-        };
+        ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+            ui.vertical(|ui| {
+                match self.current_panel {
+                    Panel::Settings => {
+                        ui.label("Settings");
+                        ui.separator();
+                    },
+                    Panel::Explorer => {
+                        ui.label("Explorer");
+                        ui.separator();
+                    },
+                    Panel::Command => {
+                        ui.label("Command");
+                        ui.separator();
+                    },
+                    Panel::Documentation => {
+                        ui.label("Docs");
+                        ui.separator();
+                    },
+                };
+            });
+        });
     }
 }
 
