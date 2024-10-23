@@ -1,6 +1,6 @@
 pub(crate) mod command;
-mod documentation;
-mod explorer;
-mod settings;
+pub(crate) mod documentation;
+pub(crate) mod explorer;
+pub(crate) mod settings;
 
 mod nord;

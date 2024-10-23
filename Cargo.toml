@@ -1,14 +1,15 @@
 [package]
 name = "SLDM"
 version = "0.1.0"
-authors = ["Leo Letellier"]
+authors = ["Léo Letellier"]
+repository = "https://github.com/LeoLetellier/SLBL-FSA"
 edition = "2021"
 
 [dependencies]
 eframe = { version = "0.29.1", features = ["wgpu"] }
 egui = { version = "0.29.1", features = ["log", "rayon"] }
 egui-phosphor = "0.7.3"
-egui_commonmark = "0.18.0"
+egui_commonmark = { version = "0.18.0", features = ["macros"] }
 egui_plot = "0.29.0"
 env_logger = "0.11.5"
 hex_color = "3.0.0"

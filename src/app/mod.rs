@@ -2,6 +2,8 @@ pub(crate) mod context_menu;
 mod action_panel;
 mod viewer;
 
+use std::env;
+
 use egui_phosphor::regular as Phosphor;
 use crate::project::Project;
 use action_panel::Panel;
@@ -49,24 +51,33 @@ impl eframe::App for AppDM {
             .fixed_size([200., 500.])
             .open(&mut self.is_about_open)
             .show(ctx, |ui| {
-                ui.label("Slow Landslide Displacement Model");
-                ui.separator();
-                ui.label("Author: Léo Letellier");
-                ui.horizontal(|ui| {
-                    ui.label("Repository: ");
-                    ui.hyperlink_to("GitHub", "https://github.com/LeoLetellier/SLBL-FSA");
+                Self::ui_about(ui);
             });
-        });
     }
 }
 
 impl AppDM {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+    const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
+    const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
+
     pub(crate) fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let mut fonts = egui::FontDefinitions::default();
         egui_phosphor::add_to_fonts(&mut fonts, egui_phosphor::Variant::Regular);
         cc.egui_ctx.set_fonts(fonts);
 
         Self::default()
+    }
+
+    fn ui_about(ui: &mut egui::Ui) {
+        ui.label("Slow Landslide Displacement Model");
+                ui.separator();
+                ui.label("Version: ".to_owned() + Self::VERSION);
+                ui.label("Author: ".to_owned() + Self::AUTHORS);
+                ui.horizontal(|ui| {
+                    ui.label("Repository: ");
+                    ui.hyperlink_to("GitHub", Self::REPOSITORY);
+                });
     }
 }
 

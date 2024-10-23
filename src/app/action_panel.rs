@@ -1,8 +1,7 @@
-use std::borrow::BorrowMut;
-
 use eframe::egui;
 use super::AppDM;
 use egui_phosphor::regular as Phosphor;
+use crate::components::documentation;
 
 #[derive(Debug, Default)]
 pub(crate) enum Panel {
@@ -30,8 +29,7 @@ impl AppDM {
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP).with_cross_justify(true), |ui| self.ui_command(ui));
                     },
                     Panel::Documentation => {
-                        ui.label("Docs");
-                        ui.separator();
+                        self.ui_documentation(ui);
                     },
                 };
             });
@@ -46,11 +44,11 @@ impl AppDM {
 
         ui.vertical(|ui| {
             ui.with_layout(egui::Layout::top_down(egui::Align::Center) ,|ui| {
-                let button_explorer = ui.button(icon_explorer);
+                let button_explorer = ui.button(icon_explorer).on_hover_text("Explorer");
                 ui.separator();
-                let button_command = ui.button(icon_command);
+                let button_command = ui.button(icon_command).on_hover_text("Command");
                 ui.separator();
-                let button_documentation = ui.button(icon_documentation);
+                let button_documentation = ui.button(icon_documentation).on_hover_text("Documentation");
 
                 if button_explorer.clicked() {
                     self.current_panel = Panel::Explorer;
@@ -71,7 +69,7 @@ impl AppDM {
             });
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                let button_settings = ui.button(icon_settings);
+                let button_settings = ui.button(icon_settings).on_hover_text("Settings");
             
                 if button_settings.clicked() {
                     self.current_panel = Panel::Settings;
