@@ -37,7 +37,7 @@ impl eframe::App for AppDM {
         egui::SidePanel::left("action_panel")
             .resizable(true)
             .min_width(57.)
-            .max_width(660.)
+            .max_width(ctx.input(|i: &egui::InputState| i.screen_rect()).max.x / 2.)
             .default_width(220.)
             .show(ctx, |ui| {
                 self.ui_panel_content(ui);
