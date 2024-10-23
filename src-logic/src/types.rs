@@ -44,8 +44,7 @@ pub struct DispProfile {
     pub slope_regul: Vec<f32>,
     pub amplitude_regul: Vec<f32>,
     // portion seen into a LOS
-    pub proj_slope_vec: Option<Vec<f32>>,
-    pub proj_amplitude_vec: Option<Vec<f32>>,
+    pub amplitude_in_los: Option<f32>,
 }
 
 impl DispProfile {
@@ -57,8 +56,7 @@ impl DispProfile {
             origin_z: origin_z,
             slope_regul: Vec::new(),
             amplitude_regul: Vec::new(),
-            proj_slope_vec: None,
-            proj_amplitude_vec: None,
+            amplitude_in_los: None,
         }
     }
 

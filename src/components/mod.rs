@@ -1,4 +1,4 @@
-mod command;
+pub(crate) mod command;
 mod documentation;
 mod explorer;
 mod settings;

@@ -1,9 +1,11 @@
+use std::borrow::BorrowMut;
+
 use eframe::egui;
-use super::View;
+use super::AppDM;
 use egui_phosphor::regular as Phosphor;
 
 #[derive(Debug, Default)]
-enum Panel {
+pub(crate) enum Panel {
     Settings,
     #[default]
     Explorer,
@@ -11,13 +13,8 @@ enum Panel {
     Documentation,
 }
 
-#[derive(Debug, Default)]
-pub(crate) struct ActionPanel {
-    current_panel: Panel,
-}
-
-impl View for ActionPanel {
-    fn ui(&mut self, ui: &mut egui::Ui) {
+impl AppDM {
+    pub(super) fn ui_panel_content(&mut self, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.vertical(|ui| {
                 match self.current_panel {
@@ -30,8 +27,7 @@ impl View for ActionPanel {
                         ui.separator();
                     },
                     Panel::Command => {
-                        ui.label("Command");
-                        ui.separator();
+                        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP).with_cross_justify(true), |ui| self.ui_command(ui));
                     },
                     Panel::Documentation => {
                         ui.label("Docs");
@@ -41,10 +37,8 @@ impl View for ActionPanel {
             });
         });
     }
-}
 
-impl ActionPanel {
-    pub(crate) fn ui_panel(&mut self, ui: &mut egui::Ui) {
+    pub(super) fn ui_panel_header(&mut self, ui: &mut egui::Ui) {
         let icon_settings = egui::RichText::new(Phosphor::GEAR).size(32.).strong();
         let icon_explorer = egui::RichText::new(Phosphor::TREE_VIEW).size(32.).strong();
         let icon_command = egui::RichText::new(Phosphor::QUEUE).size(32.).strong();

@@ -1,19 +1,21 @@
-mod context_menu;
+pub(crate) mod context_menu;
 mod action_panel;
 mod viewer;
 
-use context_menu::ContextMenus;
-use action_panel::ActionPanel;
-use egui::Layout;
-use viewer::Viewer;
+use egui_phosphor::regular as Phosphor;
 use crate::project::Project;
+use action_panel::Panel;
+use viewer::ViewerHandler;
+use crate::components::command::ProjectCommand;
 
 #[derive(Debug, Default)]
 pub(crate) struct AppDM {
-    context_menu: ContextMenus,
-    action_panel: ActionPanel,
-    viewer: Viewer,
-    handler: Handler,
+    pub(crate) project: Project,
+    pub(crate) settings: Settings,
+    pub(crate) viewer_handler: ViewerHandler,
+    pub(crate) is_about_open: bool,
+    pub(crate) current_panel: Panel,
+    pub(crate) current_command: ProjectCommand,
 }
 
 impl eframe::App for AppDM {
@@ -22,13 +24,13 @@ impl eframe::App for AppDM {
             .exact_height(40.)
             .show_separator_line(false)
             .show(ctx, |ui| {
-                self.context_menu.ui(ui);
+                self.ui_context_menu(ui);
             });
         egui::SidePanel::left("header_panel")
             .exact_width(57.)
             .resizable(false)
             .show(ctx, |ui| {
-                self.action_panel.ui_panel(ui);
+                self.ui_panel_header(ui);
             });
         egui::SidePanel::left("action_panel")
             .resizable(true)
@@ -36,11 +38,23 @@ impl eframe::App for AppDM {
             .max_width(660.)
             .default_width(220.)
             .show(ctx, |ui| {
-                self.action_panel.ui(ui);
+                self.ui_panel_content(ui);
             });
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.with_layout(egui::Layout::left_to_right(egui::Align::Center).with_cross_justify(true), |ui| {
-                self.viewer.ui(ui);
+                self.ui_viewer(ui);
+            });
+        });
+        egui::Window::new(egui::RichText::new(Phosphor::INFO.to_string() + " About"))
+            .fixed_size([200., 500.])
+            .open(&mut self.is_about_open)
+            .show(ctx, |ui| {
+                ui.label("Slow Landslide Displacement Model");
+                ui.separator();
+                ui.label("Author: Léo Letellier");
+                ui.horizontal(|ui| {
+                    ui.label("Repository: ");
+                    ui.hyperlink_to("GitHub", "https://github.com/LeoLetellier/SLBL-FSA");
             });
         });
     }
@@ -56,15 +70,5 @@ impl AppDM {
     }
 }
 
-trait View {
-    fn ui(&mut self, ui: &mut egui::Ui);
-}
-
 #[derive(Debug, Default)]
 pub(crate) struct Settings {}
-
-#[derive(Debug, Default)]
-pub(crate) struct Handler {
-    project: Project,
-    settings: Settings,
-}
