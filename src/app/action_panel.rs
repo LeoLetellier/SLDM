@@ -1,11 +1,11 @@
 use eframe::egui;
+use egui::Visuals;
 use super::AppDM;
 use egui_phosphor::regular as Phosphor;
 use crate::components::documentation;
 
 #[derive(Debug, Default)]
 pub(crate) enum Panel {
-    Settings,
     #[default]
     Explorer,
     Command,
@@ -16,17 +16,13 @@ impl AppDM {
     pub(super) fn ui_panel_content(&mut self, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.vertical(|ui| {
+                ui.set_width(ui.available_width());
                 match self.current_panel {
-                    Panel::Settings => {
-                        ui.label("Settings");
-                        ui.separator();
-                    },
                     Panel::Explorer => {
-                        ui.label("Explorer");
-                        ui.separator();
+                        self.ui_explorer(ui);
                     },
                     Panel::Command => {
-                        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP).with_cross_justify(true), |ui| self.ui_command(ui));
+                        self.ui_command(ui);
                     },
                     Panel::Documentation => {
                         self.ui_documentation(ui);
@@ -37,7 +33,10 @@ impl AppDM {
     }
 
     pub(super) fn ui_panel_header(&mut self, ui: &mut egui::Ui) {
-        let icon_settings = egui::RichText::new(Phosphor::GEAR).size(32.).strong();
+        let icon_light = egui::RichText::new(Phosphor::SUN).size(32.).strong();
+        let icon_light2 = egui::RichText::new(Phosphor::SUN_DIM).size(32.).strong();
+        let icon_dark = egui::RichText::new(Phosphor::MOON).size(32.).strong();
+        let icon_dark2 = egui::RichText::new(Phosphor::MOON_STARS).size(32.).strong();
         let icon_explorer = egui::RichText::new(Phosphor::TREE_VIEW).size(32.).strong();
         let icon_command = egui::RichText::new(Phosphor::QUEUE).size(32.).strong();
         let icon_documentation = egui::RichText::new(Phosphor::FILE_DOC).size(32.).strong();
@@ -69,16 +68,23 @@ impl AppDM {
             });
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                let button_settings = ui.button(icon_settings).on_hover_text("Settings");
-            
-                if button_settings.clicked() {
-                    self.current_panel = Panel::Settings;
+                let icon_theme;
+                if self.is_light_mode {
+                    icon_theme = icon_dark.to_owned();
+                } else {
+                    icon_theme = icon_light.to_owned();
                 }
-                
-                match self.current_panel {
-                    Panel::Settings => {button_settings.highlight();},
-                    _ => (),
+                let button_theme = ui.button(icon_theme);
+                if button_theme.clicked() {
+                    if self.is_light_mode {
+                        self.is_light_mode = false;
+                        ui.ctx().set_visuals(Visuals::dark());
+                    } else {
+                        self.is_light_mode = true;
+                        ui.ctx().set_visuals(Visuals::light());
+                    }
                 }
+                button_theme.on_hover_text("Light/Dark Theme");
             });
         });
     }

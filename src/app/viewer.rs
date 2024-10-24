@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use eframe::egui;
 use super::AppDM;
 use egui_phosphor::regular::{self as Phosphor, HEAD_CIRCUIT};
@@ -7,21 +9,31 @@ use src_logic::types::*;
 impl AppDM {
     pub(super) fn ui_viewer(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            if self.viewer_handler.plot_section {
-                self.ui_viewer_section(ui);
-            } else {
+            if self.is_viewer_properties {
                 self.ui_viewer_properties(ui);
+            } else {
+                self.ui_viewer_section(ui);
             }
             ui.separator();
             
             ui.vertical(|ui| {
                 let section_button = egui::RichText::new(Phosphor::CHART_LINE).size(32.);
                 let prop_button = egui::RichText::new(Phosphor::DOTS_SIX).size(32.);
-                if ui.button(section_button).on_hover_text("Section").clicked() {
-                    self.viewer_handler.plot_section = true;
+                let button_section = ui.button(section_button);
+                ui.separator();
+                let button_properties = ui.button(prop_button);
+
+                if self.is_viewer_properties {
+                    button_properties.to_owned().highlight();
+                } else {
+                    button_section.to_owned().highlight();
                 }
-                if ui.button(prop_button).on_hover_text("Properties").clicked() {
-                    self.viewer_handler.plot_section = false;
+
+                if button_section.on_hover_text("Section").clicked() {
+                    self.is_viewer_properties = false;
+                }
+                if button_properties.on_hover_text("Properties").clicked() {
+                    self.is_viewer_properties = true;
                 }
             });
         });
@@ -48,16 +60,5 @@ impl AppDM {
                 plot_ui.line(line);
                 plot_ui.arrows(arrows);
             });
-    }
-}
-
-#[derive(Debug)]
-pub(crate) struct ViewerHandler {
-    pub(crate) plot_section: bool,
-}
-
-impl Default for ViewerHandler {
-    fn default() -> Self {
-        Self { plot_section: true }
     }
 }

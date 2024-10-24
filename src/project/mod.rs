@@ -1,5 +1,4 @@
 use src_logic::types::*;
-use std::sync::{Arc, Mutex};
 use src_logic::io_csv::*;
 
 
@@ -18,8 +17,9 @@ pub(crate) struct Project {
 
 #[derive(Debug, Default)]
 pub(crate) struct BundleDem {
-    dem: Dem1D,
-    section_geometry: Option<Orientation>,
+    pub(crate) dem: Dem1D,
+    pub(crate) section_geometry: Option<Orientation>,
+    pub(crate) section_surface: bool,
 }
 
 impl BundleDem {
@@ -30,33 +30,42 @@ impl BundleDem {
 }
 
 #[derive(Debug, Default)]
-struct BundleSurface {
-    name: String,
-    surface: Surface1D,
+pub(crate) struct BundleSurface {
+    pub(crate) name: String,
+    pub(crate) surface: Surface1D,
+    pub(crate) section_surface: bool,
 }
 
 #[derive(Debug, Default)]
-struct BundleUnitModel {
-    name: String,
-    profile: DispProfile,
+pub(crate) struct BundleUnitModel {
+    pub(crate) name: String,
+    pub(crate) profile: DispProfile,
+    pub(crate) section_arrow: bool,
+    pub(crate) section_pillar: bool,
+    pub(crate) property_disp: bool,
+    pub(crate) property_proj_disp: bool,
 }
 
 #[derive(Debug, Default)]
-struct BundleCompositeModel {
-    name: String,
-    profiles: Vec<Arc<DispProfile>>,
-    weights: Arc<Vec<f32>>,
+pub(crate) struct BundleCompositeModel {
+    pub(crate) name: String,
+    pub(crate) profiles: Vec<DispProfile>,
+    pub(crate) weights: Vec<f32>,
+    pub(crate) section_arrow: bool,
+    pub(crate) property_disp: bool,
+    pub(crate) property_proj_disp: bool,
 }
 
 #[derive(Debug, Default)]
-struct BundleSar {
-    sar_geometry: Orientation,
-    disp_data: Vec<BundleDispData>,
+pub(crate) struct BundleSar {
+    pub(crate) sar_geometry: Orientation,
+    pub(crate) disp_data: Vec<BundleDispData>,
 }
 
 #[derive(Debug, Default)]
-struct BundleDispData {
-    name: String,
-    disp_data: DispData,
+pub(crate) struct BundleDispData {
+    pub(crate) name: String,
+    pub(crate) disp_data: DispData,
+    pub(crate) section_arrow: bool,
+    pub(crate) property_disp: bool,
 }
-

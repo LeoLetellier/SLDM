@@ -7,15 +7,14 @@ use std::env;
 use egui_phosphor::regular as Phosphor;
 use crate::project::Project;
 use action_panel::Panel;
-use viewer::ViewerHandler;
 use crate::components::command::ProjectCommand;
 
 #[derive(Debug, Default)]
 pub(crate) struct AppDM {
     pub(crate) project: Project,
-    pub(crate) settings: Settings,
-    pub(crate) viewer_handler: ViewerHandler,
+    pub(crate) is_light_mode: bool,
     pub(crate) is_about_open: bool,
+    pub(crate) is_viewer_properties: bool,
     pub(crate) current_panel: Panel,
     pub(crate) current_command: ProjectCommand,
 }
@@ -36,9 +35,9 @@ impl eframe::App for AppDM {
             });
         egui::SidePanel::left("action_panel")
             .resizable(true)
-            .min_width(57.)
-            .max_width(ctx.input(|i: &egui::InputState| i.screen_rect()).max.x / 2.)
-            .default_width(220.)
+            .min_width(180.)
+            .max_width(ctx.input(|i: &egui::InputState| i.screen_rect()).max.x / 2.8)
+            .default_width(280.)
             .show(ctx, |ui| {
                 self.ui_panel_content(ui);
             });
@@ -80,6 +79,3 @@ impl AppDM {
                 });
     }
 }
-
-#[derive(Debug, Default)]
-pub(crate) struct Settings {}
