@@ -11,7 +11,7 @@ use assert_approx_eq::assert_approx_eq;
 #[test]
 fn test_dem_input() {
     let file_path = String::from("./test_data/dem.csv");
-    let dem = Dem1D::from_csv(file_path);
+    let dem = Dem1D::from_csv(file_path).unwrap();
     let expect_x: Vec<f32> = vec![0., 100., 200., 300., 400., 500., 600.];
     let expect_z: Vec<f32> = vec![0., 10., 30., 35., 45., 50., 60.];
     for k in 0..dem.x.len() {
@@ -26,8 +26,8 @@ fn test_plot_dem() {
 
     let dem_path = String::from("./test_data/dem.csv");
     let slbl_path = String::from("./test_data/slbl.csv");
-    let dem = Dem1D::from_csv(dem_path);
-    let surface = Surface1D::from_csv(slbl_path);
+    let dem = Dem1D::from_csv(dem_path).unwrap();
+    let surface = Surface1D::from_csv(slbl_path).unwrap();
 
     let graph_buffer = plot_section((1024, 768), (&dem, get_style(BLACK, 1., true, 2)), vec![(&surface, get_style(BLUE, 1., true, 1))], vec![], vec![]);
     // graph_buffer.save("figures/test1.png").unwrap();
@@ -40,8 +40,8 @@ fn test_plot_arrows() {
 
     let dem_path = String::from("./test_data/dem.csv");
     let slbl_path = String::from("./test_data/slbl.csv");
-    let dem = Dem1D::from_csv(dem_path);
-    let mut surface = Surface1D::from_csv(slbl_path);
+    let dem = Dem1D::from_csv(dem_path).unwrap();
+    let mut surface = Surface1D::from_csv(slbl_path).unwrap();
 
     let slide_config = SlideConfig::new(SlideMethod::ExactMatrix, 1, 4, 2.0);
     let mut surface2 = Surface1D::from_slbl(&slide_config, &dem);
@@ -53,11 +53,12 @@ fn test_plot_arrows() {
     disp.amplitude_regul = disp.amplitude_regul.iter().map(|k| k * 10.).collect();
     disp2.amplitude_regul = disp2.amplitude_regul.iter().map(|k| k * 20.).collect();
 
-    let graph_buffer = plot_section((1600, 1000), (&dem, get_style(BLACK, 1., true, 2)), vec![(&surface, get_style(BLUE, 1., true, 1)), (&surface2, get_style(GREEN, 1., true, 1))], vec![&disp, &disp2], vec![]);
+    // let graph_buffer = plot_section((1600, 1000), (&dem, get_style(BLACK, 1., true, 2)), vec![(&surface, get_style(BLUE, 1., true, 1)), (&surface2, get_style(GREEN, 1., true, 1))], vec![&disp, &disp2], vec![]);
+    let graph_buffer = plot_section((1600, 1000), (&dem, get_style(BLACK, 1., true, 2)), vec![(&surface, get_style(BLUE, 1., true, 1))], vec![&disp], vec![]);
     println!("{}", graph_buffer);
 
     fs::write("./figures/test.svg", graph_buffer).unwrap();
 
     println!("surface: {:?}\ndisp profile: {:?}", surface, disp);
-    println!("surface: {:?}\ndisp profile: {:?}", surface2, disp2);
+    // println!("surface: {:?}\ndisp profile: {:?}", surface2, disp2);
 }
