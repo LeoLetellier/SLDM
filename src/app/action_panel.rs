@@ -4,7 +4,7 @@ use super::AppDM;
 use egui_phosphor::regular as Phosphor;
 use crate::components::documentation;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub(crate) enum Panel {
     #[default]
     Explorer,
@@ -50,13 +50,28 @@ impl AppDM {
                 let button_documentation = ui.button(icon_documentation).on_hover_text("Documentation");
 
                 if button_explorer.clicked() {
-                    self.current_panel = Panel::Explorer;
+                    if self.current_panel == Panel::Explorer {
+                        self.show_panel = !self.show_panel;
+                    } else {
+                        self.current_panel = Panel::Explorer;
+                        self.show_panel = true;
+                    }
                 }
                 if button_command.clicked() {
-                    self.current_panel = Panel::Command;
+                    if self.current_panel == Panel::Command {
+                        self.show_panel = !self.show_panel;
+                    } else {
+                        self.current_panel = Panel::Command;
+                        self.show_panel = true;
+                    }
                 }
                 if button_documentation.clicked() {
-                    self.current_panel = Panel::Documentation;
+                    if self.current_panel == Panel::Documentation {
+                        self.show_panel = !self.show_panel;
+                    } else {
+                        self.current_panel = Panel::Documentation;
+                        self.show_panel = true;
+                    }
                 }
 
                 match self.current_panel {
@@ -70,20 +85,18 @@ impl AppDM {
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                 let icon_theme;
                 if self.is_light_mode {
+                    ui.ctx().set_visuals(Visuals::light());
                     icon_theme = icon_dark.to_owned();
                 } else {
+                    ui.ctx().set_visuals(Visuals::dark());
                     icon_theme = icon_light.to_owned();
                 }
+
                 let button_theme = ui.button(icon_theme);
                 if button_theme.clicked() {
-                    if self.is_light_mode {
-                        self.is_light_mode = false;
-                        ui.ctx().set_visuals(Visuals::dark());
-                    } else {
-                        self.is_light_mode = true;
-                        ui.ctx().set_visuals(Visuals::light());
-                    }
+                    self.is_light_mode = !self.is_light_mode;
                 }
+
                 button_theme.on_hover_text("Light/Dark Theme");
             });
         });

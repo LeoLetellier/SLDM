@@ -1,8 +1,10 @@
 use eframe::egui;
 
+use egui::panel::PanelState;
 use egui_phosphor::regular as Phosphor;
 use super::AppDM;
 use crate::components::command::ProjectCommand;
+use crate::app::action_panel::Panel;
 
 impl AppDM {
     fn header(text: impl Into<String>) -> egui::RichText {
@@ -29,22 +31,22 @@ impl AppDM {
 
                 ui.menu_button(header_project, |ui| {
                     if ui.button(Self::header("New")).clicked() {
-                        // TODO
+                        self.open_command(ProjectCommand::NewProject);
                     }
                     if ui.button(Self::header("Open")).clicked() {
-                        // TODO
+                        self.open_command(ProjectCommand::OpenProject);
                     }
                     if ui.button(Self::header("Check consistency")).clicked() {
-                        // TODO
+                        self.open_command(ProjectCommand::CheckProject);
                     }
                 });
 
                 ui.menu_button(header_dem, |ui| {
                     if ui.button(Self::header("From file")).clicked() {
-                        self.current_command = ProjectCommand::OpenDem;
+                        self.open_command(ProjectCommand::OpenDem);
                     }
                     if ui.button(Self::header("Define Geometry")).clicked() {
-                        // TODO
+                        self.open_command(ProjectCommand::DemGeometry);
                     }
                 });
             });
@@ -57,22 +59,22 @@ impl AppDM {
                 let header_from_surfaces = Self::header(Phosphor::STACK_PLUS.to_string() + " From surfaces");
 
                 if ui.button(header_from_file).clicked() {
-                    // TODO
+                    self.open_command(ProjectCommand::OpenSurface);
                 }
                 ui.menu_button(header_from_geometry, |ui| {
                     if ui.button(Self::header("SLBL exact")).clicked() {
-                        // TODO
+                        self.open_command(ProjectCommand::SlblExact);
                     }
                     if ui.button(Self::header("SLBL routine")).clicked() {
-                        // TODO
+                        self.open_command(ProjectCommand::SlblRoutine);
                     }
                 });
                 ui.menu_button(header_from_surfaces, |ui| {
                     if ui.button(Self::header("Minimum")).clicked() {
-                        // TODO
+                        self.open_command(ProjectCommand::SurfaceMin);
                     }
                     if ui.button(Self::header("Maximum")).clicked() {
-                        // TODO
+                        self.open_command(ProjectCommand::SurfaceMax);
                     }
                 });
             });
@@ -85,13 +87,13 @@ impl AppDM {
                 let header_create_combined_model = Self::header(Phosphor::ROWS_PLUS_TOP.to_string() + " Create combined model");
 
                 if ui.button(header_from_surface).clicked() {
-                    // TODO
+                    self.open_command(ProjectCommand::ModelSurface);
                 }
                 if ui.button(header_add_gradient).clicked() {
-                    // TODO
+                    self.open_command(ProjectCommand::ModelGradient);
                 }
                 if ui.button(header_create_combined_model).clicked() {
-                    // TODO
+                    self.open_command(ProjectCommand::ModelCombine);
                 }
             });
 
@@ -100,20 +102,30 @@ impl AppDM {
                 ui.set_max_width(200.);
                 let header_new_satellite_geometry = Self::header(Phosphor::COMPASS_TOOL.to_string() + " New satellite geometry");
                 let header_displacement_data = Self::header(Phosphor::ARROWS_OUT_CARDINAL.to_string() + " Displacement data");
+                let header_calibrate_model = Self::header(Phosphor::TRAY_ARROW_DOWN.to_string() + " Calibrate model");
 
                 if ui.button(header_new_satellite_geometry).clicked() {
-                    // TODO
+                    self.open_command(ProjectCommand::SatGeometry);
                 }
                 ui.menu_button(header_displacement_data, |ui| {
                     if ui.button(Self::header("From file")).clicked() {
-                        // TODO
+                        self.open_command(ProjectCommand::OpenDisp);
                     }
                 });
+                if ui.button(header_calibrate_model).clicked() {
+                    self.open_command(ProjectCommand::CalibrateModel);
+                }
             });
             
             if ui.button(header_about.strong()).clicked() {
                 self.is_about_open = true;
             }
         });
+    }
+
+    fn open_command(&mut self, command: ProjectCommand) {
+        self.current_panel = Panel::Command;
+        self.current_command = command;
+        self.show_panel = true;
     }
 }

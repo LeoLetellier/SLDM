@@ -7,7 +7,7 @@ use std::env;
 use egui_phosphor::regular as Phosphor;
 use crate::project::Project;
 use action_panel::Panel;
-use crate::components::command::ProjectCommand;
+use crate::components::command::{ProjectCommand, Commands};
 
 #[derive(Debug, Default)]
 pub(crate) struct AppDM {
@@ -16,7 +16,9 @@ pub(crate) struct AppDM {
     pub(crate) is_about_open: bool,
     pub(crate) is_viewer_properties: bool,
     pub(crate) current_panel: Panel,
+    pub(crate) show_panel: bool,
     pub(crate) current_command: ProjectCommand,
+    pub(crate) command_data: Commands,
 }
 
 impl eframe::App for AppDM {
@@ -33,14 +35,16 @@ impl eframe::App for AppDM {
             .show(ctx, |ui| {
                 self.ui_panel_header(ui);
             });
-        egui::SidePanel::left("action_panel")
-            .resizable(true)
-            .min_width(180.)
-            .max_width(ctx.input(|i: &egui::InputState| i.screen_rect()).max.x / 2.8)
-            .default_width(280.)
-            .show(ctx, |ui| {
-                self.ui_panel_content(ui);
-            });
+        if self.show_panel {
+            egui::SidePanel::left("action_panel")
+                .resizable(true)
+                .min_width(180.)
+                .max_width(ctx.input(|i: &egui::InputState| i.screen_rect()).max.x / 2.8)
+                .default_width(280.)
+                .show(ctx, |ui| {
+                    self.ui_panel_content(ui);
+                });
+        }
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.with_layout(egui::Layout::left_to_right(egui::Align::Center).with_cross_justify(true), |ui| {
                 self.ui_viewer(ui);

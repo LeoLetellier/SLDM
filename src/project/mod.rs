@@ -1,5 +1,6 @@
 use src_logic::types::*;
 use src_logic::io_csv::*;
+use anyhow::Result;
 
 
 #[derive(Debug, Default)]
@@ -23,9 +24,10 @@ pub(crate) struct BundleDem {
 }
 
 impl BundleDem {
-    pub(crate) fn open_from_file(&mut self, path: String) {
-        let dem = Dem1D::from_csv(path);
+    pub(crate) fn open_from_file(&mut self, path: String) -> Result<()> {
+        let dem = Dem1D::from_csv(path)?;
         self.dem = dem;
+        Ok(())
     }
 }
 
