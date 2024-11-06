@@ -5,6 +5,7 @@ use egui::{Button, ScrollArea};
 
 use crate::{app::AppDM, project};
 use src_logic::types::*;
+use src_logic::slide::slbl_matrix2;
 use egui_phosphor::regular as Phosphor;
 
 #[derive(Debug, Default, Clone)]
@@ -12,7 +13,6 @@ pub(crate) enum ProjectCommand { // Make it own the data with box
     #[default]
     NoCommand,
     NewProject(NewProject),
-    OpenProject(OpenProject),
     Note(Note),
     OpenDem(OpenDem),
     DemGeometry(DemGeometry),
@@ -31,25 +31,54 @@ pub(crate) enum ProjectCommand { // Make it own the data with box
 
 impl AppDM {
     pub(crate) fn ui_command(&mut self, ui: &mut egui::Ui) {
+        let dem_loaded = !self.project.dem.dem.x.is_empty();
+        let project_loaded = !self.project.name.is_empty();
         ui.vertical(|ui|{
             match &mut self.current_command {
                 ProjectCommand::NoCommand => self.ui_no_command(ui),
                 ProjectCommand::NewProject(_) => self.ui_new_project(ui),
-                ProjectCommand::OpenProject(_) => self.ui_open_project(ui),
-                ProjectCommand::Note(_) => self.ui_note(ui),
-                ProjectCommand::OpenDem(_) => self.ui_open_dem(ui),
-                ProjectCommand::DemGeometry(_) => self.ui_dem_geometry(ui),
-                ProjectCommand::OpenSurface(_) => self.ui_open_surface(ui),
-                ProjectCommand::SlblExact(_) => self.ui_slbl_exact(ui),
-                ProjectCommand::SlblRoutine(_) => self.ui_slbl_routine(ui),
-                ProjectCommand::SurfaceMin(_) => self.ui_surface_min(ui),
-                ProjectCommand::SurfaceMax(_) => self.ui_surface_max(ui),
-                ProjectCommand::ModelSurface(_) => self.ui_model_surface(ui),
-                ProjectCommand::ModelGradient(_) => self.ui_model_gradient(ui),
-                ProjectCommand::ModelCombine(_) => self.ui_model_combine(ui),
-                ProjectCommand::SatGeometry(_) => self.ui_sat_geometry(ui),
-                ProjectCommand::OpenDisp(_) => self.ui_open_disp(ui),
-                ProjectCommand::CalibrateModel(_) => self.ui_calibrate_model(ui),
+                ProjectCommand::Note(_) => {
+                    if project_loaded {self.ui_note(ui)}
+                },
+                ProjectCommand::OpenDem(_) => {
+                    if project_loaded {self.ui_open_dem(ui)}
+                },
+                ProjectCommand::DemGeometry(_) => {
+                    if project_loaded & dem_loaded {self.ui_dem_geometry(ui)}
+                },
+                ProjectCommand::OpenSurface(_) => {
+                    if project_loaded & dem_loaded {self.ui_open_surface(ui)}
+                },
+                ProjectCommand::SlblExact(_) => {
+                    if project_loaded & dem_loaded {self.ui_slbl_exact(ui)}
+                },
+                ProjectCommand::SlblRoutine(_) => {
+                    if project_loaded & dem_loaded {self.ui_slbl_routine(ui)}
+                },
+                ProjectCommand::SurfaceMin(_) => {
+                    if project_loaded & dem_loaded {self.ui_surface_min(ui)}
+                },
+                ProjectCommand::SurfaceMax(_) => {
+                    if project_loaded & dem_loaded {self.ui_surface_max(ui)}
+                },
+                ProjectCommand::ModelSurface(_) => {
+                    if project_loaded & dem_loaded {self.ui_model_surface(ui)}
+                },
+                ProjectCommand::ModelGradient(_) => {
+                    if project_loaded & dem_loaded {self.ui_model_gradient(ui)}
+                },
+                ProjectCommand::ModelCombine(_) => {
+                    if project_loaded & dem_loaded {self.ui_model_combine(ui)}
+                },
+                ProjectCommand::SatGeometry(_) => {
+                    if project_loaded & dem_loaded {self.ui_sat_geometry(ui)}
+                },
+                ProjectCommand::OpenDisp(_) => {
+                    if project_loaded & dem_loaded {self.ui_open_disp(ui)}
+                },
+                ProjectCommand::CalibrateModel(_) => {
+                    if project_loaded & dem_loaded {self.ui_calibrate_model(ui)}
+                },
             }
         });
         
@@ -78,7 +107,6 @@ pub enum CommandStatus {
 #[derive(Debug, Default)]
 pub struct Commands {
     new_project: NewProject,
-    open_project: OpenProject,
     open_dem: OpenDem,
     note: Note,
     dem_geometry: DemGeometry,
@@ -100,12 +128,6 @@ pub struct NewProject {
     status: CommandStatus,
     project_name: String,
     project_in_folder: Option<String>,
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct OpenProject {
-    status: CommandStatus,
-    project_folder: Option<String>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -132,14 +154,34 @@ pub struct OpenSurface {
     file_path: Option<String>,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct SlblExact {
     status: CommandStatus,
+    first_pnt: usize,
+    last_pnt: usize,
+    tol: f32,
+    pub(crate) temp_surface: Surface1D,
+}
+
+impl Default for SlblExact {
+    fn default() -> Self {
+        SlblExact {
+            status: CommandStatus::default(),
+            first_pnt: 0,
+            last_pnt: 1,
+            tol: 1.,
+            temp_surface: Surface1D::default(),
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct SlblRoutine {
     status: CommandStatus,
+    first_x: f32,
+    last_x: f32,
+    tol: f32,
+    n_it: usize,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -225,48 +267,7 @@ impl AppDM {
                     data.status = CommandStatus::Clean;
                 } else {
                     // Logic part
-                    data.status = CommandStatus::Complete;
-                }
-            }
-        });
-    }
-
-    fn ui_open_project(&mut self, ui: &mut egui::Ui) {
-        let title = egui::RichText::new("Open an Existing Project");
-        let ProjectCommand::OpenProject(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
-        };
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
-                if ui.button("Select Folder").clicked() {
-                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                        data.project_folder = Some(path.display().to_string());
-                    }
-                }
-            });
-        });
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
-                _ => (),
-            }
-        });
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
-                CommandStatus::Clean => egui::RichText::new("Apply"),
-                CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
-                CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
-            };
-            let apply_button= ui.button(apply_text);
-            
-            if apply_button.clicked() {
-                if data.status != CommandStatus::Clean {
-                    data.status = CommandStatus::Clean;
-                } else {
-                    // Logic part
+                    self.project.name = data.project_name.to_owned();
                     data.status = CommandStatus::Complete;
                 }
             }
@@ -469,8 +470,15 @@ impl AppDM {
             ui.vertical(|ui| {
                 ui.label(title);
                 ui.separator();
+                let text_first = "First point at ".to_string() + self.project.dem.dem.x[data.first_pnt].to_string().as_str() + "m";
+                let text_last = "Last point at ".to_string() + self.project.dem.dem.x[data.last_pnt].to_string().as_str() + "m";
+                ui.add(egui::Slider::new(&mut data.first_pnt, 0..=(data.last_pnt - 1)).text(text_first));
+                ui.add(egui::Slider::new(&mut data.last_pnt, (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1)).text(text_last));
+                ui.add(egui::Slider::new(&mut data.tol, 0.0..=2.0).text("Tolerance"));
             });
         });
+
+        // data.temp_surface.z = slbl_matrix2(&self.project.dem.dem, data.first_pnt, data.last_pnt, data.tol);
 
         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
             match &data.status {
@@ -491,6 +499,7 @@ impl AppDM {
                     data.status = CommandStatus::Clean;
                 } else {
                     // Logic part
+                    self.project.surface_from_exact_slbl(data.first_pnt, data.last_pnt, data.tol);
                     data.status = CommandStatus::Complete;
                 }
             }

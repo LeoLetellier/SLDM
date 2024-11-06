@@ -1,11 +1,9 @@
-use std::f64::consts::E;
-
 use eframe::egui;
 
 use egui::panel::PanelState;
 use egui_phosphor::regular as Phosphor;
 use super::AppDM;
-use crate::components::command::{CalibrateModel, DemGeometry, ModelCombine, ModelGradient, ModelSurface, NewProject, Note, OpenDem, OpenDisp, OpenProject, OpenSurface, ProjectCommand, SatGeometry, SlblExact, SlblRoutine, SurfaceMax, SurfaceMin};
+use crate::components::command::{CalibrateModel, DemGeometry, ModelCombine, ModelGradient, ModelSurface, NewProject, Note, OpenDem, OpenDisp, OpenSurface, ProjectCommand, SatGeometry, SlblExact, SlblRoutine, SurfaceMax, SurfaceMin};
 use crate::app::action_panel::Panel;
 
 impl AppDM {
@@ -32,16 +30,23 @@ impl AppDM {
                 let header_dem = Self::header(Phosphor::LINE_SEGMENTS.to_string() + " DEM");
 
                 ui.menu_button(header_project, |ui| {
-                    if ui.button(Self::header("New")).clicked() {
+                    if ui.button(Self::header(Phosphor::FOLDER_SIMPLE_PLUS.to_string() + " New")).clicked() {
                         self.open_command(ProjectCommand::NewProject(NewProject::default()));
                         ui.close_menu();
                     }
-                    if ui.button(Self::header("Open")).clicked() {
-                        // direcly open the project here, no need for command window
-                        self.open_command(ProjectCommand::OpenProject(OpenProject::default()));
+                    if ui.button(Self::header(Phosphor::FOLDER_OPEN.to_string() + " Open")).clicked() {
+                        // directly open the project here, no need for command window, ask path
                         ui.close_menu();
                     }
-                    if ui.button(Self::header("Note")).clicked() {
+                    if ui.button(Self::header(Phosphor::FLOPPY_DISK.to_string() + " Save as")).clicked() {
+                        // directly save project, ask path
+                        ui.close_menu();
+                    }
+                    if ui.button(Self::header(Phosphor::FLOPPY_DISK_BACK.to_string() + " Save")).clicked() {
+                        // save at defined path
+                        ui.close_menu();
+                    }
+                    if ui.button(Self::header(Phosphor::NOTE.to_string() + " Note")).clicked() {
                         self.open_command(ProjectCommand::Note(Note::default()));
                         ui.close_menu();
                     }

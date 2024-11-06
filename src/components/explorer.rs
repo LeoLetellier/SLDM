@@ -14,6 +14,9 @@ impl AppDM {
                     });
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.set_width(ui.available_width());
+                        if self.is_viewer_properties {
+                            ui.disable();
+                        }
                         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, self.project.dem.section_surface)).clicked() {
                             self.project.dem.section_surface = !self.project.dem.section_surface;
                         };
@@ -29,21 +32,26 @@ impl AppDM {
             .show(ui, |ui| {
                 (0..self.project.surfaces.len()).for_each(|k| {
                     let bundle = &mut self.project.surfaces[k];
-                    CollapsingHeader::new(bundle.name.clone())
-                        .default_open(true)
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
-                                    ui.label("Elevation");
-                                });
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    ui.set_width(ui.available_width());
-                                    if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_surface)).clicked() {
-                                        bundle.section_surface = !bundle.section_surface;
-                                    };
+                    ui.push_id(k, |ui|{
+                        CollapsingHeader::new(bundle.name.clone())
+                            .default_open(true)
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
+                                        ui.label("Elevation");
+                                    });
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        ui.set_width(ui.available_width());
+                                        if self.is_viewer_properties {
+                                            ui.disable();
+                                        }
+                                        if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_surface)).clicked() {
+                                            bundle.section_surface = !bundle.section_surface;
+                                        };
+                                    });
                                 });
                             });
-                        });
+                    });
                 });
             });
 

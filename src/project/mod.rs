@@ -30,6 +30,14 @@ impl Project {
         self.surfaces.push(bundle);
         Ok(())
     }
+
+    pub(crate) fn surface_from_exact_slbl(&mut self, first_pnt: usize, last_pnt: usize, tol: f32) -> Result<()> {
+        let surface = Surface1D::from_slbl_exact(&self.dem.dem, first_pnt, last_pnt, tol);
+        let mut bundle = BundleSurface::default();
+        bundle.surface = surface;
+        self.surfaces.push(bundle);
+        Ok(())
+    }
 }
 
 #[derive(Debug)]

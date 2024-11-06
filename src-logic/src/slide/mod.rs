@@ -45,9 +45,8 @@ impl SlideConfig {
 fn compute_slide(config: &SlideConfig, dem: &Dem1D) -> Vec<f32> {
     let z_slide: Vec<f32> = match config.method {
         SlideMethod::RoutineSimple => slbl_routine_simple(dem, config),
-        //SlideMethod::RoutineThreshold => (),
+        SlideMethod::RoutineThreshold => todo!(),
         SlideMethod::ExactMatrix => slbl_matrix(dem, config),
-        _ => panic!("SlideMethod is invalid in compute_slide."),
     };
     z_slide
 }
@@ -66,6 +65,21 @@ fn slbl_matrix(dem: &Dem1D, config: &SlideConfig) -> Vec<f32> {
     let mut result = dem.surface.z.to_owned();
     for i in (config.first_pnt + 1)..config.last_pnt {
         result[i] = m_result[i - config.first_pnt - 1]
+    }
+    result
+}
+
+pub fn slbl_matrix2(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32) -> Vec<f32> {
+    let dim: usize = last_pnt - first_pnt - 1;
+    let sub_diag: Vec<f32> = vec![-0.5 ; dim-1];
+    let mut main_diag: Vec<f32> = vec![1. ; dim];
+    let mut rhs: Vec<f32> = vec![-tol ; dim];
+    rhs[0] += dem.surface.z[first_pnt] / 2.;
+    rhs[dim-1] += dem.surface.z[last_pnt] / 2.;
+    let m_result = tridiag_matrix_non_conservative(dim, &sub_diag, &mut main_diag, &sub_diag, &mut rhs);
+    let mut result = dem.surface.z.to_owned();
+    for i in (first_pnt + 1)..last_pnt {
+        result[i] = m_result[i - first_pnt - 1]
     }
     result
 }
@@ -89,6 +103,26 @@ fn slbl_routine_simple(dem: &Dem1D, config: &SlideConfig) -> Vec<f32> {
     }
     for i in (config.first_pnt + 1)..config.last_pnt {
         result[i] = m_result[i - config.first_pnt + 1]
+    }
+    result
+}
+
+fn slbl_routine_simple2(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32, n_it: usize) -> Vec<f32> {
+    let mut m_result = dem.surface.z[first_pnt..=last_pnt].to_owned();
+    let mut result = dem.surface.z.to_owned();
+
+    for _ in 0..n_it {
+        let z_temp = m_result.clone();
+        for i in 1..m_result.len()-1 {
+            let local_mean = (z_temp[i-1] + z_temp[i+1]) / 2. - tol;
+            if local_mean < m_result[i] {
+                m_result[i] = local_mean;
+            }
+        }
+    }
+
+    for i in (first_pnt + 1)..last_pnt {
+        result[i] = m_result[i - first_pnt + 1]
     }
     result
 }
@@ -172,6 +206,37 @@ impl Surface1D {
         let z_slbl = compute_slide(config, dem);
         Surface1D::new(z_slbl)
     }
+
+    pub fn from_slbl_exact(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32) -> Self {
+        let z_slbl = slbl_matrix2(dem, first_pnt, last_pnt, tol);
+        Surface1D::new(z_slbl)
+    }
+}
+
+fn find_nearest_abscissa(xs: &Vec<f32>, x: f32) -> usize {
+    let mut left = 0;
+    let mut right = xs.len() - 1;
+    assert!((xs.len() > 2) & (xs.is_sorted()));
+    assert!((xs[0] <= x) & (xs[xs.len() - 1] >= x));
+
+    while left < right {
+        let mid = (left + right) / 2;
+        if xs[mid] <= x {
+            left = mid + 1;
+        } else {
+            right = mid;
+        }
+        println!("{left}, {right}");
+    }
+    let dleft = x - xs[left - 1];
+    let dright = xs[left] - x;
+    println!("indexes {}, {}, values {}, {}", left - 1, left, xs[left - 1], xs[left]);
+    println!("{dleft}, {dright}");
+    if dleft <= dright {
+        left - 1
+    } else {
+        left
+    }
 }
 
 /// Computes the slope of a property along the section and the given DEM
@@ -185,4 +250,35 @@ pub(super) fn slope1d(x: &Vec<f32>, z: &Vec<f32>) -> Vec<f32> {
     }
     slope_v.push(((z[len - 1] - z[len - 2]) / (x[len - 1] - x[len - 2])).atan()); // half slope
     slope_v
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_absissa() {
+        let xs: Vec<f32> = vec![1., 2., 3., 4., 5., 6.];
+
+        let result = find_nearest_abscissa(&xs, 2.29);
+        assert_eq!(result, 1);
+
+        let result = find_nearest_abscissa(&xs, 2.56);
+        assert_eq!(result, 2);
+
+        let result = find_nearest_abscissa(&xs, 1.);
+        assert_eq!(result, 0);
+
+        let result = find_nearest_abscissa(&xs, 3.5);
+        assert_eq!(result, 2);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_absissa_fail () {
+        let xs: Vec<f32> = vec![1., 2., 3., 4., 5., 6.];
+
+        let result = find_nearest_abscissa(&xs, 12.);
+        assert_eq!(result, 5);
+    }
 }

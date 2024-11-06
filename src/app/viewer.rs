@@ -1,7 +1,7 @@
 use std::borrow::Borrow;
 
 use eframe::egui;
-use super::AppDM;
+use super::{AppDM, ProjectCommand};
 use egui_phosphor::regular::{self as Phosphor, HEAD_CIRCUIT};
 use egui_plot::{Line, Plot, Points, Arrows};
 use src_logic::types::*;
@@ -56,7 +56,20 @@ impl AppDM {
                 }
             }
         }
-        
+
+        // match &self.current_command {
+        //     ProjectCommand::SlblExact(command_data) => {
+        //         let line = Line::new({
+        //             let mut data = Vec::with_capacity(self.project.dem.dem.x.len());
+        //             for (a, b) in self.project.dem.dem.x.iter().zip(command_data.temp_surface.z.iter()) {
+        //                 data.push([*a as f64, *b as f64]);
+        //             }
+        //             data
+        //         });
+        //     },
+        //     _ => (),
+        // }
+
         if !self.project.dem.dem.x.is_empty() & self.project.dem.section_surface {
             let line = Line::new(
                 {
