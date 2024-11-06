@@ -40,12 +40,44 @@ impl AppDM {
     }
 
     fn ui_viewer_section(&mut self, ui: &mut egui::Ui) {
-        let data = vec![[0., 2.], [1., 1.], [2., 3.]];
-        let line = Line::new(data);
+        let mut lines: Vec<Line> = vec![];
+
+        if !self.project.surfaces.is_empty() {
+            for surf in &self.project.surfaces {
+                if !surf.surface.z.is_empty() & surf.section_surface {
+                    let line = Line::new({
+                        let mut data = Vec::with_capacity(self.project.dem.dem.surface.z.len());
+                        for (a, b) in self.project.dem.dem.x.iter().zip(surf.surface.z.iter()) {
+                            data.push([*a as f64, *b as f64]);
+                        }
+                        data
+                    });
+                    lines.push(line);
+                }
+            }
+        }
+        
+        if !self.project.dem.dem.x.is_empty() & self.project.dem.section_surface {
+            let line = Line::new(
+                {
+                    let mut data = Vec::with_capacity(self.project.dem.dem.surface.z.len());
+                    for (a, b) in self.project.dem.dem.x.iter().zip(self.project.dem.dem.surface.z.iter()) {
+                        data.push([*a as f64, *b as f64]);
+                    }
+                    data
+                }
+            );
+            lines.push(line);
+        }
+
         Plot::new("Section plot")
             .width(ui.available_width() - 64.)
             .height(ui.available_height())
-            .show(ui, |plot_ui| plot_ui.line(line));
+            .show(ui, |plot_ui| {
+                for line in lines {
+                    plot_ui.line(line);
+                }
+        });
     }
 
     fn ui_viewer_properties(&mut self, ui: &mut egui::Ui) {

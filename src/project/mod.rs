@@ -16,18 +16,36 @@ pub(crate) struct Project {
     pub(crate) sars: Vec<BundleSar>,
 }
 
-#[derive(Debug, Default)]
+impl Project {
+    pub(crate) fn open_dem_from_file(&mut self, path: String) -> Result<()> {
+        let dem = Dem1D::from_csv(path)?;
+        self.dem.dem = dem;
+        Ok(())
+    }
+
+    pub(crate) fn open_surface_from_file(&mut self, path: String) -> Result<()> {
+        let surface = Surface1D::from_csv(path)?;
+        let mut bundle = BundleSurface::default();
+        bundle.surface = surface;
+        self.surfaces.push(bundle);
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
 pub(crate) struct BundleDem {
     pub(crate) dem: Dem1D,
     pub(crate) section_geometry: Option<Orientation>,
     pub(crate) section_surface: bool,
 }
 
-impl BundleDem {
-    pub(crate) fn open_from_file(&mut self, path: String) -> Result<()> {
-        let dem = Dem1D::from_csv(path)?;
-        self.dem = dem;
-        Ok(())
+impl Default for BundleDem {
+    fn default() -> Self {
+        BundleDem {
+            dem: Dem1D::default(),
+            section_geometry: None,
+            section_surface: true,
+        }
     }
 }
 

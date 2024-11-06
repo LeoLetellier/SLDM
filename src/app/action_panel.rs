@@ -1,12 +1,14 @@
 use eframe::egui;
 use egui::Visuals;
-use super::AppDM;
+use super::{AppDM, ProjectCommand};
 use egui_phosphor::regular as Phosphor;
 use crate::components::documentation;
+use crate::components::command::Commands;
 
 #[derive(Debug, Default, PartialEq)]
 pub(crate) enum Panel {
     #[default]
+    NoPanel,
     Explorer,
     Command,
     Documentation,
@@ -27,6 +29,7 @@ impl AppDM {
                     Panel::Documentation => {
                         self.ui_documentation(ui);
                     },
+                    Panel::NoPanel => (),
                 };
             });
         });
@@ -52,6 +55,7 @@ impl AppDM {
                 if button_explorer.clicked() {
                     if self.current_panel == Panel::Explorer {
                         self.show_panel = !self.show_panel;
+                        self.current_panel = Panel::NoPanel;
                     } else {
                         self.current_panel = Panel::Explorer;
                         self.show_panel = true;
@@ -60,6 +64,7 @@ impl AppDM {
                 if button_command.clicked() {
                     if self.current_panel == Panel::Command {
                         self.show_panel = !self.show_panel;
+                        self.current_panel = Panel::NoPanel;
                     } else {
                         self.current_panel = Panel::Command;
                         self.show_panel = true;
@@ -68,6 +73,7 @@ impl AppDM {
                 if button_documentation.clicked() {
                     if self.current_panel == Panel::Documentation {
                         self.show_panel = !self.show_panel;
+                        self.current_panel = Panel::NoPanel;
                     } else {
                         self.current_panel = Panel::Documentation;
                         self.show_panel = true;

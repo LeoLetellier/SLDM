@@ -22,8 +22,9 @@ impl AppDM {
             });
 
         ui.separator();
-
-        CollapsingHeader::new("Surfaces")
+        
+        let nb_surfaces = self.project.surfaces.len();
+        CollapsingHeader::new("Surfaces (".to_string() + nb_surfaces.to_string().as_str() + ")")
             .default_open(true)
             .show(ui, |ui| {
                 (0..self.project.surfaces.len()).for_each(|k| {
@@ -48,15 +49,17 @@ impl AppDM {
 
         ui.separator();
 
-        CollapsingHeader::new("Models")
+        let nb_models = self.project.unit_models.len() + self.project.composition_models.len();
+        CollapsingHeader::new("Models (".to_string() + nb_models.to_string().as_str() + ")")
             .default_open(true)
             .show(ui, |ui| {
 
             });
 
         ui.separator();
-
-        CollapsingHeader::new("Calibration data")
+        
+        let nb_sat = self.project.sars.len();
+        CollapsingHeader::new("Calibration data (".to_string() + nb_sat.to_string().as_str() + ")")
             .default_open(true)
             .show(ui, |ui| {
 

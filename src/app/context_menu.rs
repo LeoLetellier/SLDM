@@ -1,9 +1,11 @@
+use std::f64::consts::E;
+
 use eframe::egui;
 
 use egui::panel::PanelState;
 use egui_phosphor::regular as Phosphor;
 use super::AppDM;
-use crate::components::command::ProjectCommand;
+use crate::components::command::{CalibrateModel, DemGeometry, ModelCombine, ModelGradient, ModelSurface, NewProject, Note, OpenDem, OpenDisp, OpenProject, OpenSurface, ProjectCommand, SatGeometry, SlblExact, SlblRoutine, SurfaceMax, SurfaceMin};
 use crate::app::action_panel::Panel;
 
 impl AppDM {
@@ -31,22 +33,28 @@ impl AppDM {
 
                 ui.menu_button(header_project, |ui| {
                     if ui.button(Self::header("New")).clicked() {
-                        self.open_command(ProjectCommand::NewProject);
+                        self.open_command(ProjectCommand::NewProject(NewProject::default()));
+                        ui.close_menu();
                     }
                     if ui.button(Self::header("Open")).clicked() {
-                        self.open_command(ProjectCommand::OpenProject);
+                        // direcly open the project here, no need for command window
+                        self.open_command(ProjectCommand::OpenProject(OpenProject::default()));
+                        ui.close_menu();
                     }
-                    if ui.button(Self::header("Check consistency")).clicked() {
-                        self.open_command(ProjectCommand::CheckProject);
+                    if ui.button(Self::header("Note")).clicked() {
+                        self.open_command(ProjectCommand::Note(Note::default()));
+                        ui.close_menu();
                     }
                 });
 
                 ui.menu_button(header_dem, |ui| {
                     if ui.button(Self::header("From file")).clicked() {
-                        self.open_command(ProjectCommand::OpenDem);
+                        self.open_command(ProjectCommand::OpenDem(OpenDem::default()));
+                        ui.close_menu();
                     }
                     if ui.button(Self::header("Define Geometry")).clicked() {
-                        self.open_command(ProjectCommand::DemGeometry);
+                        self.open_command(ProjectCommand::DemGeometry(DemGeometry::default()));
+                        ui.close_menu();
                     }
                 });
             });
@@ -59,22 +67,27 @@ impl AppDM {
                 let header_from_surfaces = Self::header(Phosphor::STACK_PLUS.to_string() + " From surfaces");
 
                 if ui.button(header_from_file).clicked() {
-                    self.open_command(ProjectCommand::OpenSurface);
+                    self.open_command(ProjectCommand::OpenSurface(OpenSurface::default()));
+                    ui.close_menu();
                 }
                 ui.menu_button(header_from_geometry, |ui| {
                     if ui.button(Self::header("SLBL exact")).clicked() {
-                        self.open_command(ProjectCommand::SlblExact);
+                        self.open_command(ProjectCommand::SlblExact(SlblExact::default()));
+                        ui.close_menu();
                     }
                     if ui.button(Self::header("SLBL routine")).clicked() {
-                        self.open_command(ProjectCommand::SlblRoutine);
+                        self.open_command(ProjectCommand::SlblRoutine(SlblRoutine::default()));
+                        ui.close_menu();
                     }
                 });
                 ui.menu_button(header_from_surfaces, |ui| {
                     if ui.button(Self::header("Minimum")).clicked() {
-                        self.open_command(ProjectCommand::SurfaceMin);
+                        self.open_command(ProjectCommand::SurfaceMin(SurfaceMin::default()));
+                        ui.close_menu();
                     }
                     if ui.button(Self::header("Maximum")).clicked() {
-                        self.open_command(ProjectCommand::SurfaceMax);
+                        self.open_command(ProjectCommand::SurfaceMax(SurfaceMax::default()));
+                        ui.close_menu();
                     }
                 });
             });
@@ -87,13 +100,16 @@ impl AppDM {
                 let header_create_combined_model = Self::header(Phosphor::ROWS_PLUS_TOP.to_string() + " Create combined model");
 
                 if ui.button(header_from_surface).clicked() {
-                    self.open_command(ProjectCommand::ModelSurface);
+                    self.open_command(ProjectCommand::ModelSurface(ModelSurface::default()));
+                    ui.close_menu();
                 }
                 if ui.button(header_add_gradient).clicked() {
-                    self.open_command(ProjectCommand::ModelGradient);
+                    self.open_command(ProjectCommand::ModelGradient(ModelGradient::default()));
+                    ui.close_menu();
                 }
                 if ui.button(header_create_combined_model).clicked() {
-                    self.open_command(ProjectCommand::ModelCombine);
+                    self.open_command(ProjectCommand::ModelCombine(ModelCombine::default()));
+                    ui.close_menu();
                 }
             });
 
@@ -105,15 +121,18 @@ impl AppDM {
                 let header_calibrate_model = Self::header(Phosphor::TRAY_ARROW_DOWN.to_string() + " Calibrate model");
 
                 if ui.button(header_new_satellite_geometry).clicked() {
-                    self.open_command(ProjectCommand::SatGeometry);
+                    self.open_command(ProjectCommand::SatGeometry(SatGeometry::default()));
+                    ui.close_menu();
                 }
                 ui.menu_button(header_displacement_data, |ui| {
                     if ui.button(Self::header("From file")).clicked() {
-                        self.open_command(ProjectCommand::OpenDisp);
+                        self.open_command(ProjectCommand::OpenDisp(OpenDisp::default()));
+                        ui.close_menu();
                     }
                 });
                 if ui.button(header_calibrate_model).clicked() {
-                    self.open_command(ProjectCommand::CalibrateModel);
+                    self.open_command(ProjectCommand::CalibrateModel(CalibrateModel::default()));
+                    ui.close_menu();
                 }
             });
             

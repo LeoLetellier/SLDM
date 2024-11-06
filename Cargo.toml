@@ -13,12 +13,18 @@ egui-phosphor = "0.7.3"
 egui_commonmark = { version = "0.18.0", features = ["macros"] }
 egui_plot = "0.29.0"
 env_logger = "0.11.5"
-hex_color = "3.0.0"
 rfd = "0.15.0"
-thiserror = "1.0.68"
 
 [workspace]
 members = ["src-logic"]
 
 [dependencies.src-logic]
 path = "./src-logic"
+
+[profile.release]
+opt-level = "z"
+debug = false
+lto = true
+panic = "abort"
+strip = true
+

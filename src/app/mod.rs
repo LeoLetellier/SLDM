@@ -18,7 +18,6 @@ pub(crate) struct AppDM {
     pub(crate) current_panel: Panel,
     pub(crate) show_panel: bool,
     pub(crate) current_command: ProjectCommand,
-    pub(crate) command_data: Commands,
 }
 
 impl eframe::App for AppDM {
