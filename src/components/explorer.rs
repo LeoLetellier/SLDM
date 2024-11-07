@@ -8,20 +8,22 @@ impl AppDM {
         CollapsingHeader::new("DEM")
             .default_open(true)
             .show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
-                        ui.label("Elevation");
+                if !self.project.dem.dem.x.is_empty() {
+                    ui.horizontal(|ui| {
+                        ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
+                            ui.label("Elevation");
+                        });
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.set_width(ui.available_width());
+                            if self.is_viewer_properties {
+                                ui.disable();
+                            }
+                            if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, self.project.dem.section_surface)).clicked() {
+                                self.project.dem.section_surface = !self.project.dem.section_surface;
+                            };
+                        });
                     });
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.set_width(ui.available_width());
-                        if self.is_viewer_properties {
-                            ui.disable();
-                        }
-                        if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, self.project.dem.section_surface)).clicked() {
-                            self.project.dem.section_surface = !self.project.dem.section_surface;
-                        };
-                    });
-                });
+                }
             });
 
         ui.separator();

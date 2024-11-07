@@ -29,6 +29,10 @@ impl DispProfile {
         self
     }
 
+    pub fn apply_amplitude_gradient(&mut self, gradient: &Vec<(usize, f32)>) {
+        self.amplitude_vec = amplitude_gradient(&self.amplitude_vec, gradient);
+    }
+
     // TODO
     // pub fn from_profiles(profiles: Vec<DispProfile>, weights: Vec<f32>) -> Self {
     //     assert_eq!(profiles.len(), weights.len());
@@ -48,7 +52,7 @@ impl DispProfile {
     // }
 }
 
-fn interpol_linear(x_old: &Vec<f32>, y_old: &Vec<f32>, x_new: &Vec<f32>) -> Vec<f32> {
+pub(crate) fn interpol_linear(x_old: &Vec<f32>, y_old: &Vec<f32>, x_new: &Vec<f32>) -> Vec<f32> {
     let length = x_old.len();
     assert_eq!(x_old.len(), y_old.len());
 

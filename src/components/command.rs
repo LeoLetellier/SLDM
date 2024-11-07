@@ -1,7 +1,7 @@
 use std::default;
 
 use eframe::egui;
-use egui::{Button, ScrollArea, Separator};
+use egui::{Button, DragValue, ScrollArea, Separator};
 
 use crate::{app::AppDM, project};
 use src_logic::types::*;
@@ -207,6 +207,8 @@ impl Default for ModelSurface {
 #[derive(Debug, Default, Clone)]
 pub struct ModelGradient {
     status: CommandStatus,
+    selected_unit_model_index: usize,
+    gradient_points: Vec<(usize, f32)>
 }
 
 #[derive(Debug, Default, Clone)]
@@ -709,6 +711,29 @@ impl AppDM {
             ui.vertical(|ui| {
                 ui.label(title);
                 ui.separator();
+                egui::ComboBox::from_label("on model")
+                    .selected_text(self.project.unit_models[data.selected_unit_model_index].name.clone())
+                    .show_ui(ui, |ui| {
+                        for k in 0..self.project.unit_models.len() {
+                            ui.selectable_value(&mut data.selected_unit_model_index, k, self.project.unit_models[k].name.clone());
+                        }
+                    });
+                for k in 0..data.gradient_points.len() {
+                    ui.horizontal(|ui| {
+                        ui.label("point: ");
+                        ui.add(egui::DragValue::new(&mut data.gradient_points[k].0).range(0..=(self.project.dem.dem.x.len() - 1)));
+                        ui.label("weight: ");
+                        ui.add(egui::DragValue::new(&mut data.gradient_points[k].1).range(0..=10));
+                    });
+                }
+                ui.horizontal(|ui| {
+                    if ui.button(Phosphor::MINUS).clicked() {
+                        data.gradient_points.pop();
+                    }
+                    if ui.button(Phosphor::PLUS).clicked() {
+                        data.gradient_points.push((0, 1.));
+                    }
+                });
             });
         });
 
@@ -730,6 +755,8 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
+                    // TODO check that there is no duplicate gradient otherwise error !
+                    self.project.apply_model_gradient(data.selected_unit_model_index, &data.gradient_points);
                     // Logic part
                     data.status = CommandStatus::Complete;
                 }

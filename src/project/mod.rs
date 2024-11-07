@@ -83,6 +83,11 @@ impl Project {
         self.unit_models.push(bundle);
         Ok(())
     }
+
+    pub(crate) fn apply_model_gradient(&mut self, model_index: usize, gradient: &Vec<(usize, f32)>) -> Result<()> {
+        self.unit_models[model_index].profile.apply_amplitude_gradient(gradient);
+        Ok(())
+    }
 }
 
 #[derive(Debug)]

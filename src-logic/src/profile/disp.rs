@@ -1,6 +1,7 @@
 //! Additionnal functions to compute some slope and segment intersection
 
 use std::f32::consts::PI;
+use super::interpol_linear;
 
 /// Computes the displacement projected from the failure surface into the topography (DEM) perpendicularly 
 /// to the slope of the failure surface
@@ -70,6 +71,14 @@ pub(super) fn slope2vec(slope: &Vec<f32>, dir: i8, first_index: usize, last_inde
     (vec_x, vec_z)
 }
 
+pub(super) fn amplitude_gradient(target: &Vec<f32>, gradient_weights: &Vec<(usize, f32)>) -> Vec<f32> {
+    let nb_points = target.len();
+    let gradient_vector = interpol_linear(&gradient_weights.iter().map(|(a, b)| *a as f32).collect(), 
+    &gradient_weights.iter().map(|(a, b)| *b).collect(), 
+    &(0..target.len()).map(|i| i as f32).collect());
+    (0..target.len()).map(|k| target[k] * gradient_vector[k]).collect()
+}
+
 
 //test crossing TODO
 
@@ -82,5 +91,14 @@ mod tests {
         let res = get_intersection_point((1., 2.), (1., 2.), (1., 2.), (2., 1.));
         let expect = Some((1.5, 1.5));
         assert_eq!(res, expect);
+    }
+
+    #[test]
+    fn test_gradient() {
+        let profile: Vec<f32> = vec![1.;12];
+        let gradient = vec![(3, 2.), (5, 1.), (10, 1.5)];
+        let result = amplitude_gradient(&profile, &gradient);
+        let expect = vec![2., 2., 2., 2., 1.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5, 1.5];
+        assert_eq!(result, expect);
     }
 }
