@@ -1,6 +1,6 @@
 use egui::CollapsingHeader;
 
-use crate::{app::AppDM, project::BundleSurface};
+use crate::{app::AppDM, project};
 use egui_phosphor::regular as Phosphor;
 
 impl AppDM {
@@ -61,7 +61,66 @@ impl AppDM {
         CollapsingHeader::new("Models (".to_string() + nb_models.to_string().as_str() + ")")
             .default_open(true)
             .show(ui, |ui| {
-
+                (0..self.project.unit_models.len()).for_each(|k| {
+                    let bundle = &mut self.project.unit_models[k];
+                    ui.push_id(k, |ui|{
+                        CollapsingHeader::new(bundle.name.clone())
+                            .default_open(true)
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
+                                        ui.label("Displacement Vectors");
+                                    });
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        ui.set_width(ui.available_width());
+                                        if self.is_viewer_properties {
+                                            ui.disable();
+                                        }
+                                        if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_arrow)).clicked() {
+                                            bundle.section_arrow = !bundle.section_arrow;
+                                        };
+                                    });
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
+                                        ui.label("Migration Pillars");
+                                    });
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        ui.set_width(ui.available_width());
+                                        if self.is_viewer_properties {
+                                            ui.disable();
+                                        }
+                                        if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_pillar)).clicked() {
+                                            bundle.section_pillar = !bundle.section_pillar;
+                                        };
+                                    });
+                                });
+                            });
+                    });
+                });
+                (0..self.project.composition_models.len()).for_each(|k| {
+                    let bundle = &mut self.project.composition_models[k];
+                    ui.push_id(k, |ui|{
+                        CollapsingHeader::new(bundle.name.clone())
+                            .default_open(true)
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
+                                        ui.label("Displacement Vectors");
+                                    });
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        ui.set_width(ui.available_width());
+                                        if self.is_viewer_properties {
+                                            ui.disable();
+                                        }
+                                        if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_arrow)).clicked() {
+                                            bundle.section_arrow = !bundle.section_arrow;
+                                        };
+                                    });
+                                });
+                            });
+                    });
+                });
             });
 
         ui.separator();

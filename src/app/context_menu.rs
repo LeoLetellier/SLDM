@@ -3,7 +3,7 @@ use eframe::egui;
 use egui::panel::PanelState;
 use egui_phosphor::regular as Phosphor;
 use super::AppDM;
-use crate::components::command::{CalibrateModel, DemGeometry, ModelCombine, ModelGradient, ModelSurface, NewProject, Note, OpenDem, OpenDisp, OpenSurface, ProjectCommand, SatGeometry, SlblExact, SlblRoutine, SurfaceMax, SurfaceMin};
+use crate::components::command::{CalibrateModel, DemGeometry, ModelCombine, ModelGradient, ModelSurface, Note, OpenDem, OpenDisp, OpenSurface, ProjectCommand, SatGeometry, SlblExact, SlblRoutine, SurfaceMax, SurfaceMin};
 use crate::app::action_panel::Panel;
 
 impl AppDM {
@@ -30,20 +30,12 @@ impl AppDM {
                 let header_dem = Self::header(Phosphor::LINE_SEGMENTS.to_string() + " DEM");
 
                 ui.menu_button(header_project, |ui| {
-                    if ui.button(Self::header(Phosphor::FOLDER_SIMPLE_PLUS.to_string() + " New")).clicked() {
-                        self.open_command(ProjectCommand::NewProject(NewProject::default()));
-                        ui.close_menu();
-                    }
                     if ui.button(Self::header(Phosphor::FOLDER_OPEN.to_string() + " Open")).clicked() {
                         // directly open the project here, no need for command window, ask path
                         ui.close_menu();
                     }
-                    if ui.button(Self::header(Phosphor::FLOPPY_DISK.to_string() + " Save as")).clicked() {
+                    if ui.button(Self::header(Phosphor::FLOPPY_DISK.to_string() + " Save")).clicked() {
                         // directly save project, ask path
-                        ui.close_menu();
-                    }
-                    if ui.button(Self::header(Phosphor::FLOPPY_DISK_BACK.to_string() + " Save")).clicked() {
-                        // save at defined path
                         ui.close_menu();
                     }
                     if ui.button(Self::header(Phosphor::NOTE.to_string() + " Note")).clicked() {
@@ -144,6 +136,9 @@ impl AppDM {
             if ui.button(header_about.strong()).clicked() {
                 self.is_about_open = true;
             }
+
+            ui.separator();
+            ui.label(egui::RichText::new(&self.project.name).size(20.));
         });
     }
 

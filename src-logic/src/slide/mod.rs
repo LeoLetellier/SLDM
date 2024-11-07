@@ -211,6 +211,30 @@ impl Surface1D {
         let z_slbl = slbl_matrix2(dem, first_pnt, last_pnt, tol);
         Surface1D::new(z_slbl)
     }
+
+    pub fn from_min_surf(surf1: &Surface1D, surf2: &Surface1D) -> Surface1D {
+        let mut new_z = Vec::with_capacity(surf1.z.len());
+        for k in 0..surf1.z.len() {
+            if surf1.z[k] < surf2.z[k] {
+                new_z.push(surf1.z[k]);
+            } else {
+                new_z.push(surf2.z[k]);
+            }
+        }
+        Surface1D::new(new_z)
+    }
+
+    pub fn from_max_surf(surf1: &Surface1D, surf2: &Surface1D) -> Surface1D {
+        let mut new_z = Vec::with_capacity(surf1.z.len());
+        for k in 0..surf1.z.len() {
+            if surf1.z[k] > surf2.z[k] {
+                new_z.push(surf1.z[k]);
+            } else {
+                new_z.push(surf2.z[k]);
+            }
+        }
+        Surface1D::new(new_z)
+    }
 }
 
 fn find_nearest_abscissa(xs: &Vec<f32>, x: f32) -> usize {

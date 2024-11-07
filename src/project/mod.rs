@@ -3,10 +3,10 @@ use src_logic::io_csv::*;
 use anyhow::Result;
 
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(crate) struct Project {
     pub(crate) name: String,
-    pub(crate) path: String,
+    pub(crate) path: Option<String>,
     pub(crate) note: String,
 
     pub(crate) dem: BundleDem,
@@ -16,6 +16,21 @@ pub(crate) struct Project {
     pub(crate) sars: Vec<BundleSar>,
 }
 
+impl Default for Project {
+    fn default() -> Self {
+        Project {
+            name: String::from("Unnamed Project"),
+            path: None,
+            note: String::new(),
+            dem: BundleDem::default(),
+            surfaces: vec![],
+            unit_models: vec![],
+            composition_models: vec![],
+            sars: vec![],
+        }
+    }
+}
+
 impl Project {
     pub(crate) fn open_dem_from_file(&mut self, path: String) -> Result<()> {
         let dem = Dem1D::from_csv(path)?;
@@ -23,9 +38,10 @@ impl Project {
         Ok(())
     }
 
-    pub(crate) fn open_surface_from_file(&mut self, path: String) -> Result<()> {
+    pub(crate) fn open_surface_from_file(&mut self, path: String, name: String) -> Result<()> {
         let surface = Surface1D::from_csv(path)?;
         let mut bundle = BundleSurface::default();
+        bundle.name = name;
         bundle.surface = surface;
         self.surfaces.push(bundle);
         Ok(())
@@ -35,7 +51,35 @@ impl Project {
         let surface = Surface1D::from_slbl_exact(&self.dem.dem, first_pnt, last_pnt, tol);
         let mut bundle = BundleSurface::default();
         bundle.surface = surface;
+        bundle.name = String::from("SLBL_E_") + first_pnt.to_string().as_str() + "_" + last_pnt.to_string().as_str() + "_" + tol.to_string().as_str();
         self.surfaces.push(bundle);
+        Ok(())
+    }
+
+    pub(crate) fn surface_from_min(&mut self, surf1_index: usize, surf2_index: usize) -> Result<()> {
+        let surface = Surface1D::from_min_surf(&self.surfaces[surf1_index].surface, &self.surfaces[surf2_index].surface);
+        let mut bundle = BundleSurface::default();
+        bundle.surface = surface;
+        bundle.name = String::from("MIN_") + &self.surfaces[surf1_index].name + "_" + &self.surfaces[surf2_index].name;
+        self.surfaces.push(bundle);
+        Ok(())
+    }
+
+    pub(crate) fn surface_from_max(&mut self, surf1_index: usize, surf2_index: usize) -> Result<()> {
+        let surface = Surface1D::from_max_surf(&self.surfaces[surf1_index].surface, &self.surfaces[surf2_index].surface);
+        let mut bundle = BundleSurface::default();
+        bundle.surface = surface;
+        bundle.name = String::from("MAX_") + &self.surfaces[surf1_index].name + "_" + &self.surfaces[surf2_index].name;
+        self.surfaces.push(bundle);
+        Ok(())
+    }
+
+    pub(crate) fn disp_from_surf(&mut self, surf_index: usize, first_pnt: usize, last_pnt: usize) -> Result<()> {
+        let disp = DispProfile::from_surface(&mut self.surfaces[surf_index].surface, &self.dem.dem, first_pnt, last_pnt);
+        let mut bundle = BundleUnitModel::default();
+        bundle.name = self.surfaces[surf_index].name.clone() + "_" + first_pnt.to_string().as_str() + "_" + last_pnt.to_string().as_str();
+        bundle.profile = disp;
+        self.unit_models.push(bundle);
         Ok(())
     }
 }

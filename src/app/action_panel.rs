@@ -3,7 +3,6 @@ use egui::Visuals;
 use super::{AppDM, ProjectCommand};
 use egui_phosphor::regular as Phosphor;
 use crate::components::documentation;
-use crate::components::command::Commands;
 
 #[derive(Debug, Default, PartialEq)]
 pub(crate) enum Panel {

@@ -7,7 +7,7 @@ use std::env;
 use egui_phosphor::regular as Phosphor;
 use crate::project::Project;
 use action_panel::Panel;
-use crate::components::command::{ProjectCommand, Commands};
+use crate::components::command::{ProjectCommand};
 
 #[derive(Debug, Default)]
 pub(crate) struct AppDM {

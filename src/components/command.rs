@@ -1,7 +1,7 @@
 use std::default;
 
 use eframe::egui;
-use egui::{Button, ScrollArea};
+use egui::{Button, ScrollArea, Separator};
 
 use crate::{app::AppDM, project};
 use src_logic::types::*;
@@ -12,7 +12,6 @@ use egui_phosphor::regular as Phosphor;
 pub(crate) enum ProjectCommand { // Make it own the data with box
     #[default]
     NoCommand,
-    NewProject(NewProject),
     Note(Note),
     OpenDem(OpenDem),
     DemGeometry(DemGeometry),
@@ -32,52 +31,46 @@ pub(crate) enum ProjectCommand { // Make it own the data with box
 impl AppDM {
     pub(crate) fn ui_command(&mut self, ui: &mut egui::Ui) {
         let dem_loaded = !self.project.dem.dem.x.is_empty();
-        let project_loaded = !self.project.name.is_empty();
         ui.vertical(|ui|{
             match &mut self.current_command {
                 ProjectCommand::NoCommand => self.ui_no_command(ui),
-                ProjectCommand::NewProject(_) => self.ui_new_project(ui),
-                ProjectCommand::Note(_) => {
-                    if project_loaded {self.ui_note(ui)}
-                },
-                ProjectCommand::OpenDem(_) => {
-                    if project_loaded {self.ui_open_dem(ui)}
-                },
+                ProjectCommand::Note(_) => {self.ui_note(ui)},
+                ProjectCommand::OpenDem(_) => {self.ui_open_dem(ui)},
                 ProjectCommand::DemGeometry(_) => {
-                    if project_loaded & dem_loaded {self.ui_dem_geometry(ui)}
+                    if dem_loaded {self.ui_dem_geometry(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::OpenSurface(_) => {
-                    if project_loaded & dem_loaded {self.ui_open_surface(ui)}
+                    if dem_loaded {self.ui_open_surface(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::SlblExact(_) => {
-                    if project_loaded & dem_loaded {self.ui_slbl_exact(ui)}
+                    if dem_loaded {self.ui_slbl_exact(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::SlblRoutine(_) => {
-                    if project_loaded & dem_loaded {self.ui_slbl_routine(ui)}
+                    if dem_loaded {self.ui_slbl_routine(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::SurfaceMin(_) => {
-                    if project_loaded & dem_loaded {self.ui_surface_min(ui)}
+                    if dem_loaded {self.ui_surface_min(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::SurfaceMax(_) => {
-                    if project_loaded & dem_loaded {self.ui_surface_max(ui)}
+                    if dem_loaded {self.ui_surface_max(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::ModelSurface(_) => {
-                    if project_loaded & dem_loaded {self.ui_model_surface(ui)}
+                    if dem_loaded {self.ui_model_surface(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::ModelGradient(_) => {
-                    if project_loaded & dem_loaded {self.ui_model_gradient(ui)}
+                    if dem_loaded {self.ui_model_gradient(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::ModelCombine(_) => {
-                    if project_loaded & dem_loaded {self.ui_model_combine(ui)}
+                    if dem_loaded {self.ui_model_combine(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::SatGeometry(_) => {
-                    if project_loaded & dem_loaded {self.ui_sat_geometry(ui)}
+                    if dem_loaded {self.ui_sat_geometry(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::OpenDisp(_) => {
-                    if project_loaded & dem_loaded {self.ui_open_disp(ui)}
+                    if dem_loaded {self.ui_open_disp(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::CalibrateModel(_) => {
-                    if project_loaded & dem_loaded {self.ui_calibrate_model(ui)}
+                    if dem_loaded {self.ui_calibrate_model(ui)} else {self.ui_no_dem(ui)}
                 },
             }
         });
@@ -104,36 +97,9 @@ pub enum CommandStatus {
     Error(CommandError),
 }
 
-#[derive(Debug, Default)]
-pub struct Commands {
-    new_project: NewProject,
-    open_dem: OpenDem,
-    note: Note,
-    dem_geometry: DemGeometry,
-    open_surface: OpenSurface,
-    slbl_exact: SlblExact,
-    slbl_routine: SlblRoutine,
-    surface_min: SurfaceMin,
-    surface_max: SurfaceMax,
-    model_surface: ModelSurface,
-    model_gradient: ModelGradient,
-    model_combine: ModelCombine,
-    sat_geometry: SatGeometry,
-    open_disp: OpenDisp,
-    calibrate_model: CalibrateModel,
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct NewProject {
-    status: CommandStatus,
-    project_name: String,
-    project_in_folder: Option<String>,
-}
-
 #[derive(Debug, Default, Clone)]
 pub struct Note {
     status: CommandStatus,
-    content: String,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -152,6 +118,7 @@ pub struct DemGeometry {
 pub struct OpenSurface {
     status: CommandStatus,
     file_path: Option<String>,
+    surface_name: String,
 }
 
 #[derive(Debug, Clone)]
@@ -184,19 +151,57 @@ pub struct SlblRoutine {
     n_it: usize,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct SurfaceMin {
     status: CommandStatus,
+    first_surface_index: usize,
+    second_surface_index: usize,
 }
 
-#[derive(Debug, Default, Clone)]
+impl Default for SurfaceMin {
+    fn default() -> Self {
+        SurfaceMin {
+            status: CommandStatus::default(),
+            first_surface_index: 0,
+            second_surface_index: 1,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct SurfaceMax {
     status: CommandStatus,
+    first_surface_index: usize,
+    second_surface_index: usize,
 }
 
-#[derive(Debug, Default, Clone)]
+impl Default for SurfaceMax {
+    fn default() -> Self {
+        SurfaceMax {
+            status: CommandStatus::default(),
+            first_surface_index: 0,
+            second_surface_index: 1,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ModelSurface {
     status: CommandStatus,
+    surface_index: usize,
+    first_pnt: usize,
+    last_pnt: usize,
+}
+
+impl Default for ModelSurface {
+    fn default() -> Self {
+        ModelSurface {
+            status: CommandStatus::default(),
+            surface_index: 0,
+            first_pnt: 0,
+            last_pnt: 1,
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -225,53 +230,15 @@ pub struct CalibrateModel {
 }
 
 impl AppDM {
-    fn ui_no_command(&mut self, ui: &mut egui::Ui) -> () {
-        ui.label("No command");
-        ui.label("Please select a command to begin...");
+    fn ui_no_dem(&self, ui: &mut egui::Ui) -> () {
+        ui.label("No DEM loaded!");
+        ui.separator();
+        ui.label("Please load a DEM to start working on a project");
     }
 
-    fn ui_new_project(&mut self, ui: &mut egui::Ui) {
-        let title = egui::RichText::new("Create a New Project");
-        let ProjectCommand::NewProject(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
-        };
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
-                ui.text_edit_singleline(&mut data.project_name);
-                if ui.button("Select Folder").clicked() {
-                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                        data.project_in_folder = Some(path.display().to_string());
-                    }
-                }
-            });
-        });
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
-                _ => (),
-            }
-        });
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
-                CommandStatus::Clean => egui::RichText::new("Apply"),
-                CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
-                CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
-            };
-            let apply_button= ui.button(apply_text);
-            
-            if apply_button.clicked() {
-                if data.status != CommandStatus::Clean {
-                    data.status = CommandStatus::Clean;
-                } else {
-                    // Logic part
-                    self.project.name = data.project_name.to_owned();
-                    data.status = CommandStatus::Complete;
-                }
-            }
-        });
+    fn ui_no_command(&self, ui: &mut egui::Ui) -> () {
+        ui.label("No command");
+        ui.label("Please select a command to begin...");
     }
 
     fn ui_note(&mut self, ui: &mut egui::Ui) {
@@ -283,8 +250,14 @@ impl AppDM {
             ui.vertical(|ui| {
                 ui.label(title);
                 ui.separator();
+                ui.add_space(10.);
+                ui.horizontal(|ui| {
+                    ui.label("Project name: ");
+                    ui.text_edit_singleline(&mut self.project.name);
+                });
+                ui.add_space(10.);
                 ui.label("You can add here notes that describe the current project.");
-                ui.text_edit_multiline(&mut data.content);
+                ui.text_edit_multiline(&mut self.project.note);
             });
         });
     }
@@ -414,6 +387,11 @@ impl AppDM {
                         data.file_path = Some(path.display().to_string());
                     }
                 }
+                ui.add_space(10.);
+                ui.horizontal(|ui| {
+                    ui.label("name");
+                    ui.text_edit_singleline(&mut data.surface_name);
+                });
                 if let Some(f) = &data.file_path {
                     ScrollArea::horizontal().show(ui, |ui| {
                         ui.label(f);
@@ -448,7 +426,7 @@ impl AppDM {
                 } else {
                     match &data.file_path {
                         Some(f) => {
-                            match self.project.open_surface_from_file(f.to_string()) {
+                            match self.project.open_surface_from_file(f.to_string(), data.surface_name.to_string()) {
                                 Err(_) => data.status = CommandStatus::Error(CommandError::InvalidFile),
                                 _ => data.status = CommandStatus::Complete,
                             }
@@ -549,13 +527,34 @@ impl AppDM {
         let ProjectCommand::SurfaceMin(data) = &mut self.current_command else {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
-        
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
+
+        let nb_surf = self.project.surfaces.len();
+
+        if nb_surf >= 2 {
+            ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
+                ui.vertical(|ui| {
+                    ui.label(title);
+                    ui.separator();
+                    egui::ComboBox::from_label("First surface")
+                        .selected_text(self.project.surfaces[data.first_surface_index].name.clone())
+                        .show_ui(ui, |ui| {
+                        for k in (0..nb_surf).filter(|i| *i != data.second_surface_index) {
+                            ui.selectable_value(&mut data.first_surface_index, k, self.project.surfaces[k].name.clone());
+                        }
+                    });
+
+                    egui::ComboBox::from_label("Second surface")
+                        .selected_text(self.project.surfaces[data.second_surface_index].name.clone())
+                        .show_ui(ui, |ui| {
+                        for k in (0..nb_surf).filter(|i| *i != data.first_surface_index) {
+                            ui.selectable_value(&mut data.second_surface_index, k, self.project.surfaces[k].name.clone());
+                        }
+                    });
+                });
             });
-        });
+        } else {
+            ui.label("Not enough surfaces. Need at least 2.");
+        }
 
         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
             match &data.status {
@@ -575,6 +574,7 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
+                    self.project.surface_from_min(data.first_surface_index, data.second_surface_index);
                     // Logic part
                     data.status = CommandStatus::Complete;
                 }
@@ -588,12 +588,34 @@ impl AppDM {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
+        let nb_surf = self.project.surfaces.len();
+
+        if nb_surf >= 2 {
+            ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
+                ui.vertical(|ui| {
+                    ui.label(title);
+                    ui.separator();
+                    egui::ComboBox::from_label("First surface")
+                        .selected_text(self.project.surfaces[data.first_surface_index].name.clone())
+                        .show_ui(ui, |ui| {
+                        for k in (0..nb_surf).filter(|i| *i != data.second_surface_index) {
+                            ui.selectable_value(&mut data.first_surface_index, k, self.project.surfaces[k].name.clone());
+                        }
+                    });
+
+                    egui::ComboBox::from_label("Second surface")
+                        .selected_text(self.project.surfaces[data.second_surface_index].name.clone())
+                        .show_ui(ui, |ui| {
+                        for k in (0..nb_surf).filter(|i| *i != data.first_surface_index) {
+                            ui.selectable_value(&mut data.second_surface_index, k, self.project.surfaces[k].name.clone());
+                        }
+                    });
+                });
             });
-        });
+        } else {
+            ui.label("Not enough surfaces. Need at least 2.");
+        }
+        
 
         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
             match &data.status {
@@ -613,6 +635,7 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
+                    self.project.surface_from_max(data.first_surface_index, data.second_surface_index);
                     // Logic part
                     data.status = CommandStatus::Complete;
                 }
@@ -626,12 +649,29 @@ impl AppDM {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
+        let nb_surf = self.project.surfaces.len();
+
+        if nb_surf >= 1 {
+            ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
+                ui.vertical(|ui| {
+                    ui.label(title);
+                    ui.separator();
+                    ui.add(egui::Slider::new(&mut data.first_pnt, 0..=(data.last_pnt - 1)).text("First point"));
+                    ui.add(egui::Slider::new(&mut data.last_pnt, (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1)).text("Last point"));
+                    egui::ComboBox::from_label("From surface")
+                        .selected_text(self.project.surfaces[data.surface_index].name.clone())
+                        .show_ui(ui, |ui| {
+                            for k in 0..nb_surf {
+                                ui.selectable_value(&mut data.surface_index, k, self.project.surfaces[k].name.clone());
+                            }
+                        })
+                });
             });
-        });
+        } else {
+            ui.label("Need a surface to perform");
+        }
+
+        
 
         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
             match &data.status {
@@ -651,6 +691,7 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
+                    self.project.disp_from_surf(data.surface_index, data.first_pnt, data.last_pnt);
                     // Logic part
                     data.status = CommandStatus::Complete;
                 }
