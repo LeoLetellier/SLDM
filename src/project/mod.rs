@@ -79,6 +79,7 @@ impl Project {
         let mut bundle = BundleUnitModel::default();
         bundle.name = self.surfaces[surf_index].name.clone() + "_" + first_pnt.to_string().as_str() + "_" + last_pnt.to_string().as_str();
         bundle.profile = disp;
+        bundle.arrow_scaling_factor = 1.;
         self.unit_models.push(bundle);
         Ok(())
     }
@@ -113,6 +114,7 @@ pub(crate) struct BundleUnitModel {
     pub(crate) name: String,
     pub(crate) profile: DispProfile,
     pub(crate) section_arrow: bool,
+    pub(crate) arrow_scaling_factor: f32,
     pub(crate) section_pillar: bool,
     pub(crate) property_disp: bool,
     pub(crate) property_proj_disp: bool,
@@ -124,6 +126,7 @@ pub(crate) struct BundleCompositeModel {
     pub(crate) profiles: Vec<DispProfile>,
     pub(crate) weights: Vec<f32>,
     pub(crate) section_arrow: bool,
+    pub(crate) arrow_scaling_factor: f32,
     pub(crate) property_disp: bool,
     pub(crate) property_proj_disp: bool,
 }

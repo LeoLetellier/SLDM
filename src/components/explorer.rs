@@ -81,6 +81,9 @@ impl AppDM {
                                         };
                                     });
                                 });
+                                if bundle.section_arrow {
+                                    ui.add(egui::Slider::new(&mut bundle.arrow_scaling_factor, 0.001..=1000.0).text("Scaling factor").logarithmic(true));
+                                }
                                 ui.horizontal(|ui| {
                                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
                                         ui.label("Migration Pillars");

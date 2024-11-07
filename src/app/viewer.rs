@@ -41,12 +41,14 @@ impl AppDM {
 
     fn ui_viewer_section(&mut self, ui: &mut egui::Ui) {
         let mut lines: Vec<Line> = vec![];
+        let mut arrows: Vec<Arrows> = vec![];
+        let x_len = self.project.dem.dem.x.len();
 
         if !self.project.surfaces.is_empty() {
             for surf in &self.project.surfaces {
                 if !surf.surface.z.is_empty() & surf.section_surface {
                     let line = Line::new({
-                        let mut data = Vec::with_capacity(self.project.dem.dem.surface.z.len());
+                        let mut data = Vec::with_capacity(x_len);
                         for (a, b) in self.project.dem.dem.x.iter().zip(surf.surface.z.iter()) {
                             data.push([*a as f64, *b as f64]);
                         }
@@ -55,6 +57,30 @@ impl AppDM {
                     lines.push(line);
                 }
             }
+        }
+        
+        if !self.project.unit_models.is_empty() {
+            for model in &self.project.unit_models {
+                if model.section_arrow {
+                    let mut base = Vec::with_capacity(x_len);
+                    let mut tip = Vec::with_capacity(x_len);
+                    let (vec_x, vec_z) = model.profile.get_xz_vec();
+                    (0..x_len)
+                        .filter(|k| model.profile.amplitude_vec[*k] != 0.)
+                        .for_each(|k| {
+                            base.push([model.profile.origin_x[k] as f64, model.profile.origin_z[k] as f64]);
+                            tip.push(
+                                [(model.profile.origin_x[k] + vec_x[k]* model.arrow_scaling_factor) as f64, 
+                                (model.profile.origin_z[k] + vec_z[k]* model.arrow_scaling_factor) as f64]
+                            );
+                        });
+                        arrows.push(Arrows::new(base, tip));
+                }
+            }
+        }
+
+        if !self.project.composition_models.is_empty() {
+
         }
 
         // match &self.current_command {
@@ -73,7 +99,7 @@ impl AppDM {
         if !self.project.dem.dem.x.is_empty() & self.project.dem.section_surface {
             let line = Line::new(
                 {
-                    let mut data = Vec::with_capacity(self.project.dem.dem.surface.z.len());
+                    let mut data = Vec::with_capacity(x_len);
                     for (a, b) in self.project.dem.dem.x.iter().zip(self.project.dem.dem.surface.z.iter()) {
                         data.push([*a as f64, *b as f64]);
                     }
@@ -89,6 +115,9 @@ impl AppDM {
             .show(ui, |plot_ui| {
                 for line in lines {
                     plot_ui.line(line);
+                }
+                for arrow in arrows {
+                    plot_ui.arrows(arrow);
                 }
         });
     }
