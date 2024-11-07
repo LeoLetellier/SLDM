@@ -34,17 +34,17 @@ impl Surface1D {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct DispProfile {
     pub slope_vec: Vec<f32>,
     pub amplitude_vec: Vec<f32>,
     pub origin_x: Vec<f32>,
     pub origin_z: Vec<f32>,
-    // back into x support
-    pub slope_regul: Vec<f32>,
-    pub amplitude_regul: Vec<f32>,
-    // portion seen into a LOS
-    pub amplitude_in_los: Option<f32>,
+    // // back into x support
+    // pub slope_regul: Vec<f32>,
+    // pub amplitude_regul: Vec<f32>,
+    // // portion seen into a LOS
+    // pub amplitude_in_los: Option<f32>,
 }
 
 impl DispProfile {
@@ -54,9 +54,10 @@ impl DispProfile {
             amplitude_vec: amplitude_vec,
             origin_x: origin_x,
             origin_z: origin_z,
-            slope_regul: Vec::new(),
-            amplitude_regul: Vec::new(),
-            amplitude_in_los: None,
+
+            // slope_regul: Vec::new(),
+            // amplitude_regul: Vec::new(),
+            // amplitude_in_los: None,
         }
     }
 
@@ -64,9 +65,9 @@ impl DispProfile {
         slope_ampl_to_vx_vz(&self.slope_vec, &self.amplitude_vec)
     }
 
-    pub fn get_xz_vec_regul(&self) -> (Vec<f32>, Vec<f32>) {
-        slope_ampl_to_vx_vz(&self.slope_regul, &self.amplitude_regul)
-    }
+    // pub fn get_xz_vec_regul(&self) -> (Vec<f32>, Vec<f32>) {
+    //     slope_ampl_to_vx_vz(&self.slope_regul, &self.amplitude_regul)
+    // }
 }
 
 pub(crate) fn slope_ampl_to_vx_vz(slope: &Vec<f32>, amplitude: &Vec<f32>) -> (Vec<f32>, Vec<f32>) {

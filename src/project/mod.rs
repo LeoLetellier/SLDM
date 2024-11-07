@@ -88,6 +88,11 @@ impl Project {
         self.unit_models[model_index].profile.apply_amplitude_gradient(gradient);
         Ok(())
     }
+
+    pub(crate) fn combine_unit_models(&mut self, unit_model_indexes: &Vec<usize>, unit_weights: &Vec<f32>) -> Result<()> {
+        
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -130,6 +135,7 @@ pub(crate) struct BundleCompositeModel {
     pub(crate) name: String,
     pub(crate) profiles: Vec<DispProfile>,
     pub(crate) weights: Vec<f32>,
+    pub(crate) resulting_profile: DispProfile,
     pub(crate) section_arrow: bool,
     pub(crate) arrow_scaling_factor: f32,
     pub(crate) property_disp: bool,

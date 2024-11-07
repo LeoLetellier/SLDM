@@ -1,4 +1,5 @@
 use std::default;
+use std::marker::PhantomData;
 
 use eframe::egui;
 use egui::{Button, DragValue, ScrollArea, Separator};
@@ -214,6 +215,9 @@ pub struct ModelGradient {
 #[derive(Debug, Default, Clone)]
 pub struct ModelCombine {
     status: CommandStatus,
+    name: String,
+    unit_model_indexes: Vec<usize>,
+    unit_weights: Vec<f32>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -706,36 +710,39 @@ impl AppDM {
         let ProjectCommand::ModelGradient(data) = &mut self.current_command else {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
-                egui::ComboBox::from_label("on model")
-                    .selected_text(self.project.unit_models[data.selected_unit_model_index].name.clone())
-                    .show_ui(ui, |ui| {
-                        for k in 0..self.project.unit_models.len() {
-                            ui.selectable_value(&mut data.selected_unit_model_index, k, self.project.unit_models[k].name.clone());
+        if !self.project.unit_models.is_empty() {
+            ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
+                ui.vertical(|ui| {
+                    ui.label(title);
+                    ui.separator();
+                    egui::ComboBox::from_label("on model")
+                        .selected_text(self.project.unit_models[data.selected_unit_model_index].name.clone())
+                        .show_ui(ui, |ui| {
+                            for k in 0..self.project.unit_models.len() {
+                                ui.selectable_value(&mut data.selected_unit_model_index, k, self.project.unit_models[k].name.clone());
+                            }
+                        });
+                    for k in 0..data.gradient_points.len() {
+                        ui.horizontal(|ui| {
+                            ui.label("point: ");
+                            ui.add(egui::DragValue::new(&mut data.gradient_points[k].0).range(0..=(self.project.dem.dem.x.len() - 1)));
+                            ui.label("weight: ");
+                            ui.add(egui::DragValue::new(&mut data.gradient_points[k].1).range(0..=10));
+                        });
+                    }
+                    ui.horizontal(|ui| {
+                        if ui.button(Phosphor::MINUS).clicked() {
+                            data.gradient_points.pop();
+                        }
+                        if ui.button(Phosphor::PLUS).clicked() {
+                            data.gradient_points.push((0, 1.));
                         }
                     });
-                for k in 0..data.gradient_points.len() {
-                    ui.horizontal(|ui| {
-                        ui.label("point: ");
-                        ui.add(egui::DragValue::new(&mut data.gradient_points[k].0).range(0..=(self.project.dem.dem.x.len() - 1)));
-                        ui.label("weight: ");
-                        ui.add(egui::DragValue::new(&mut data.gradient_points[k].1).range(0..=10));
-                    });
-                }
-                ui.horizontal(|ui| {
-                    if ui.button(Phosphor::MINUS).clicked() {
-                        data.gradient_points.pop();
-                    }
-                    if ui.button(Phosphor::PLUS).clicked() {
-                        data.gradient_points.push((0, 1.));
-                    }
                 });
             });
-        });
+        } else {
+            ui.label("No models found");
+        }
 
         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
             match &data.status {
@@ -770,12 +777,46 @@ impl AppDM {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
+        if self.project.unit_models.len() >= 2 {
+            ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
+                ui.vertical(|ui| {
+                    ui.label(title);
+                    ui.separator();
+                    ui.horizontal(|ui| {
+                        ui.label("name");
+                        ui.text_edit_singleline(&mut data.name);
+                    });
+                    for k in 0..data.unit_weights.len() {
+                        ui.push_id(k, |ui| {
+                            ui.horizontal(|ui| {
+                                egui::ComboBox::from_label("Unit model")
+                            .selected_text(self.project.unit_models[data.unit_model_indexes[k]].name.clone())
+                            .show_ui(ui, |ui| {
+                                for model in 0..self.project.unit_models.len() {
+                                    ui.selectable_value(&mut data.unit_model_indexes[k], model, self.project.unit_models[model].name.clone());
+                                }
+                            });
+                            ui.add(egui::DragValue::new(&mut data.unit_weights[k]));
+                            });
+                        });
+                    }
+                    ui.horizontal(|ui| {
+                        if ui.button(Phosphor::MINUS).clicked() {
+                            data.unit_model_indexes.pop();
+                            data.unit_weights.pop();
+                        }
+                        if ui.button(Phosphor::PLUS).clicked() {
+                            if data.unit_model_indexes.len() < self.project.unit_models.len() {
+                                data.unit_model_indexes.push(0);
+                                data.unit_weights.push(1.);
+                            }
+                        }
+                    });
+                });
             });
-        });
+        } else {
+            ui.label("Need at least 2 unit models to combine...");
+        }
 
         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
             match &data.status {
@@ -795,7 +836,9 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    // Logic part
+                    // Need at least one
+                    let nb_combined = data.unit_model_indexes.len();
+                    self.project.combine_unit_models(&data.unit_model_indexes, &data.unit_weights);
                     data.status = CommandStatus::Complete;
                 }
             }

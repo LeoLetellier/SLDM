@@ -10,7 +10,7 @@ pub mod types;
 pub mod io_csv;
 pub mod plotter;
 pub mod profile;
-// pub mod data;
+pub mod data;
 
 pub mod prelude {
     pub use crate::types;

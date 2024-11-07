@@ -60,7 +60,7 @@ pub fn plot_section(size: (u32, u32), dem: (&Dem1D, ShapeStyle), surfaces: Vec<(
         dem.surface.plot(&mut chart_extended, dem_style);
         disp_datas.iter().for_each(|d| d.plot_arrows(&mut chart_extended));
         disp_profiles.iter().for_each(|p| p.plot_arrows(&mut chart_extended));
-        disp_profiles.iter().for_each(|p| p.plot_arrows_regul(&mut chart_extended));
+        // disp_profiles.iter().for_each(|p| p.plot_arrows_regul(&mut chart_extended));
         let mut surface = Vec::new();
         surfaces.iter().for_each(|(s, _style)| surface.push(s.z.clone()));
         disp_profiles.iter().enumerate().for_each(|(i, p)| p.plot_pillars(&mut chart_extended, surface[i].clone()));
@@ -115,21 +115,21 @@ impl DispProfile {
         chart_extended.chart.draw_series(arrows).unwrap();
     }
 
-    fn plot_arrows_regul(&self, chart_extended: &mut ChartExtended<'_>) {
-        let nb = chart_extended.x_support.len();
-        let dem_x = chart_extended.x_support.to_owned();
-        let dem_z = chart_extended.z_support.to_owned();
-        let (vec_x, vec_z) = self.get_xz_vec_regul();
-        let arrows = (0..nb)
-            .filter(|k| abs_diff_ne!(self.amplitude_regul[*k], 0.))
-            .map(|k| {
-                let origin = (dem_x[k] as f64, dem_z[k] as f64);
-                let target = ((dem_x[k] + vec_x[k]) as f64, (dem_z[k] + vec_z[k]) as f64);
-                ThinArrow::new(origin, target, &RED)
-            }
-        );
-        chart_extended.chart.draw_series(arrows).unwrap();
-    }
+    // fn plot_arrows_regul(&self, chart_extended: &mut ChartExtended<'_>) {
+    //     let nb = chart_extended.x_support.len();
+    //     let dem_x = chart_extended.x_support.to_owned();
+    //     let dem_z = chart_extended.z_support.to_owned();
+    //     let (vec_x, vec_z) = self.get_xz_vec_regul();
+    //     let arrows = (0..nb)
+    //         .filter(|k| abs_diff_ne!(self.amplitude_regul[*k], 0.))
+    //         .map(|k| {
+    //             let origin = (dem_x[k] as f64, dem_z[k] as f64);
+    //             let target = ((dem_x[k] + vec_x[k]) as f64, (dem_z[k] + vec_z[k]) as f64);
+    //             ThinArrow::new(origin, target, &RED)
+    //         }
+    //     );
+    //     chart_extended.chart.draw_series(arrows).unwrap();
+    // }
 
     fn plot_pillars(&self, chart_extended: &mut ChartExtended<'_>, z_slide: Vec<f32>) {
         let nb = chart_extended.x_support.len();
