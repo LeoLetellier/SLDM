@@ -47,7 +47,20 @@ impl Vector2Rep {
     pub fn from_rad(slope: f32, is_facing_right: bool) -> Self {
         assert!(slope >= -PI / 2.);
         assert!(slope <= PI / 2.);
-        todo!()
+
+        let x_sign = if is_facing_right {1.0} else {-1.0};
+        let (vx, vy) = match slope {
+            s if s == PI / 2. => (0., 1.),
+            s if s == - PI / 2. => (0., -1.),
+            s => (x_sign * s.cos().abs(), s.sin()),
+        };
+
+        Vector2Rep::new(vx, vy)
+    }
+
+    pub fn from_deg(slope: f32, is_facing_right: bool) -> Self {
+        let slope_rad = deg2rad(slope);
+        Vector2Rep::from_rad(slope_rad, is_facing_right)
     }
 
     /// Get the amplitude of the vector
@@ -129,6 +142,49 @@ mod tests_vec2 {
         assert_eq!(vec.amplitude(), 1.);
         assert!(!vec.is_facing_right());
     }
+
+    #[test]
+    fn test_from_angle_right() {
+        let vec = Vector2Rep::from_deg(0.0, true);
+        assert_eq!((vec.vx, vec.vy), (1.0, 0.0));
+    }
+
+    #[test]
+    fn test_from_angle_left() {
+        let vec = Vector2Rep::from_deg(0.0, false);
+        assert_eq!((vec.vx, vec.vy), (-1.0, 0.0));
+    }
+
+    #[test]
+    fn test_from_angle_up() {
+        let vec = Vector2Rep::from_deg(90., true);
+        assert_eq!((vec.vx, vec.vy), (0.0, 1.0));
+    }
+
+    #[test]
+    fn test_from_angle_down() {
+        let vec = Vector2Rep::from_deg(-90., true);
+        assert_eq!((vec.vx, vec.vy), (0.0, -1.0));
+    }
+
+    #[test]
+    fn test_from_angle_diag() {
+        let vec = Vector2Rep::from_deg(-45., false);
+        assert_eq!((vec.vx, vec.vy), (-1. / (2.0_f32.sqrt()), -1. / (2.0_f32.sqrt())));
+    }
+
+    // #[test]
+    fn from_all_angle() {
+        let slope: Vec<f32> = (-9..=9).map(|k| (k * 10) as f32).collect();
+        for s in &slope {
+            let vec = Vector2Rep::from_deg(*s, true);
+            println!("slope {}/{}, x: {}, y: {}", s, true, vec.vx, vec.vy);
+        }
+        for s in &slope {
+            let vec = Vector2Rep::from_deg(*s, false);
+            println!("slope {}/{}, x: {}, y: {}", s, false, vec.vx, vec.vy);
+        }
+    }
 }
 
 pub struct Vector3Rep {
@@ -142,31 +198,24 @@ impl Vector3Rep {
         Vector3Rep { vx, vy, vz }
     }
 
+    // pub fn angle_rad(&self) -> (f32, f32) {
+    //     let amp = self.amplitude();
+    //     let dip = (self.vz / amp).acos();
+    //     let azimuth = (self.vy / self.vx).atan();
+
+    //     (azimuth, dip)
+    // }
+
     pub fn angle_rad(&self) -> (f32, f32) {
-        let azimuth = match (self.vx, self.vy) {
-            // Zeros cases
-            (vx, vy) if (vx == 0.) & (vy > 0.) => PI / 2.,
-            (vx, vy) if (vx == 0.) & (vy < 0.) => 3. * PI / 2.,
-            (vx, vy) if (vy == 0.) & (vx > 0.) => 0.,
-            (vx, vy) if (vy == 0.) & (vx < 0.) => PI,
-            // Dial quarters
-            (vx, vy) if (vx > 0.) & (vy > 0.) => (vy / vx).atan(),
-            (vx, vy) if (vx < 0.) & (vy > 0.) => (-vx / vy).atan() + PI / 2.,
-            (vx, vy) if (vx < 0.) & (vy < 0.) => (vy / vx).atan() + PI,
-            (vx, vy) if (vx > 0.) & (vy < 0.) => (-vx / vy).atan() + 3. * PI / 2.,
-            // Bin, zero or vertical vector (0., 0., _)
-            _ => 0.,
+        let mut azimuth = - (self.vx / self.vy).atan();
+        match (self.vx, self.vy) {
+            (_vx, vy) if (vy < 0.) => azimuth += 3. * PI / 2.,
+            (_vx, vy) if (vy > 0.) => azimuth += PI / 2.,
+            (vx, vy) if (vy == 0.) & (vx < 0.) => azimuth = PI,
+            _ => azimuth = 0.,
         };
 
-        let dip = match (self.vx, self.vy, self.vz) {
-            // Vertical cases
-            (vx, vy, vz) if (vx == 0.) & (vy == 0.) & (vz > 0.) => PI / 2.,
-            (vx, vy, vz) if (vx == 0.) & (vy == 0.) & (vz < 0.) => - PI / 2.,
-            // General cases
-            (vx, vy, vz) if (vx != 0.) & (vy != 0.) & (vz != 0.) => (vz / (vx * vx + vy * vy).sqrt()).atan(),
-            // Zero vector (0., 0., 0.)
-            _ => 0.,
-        };
+        let dip = self.vz.asin();
 
         (azimuth, dip)
     }
@@ -177,28 +226,15 @@ impl Vector3Rep {
     }
 
     pub fn from_rad(azimuth: f32, dip: f32) -> Self {
-        // Generate unit vector
+        let mut vx = azimuth.cos() * dip.cos();
+        let mut vy = azimuth.sin() * dip.cos();
+        let vz = dip.sin();
 
-        // check bounds
-        // ultimately need to wrap the value into the right bounds
-        assert!((azimuth >= 0.) & (azimuth < 2. * PI));
-        assert!((dip >= - PI / 2.) & (dip <= PI / 2.));
+        if (dip == PI / 2.) | (dip == - PI / 2.) {
+            (vx, vy) = (0., 0.);
+        }
 
-        let vz = dip.tan();
-        let mirror_length = (1. - vz * vz).sqrt();
-
-        let (vx, vy) = match azimuth {
-            az if az == 0. => (mirror_length, 0.),
-            az if az == PI / 2. => (0., mirror_length),
-            az if az == PI => (- mirror_length, 0.),
-            az if az == 3. * PI / 2. => (0., - mirror_length),
-            az if az < PI / 2. => (az.cos(), az.sin()),
-            az if az < PI => (- (az - PI / 2.).sin(), (az - PI / 2.).cos()),
-            az if az < 3. * PI / 2. => (-(az - PI).cos(), -(az - PI).sin()),
-            az => ((az - 3. * PI / 2.).sin(), -(az - 3. * PI / 2.).cos()),
-        };
-
-        Vector3Rep::new(vx, vy, vz)
+        Vector3Rep { vx, vy, vz }
     }
 
     pub fn from_deg(azimuth: f32, dip: f32) -> Self {
@@ -247,14 +283,16 @@ impl Vector3Rep {
 mod test_vec3 {
     use super::*;
 
-    // #[test]
+    #[test]
     fn all() {
         let az: Vec<f32> = (0..36).map(|k| (k * 10) as f32).collect();
         let dip: Vec<f32> = (-9..=9).map(|k| (k * 10) as f32).collect();
         for a in &az {
             for d in &dip {
                 let vec = Vector3Rep::from_deg(*a, *d);
-                println!("az: {}, d: {}, x: {}, y: {}, z: {}", a, d, vec.vx, vec.vy, vec.vz);
+                // assert_approx_eq!(vec.amplitude(), 1.0);
+                println!("az: {}, d: {}, x: {}, y: {}, z: {}, amp: {}", a, d, vec.vx, vec.vy, vec.vz, vec.amplitude());
+                println!("az: {}, d: {}", vec.angle_deg().0, vec.angle_deg().1);
             }
         }
     }
