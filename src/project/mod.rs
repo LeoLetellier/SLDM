@@ -33,13 +33,15 @@ impl Default for Project {
 
 impl Project {
     pub(crate) fn open_dem_from_file(&mut self, path: String) -> Result<()> {
-        let dem = Dem1D::from_csv(path)?;
+        let reader = CSVReader::new(path, None)?;
+        let dem = Dem1D::from_csv_reader(&reader, &mut String::new(), &mut String::new())?;
         self.dem.dem = dem;
         Ok(())
     }
 
     pub(crate) fn open_surface_from_file(&mut self, path: String, name: String) -> Result<()> {
-        let surface = Surface1D::from_csv(path)?;
+        let reader = CSVReader::new(path, None)?;
+        let surface = Surface1D::from_csv_reader(&reader, &self.dem.dem, &mut String::new(), &mut String::new())?;
         let mut bundle = BundleSurface::default();
         bundle.name = name;
         bundle.surface = surface;

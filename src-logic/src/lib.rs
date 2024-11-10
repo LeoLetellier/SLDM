@@ -8,7 +8,7 @@
 pub mod slide;
 pub mod types;
 pub mod io_csv;
-pub mod plotter;
+// pub mod plotter;
 pub mod profile;
 pub mod data;
 

@@ -72,9 +72,8 @@ pub(super) fn slope2vec(slope: &Vec<f32>, dir: i8, first_index: usize, last_inde
 }
 
 pub(super) fn amplitude_gradient(target: &Vec<f32>, gradient_weights: &Vec<(usize, f32)>) -> Vec<f32> {
-    let nb_points = target.len();
-    let gradient_vector = interpol_linear(&gradient_weights.iter().map(|(a, b)| *a as f32).collect(), 
-    &gradient_weights.iter().map(|(a, b)| *b).collect(), 
+    let gradient_vector = interpol_linear(&gradient_weights.iter().map(|(a, _)| *a as f32).collect(), 
+    &gradient_weights.iter().map(|(_, b)| *b).collect(), 
     &(0..target.len()).map(|i| i as f32).collect());
     (0..target.len()).map(|k| target[k] * gradient_vector[k]).collect()
 }

@@ -17,20 +17,13 @@ impl DispProfile {
             k if k > last_x => amplitude.push(0.),
             _ => amplitude.push(1.),
         });
-        let mut disp_profile = DispProfile::new(slope, amplitude, origin.0, origin.1);
-        // disp_profile.interp_to_support(dem);
-        disp_profile
-
+        
+        DispProfile::from_slope_params(slope, amplitude, origin.0, origin.1)
     }
 
-    // fn interp_to_support(&mut self, dem: &Dem1D) -> &Self {
-    //     self.slope_regul = interpol_linear(&self.origin_x, &self.slope_vec, &dem.x);
-    //     self.amplitude_regul = interpol_linear(&self.origin_x, &self.amplitude_vec, &dem.x);
-    //     self
-    // }
-
     pub fn apply_amplitude_gradient(&mut self, gradient: &Vec<(usize, f32)>) {
-        self.amplitude_vec = amplitude_gradient(&self.amplitude_vec, gradient);
+        todo!()
+        // self.amplitude_vec = amplitude_gradient(&self.amplitude_vec, gradient);
     }
 
     // TODO

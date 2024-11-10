@@ -44,16 +44,18 @@ impl Vector2Rep {
         Self { x, y }
     }
 
+    pub fn coords(&self) -> (f32, f32) {
+        (self.x, self.y)
+    }
+
     /// Get the angle of the vector in radians
     pub fn angle_rad(&self) -> f32 {
         if self.x != 0. {
             (self.y / self.x).atan()
-        } else {
-            if self.y >= 0. {
+        } else if self.y >= 0. {
                 PI / 2.
-            } else {
+        } else {
                 - PI / 2.
-            }
         }
     }
 
@@ -277,6 +279,10 @@ impl Vector3Rep {
     /// Construct a new vector using its cartesian components
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Vector3Rep { x, y, z }
+    }
+
+    pub fn coords(&self) -> (f32, f32, f32) {
+        (self.x, self.y, self.z)
     }
 
     /// Get the spherical angles of the vector in radians

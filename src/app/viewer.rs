@@ -1,8 +1,6 @@
-use std::borrow::Borrow;
-
 use eframe::egui;
-use super::{AppDM, ProjectCommand};
-use egui_phosphor::regular::{self as Phosphor, HEAD_CIRCUIT};
+use super::AppDM;
+use egui_phosphor::regular as Phosphor;
 use egui_plot::{Line, Plot, Points, Arrows};
 use src_logic::types::*;
 
@@ -64,14 +62,15 @@ impl AppDM {
                 if model.section_arrow {
                     let mut base = Vec::with_capacity(x_len);
                     let mut tip = Vec::with_capacity(x_len);
-                    let (vec_x, vec_z) = model.profile.get_xz_vec();
                     (0..x_len)
-                        .filter(|k| model.profile.amplitude_vec[*k] != 0.)
+                        .filter(|k| model.profile.vecs[*k].amplitude() != 0.)
                         .for_each(|k| {
-                            base.push([model.profile.origin_x[k] as f64, model.profile.origin_z[k] as f64]);
+                            let coords = model.profile.vecs[k].coords();
+                            let origins = model.profile.origins[k];
+                            base.push([origins[0] as f64, origins[1] as f64]);
                             tip.push(
-                                [(model.profile.origin_x[k] + vec_x[k]* model.arrow_scaling_factor) as f64, 
-                                (model.profile.origin_z[k] + vec_z[k]* model.arrow_scaling_factor) as f64]
+                                [(origins[0] + coords.0 * model.arrow_scaling_factor) as f64, 
+                                (origins[1] + coords.1 * model.arrow_scaling_factor) as f64]
                             );
                         });
                         arrows.push(Arrows::new(base, tip));

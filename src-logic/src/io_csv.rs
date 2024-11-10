@@ -1,27 +1,29 @@
+use crate::data::vec_proj::Vector2Rep;
 use crate::types::*;
 use csv;
 use std::fs::File;
+use std::vec;
 use anyhow::anyhow;
 use anyhow::Result;
 use thiserror::Error;
 
 #[derive(Debug)]
-struct CSVReader {
+pub struct CSVReader {
     file_path: String,
     delimiter: u8,
     reader: csv::Reader<File>,
-    headers: Vec<String>,
+    pub headers: Vec<String>,
     data: Vec<Vec<f32>>,
 }
 
 #[derive(Debug, Error)]
-enum CsvError{
+enum CsvReadError{
     #[error("Invalid header: {0}")]
     InvalidHeader(String),
 }
 
 impl CSVReader {
-    fn new(file_path: String, delimiter: Option<u8>) -> Result<Self>  {
+    pub fn new(file_path: String, delimiter: Option<u8>) -> Result<Self>  {
         let delimiter = match delimiter {
             Some(d) => d,
             _ => b';',
@@ -30,7 +32,7 @@ impl CSVReader {
         // open file
         let file = File::open(file_path.clone())?;
 
-        // handle file with rust-csv
+        // handle file with csv
         let mut reader = csv::ReaderBuilder::new().delimiter(delimiter).from_reader(file);
         let headers =  reader.headers()?;
 
@@ -55,53 +57,100 @@ impl CSVReader {
         })
     }
 
-    fn get_data(&self, header: String) -> Result<Vec<f32>> {
-        match !self.headers.contains(&header) {
-            true => Err(anyhow!(CsvError::InvalidHeader(header))),
-            false => Ok(self.data[self.headers.iter().position(|s| s == &header).unwrap()].clone()),
+    fn get_data(&self, header: &String) -> Result<Vec<f32>> {
+        if self.headers.contains(&header) {
+            Ok(self.data[self.headers.iter().position(|s| s == header).unwrap()].clone())
+        } else {
+            Err(anyhow!(CsvReadError::InvalidHeader(header.clone())))
         }
     }
 }
 
+#[derive(Debug, Error)]
+enum FromCsvError {
+    #[error("The number of points in the sampling is different from the project's dem")]
+    XInvalidLen,
+    #[error("The values of sampling does not match with those of the project's dem")]
+    XInconsistent,
+    #[error("Two data have inconsistent vectors's length")]
+    DataInconsistentLen,
+}
+
 impl Dem1D {
-    pub fn from_csv(file_path: String) -> Result<Self> {
-        let csv = CSVReader::new(file_path, None)?;
-        let mut dem = Dem1D::default();
-        dem.x = csv.get_data(String::from("x"))?;
-        dem.surface.z = csv.get_data(String::from("z"))?;
-        Ok(dem)
+    pub fn from_csv_reader(csv_reader: &CSVReader, x_header: &mut String, z_header: &mut String) -> Result<Self> {
+        let x_header = if x_header.is_empty() {&String::from("x")} else {x_header};
+        let z_header = if z_header.is_empty() {&String::from("z")} else {z_header};
+
+        let x_data = csv_reader.get_data(x_header)?;
+        let z_data = csv_reader.get_data(z_header)?;
+        Ok(Dem1D::new(x_data, z_data)?)
     }
 }
 
 impl Surface1D {
-    pub fn from_csv(file_path: String) -> Result<Self> {
-        let csv = CSVReader::new(file_path, None)?;
-        let mut surface = Surface1D::default();
-        let _x = csv.get_data(String::from("x"))?;
-        surface.z = csv.get_data(String::from("z"))?;
-        Ok(surface)
-    }
-}
+    pub fn from_csv_reader(csv_reader: &CSVReader, dem: &Dem1D, x_header: &mut String, surface_header: &mut String) -> Result<Self> {
+        let x_header = if x_header.is_empty() {&String::from("x")} else {x_header};
+        let surface_header = if surface_header.is_empty() {&String::from("z")} else {surface_header};
 
-impl DispData {
-    pub fn from_csv(file_path: String) -> Result<Self> {
-        let csv = CSVReader::new(file_path, None)?;
-        let mut disp_data = DispData::default();
-        disp_data.x = csv.get_data(String::from("x"))?;
-        disp_data.amplitude = csv.get_data(String::from("disp"))?;
-        Ok(disp_data)
+        let x_data = csv_reader.get_data(x_header)?;
+        let surface_data = csv_reader.get_data(surface_header)?;
+
+        if dem.x.len() != x_data.len() {
+            return Err(anyhow!(FromCsvError::XInvalidLen));
+        }
+
+        for k in 0..x_data.len() {
+            if dem.x[k] != x_data[k] {
+                return Err(anyhow!(FromCsvError::XInconsistent));
+            }
+        }
+
+        Ok(Surface1D::new(surface_data))
     }
 }
 
 impl DispProfile {
-    pub fn from_csv(file_path: String) -> Result<Self> {
-        let csv = CSVReader::new(file_path, None)?;
-        let mut disp_profile = DispProfile::default();
-        disp_profile.origin_x = csv.get_data(String::from("x"))?;
-        disp_profile.origin_z = csv.get_data(String::from("z"))?;
-        disp_profile.amplitude_vec = csv.get_data(String::from("amplitude"))?;
-        disp_profile.slope_vec = csv.get_data(String::from("slope"))?;
-        Ok(disp_profile)
+    pub fn from_csv_reader(csv_reader: &CSVReader, x_header: &mut String, 
+        z_header: &mut String, vx_header: &mut String, vz_header: &mut String) -> Result<Self> {
+        let x_header = if x_header.is_empty() {&String::from("x")} else {x_header};
+        let z_header = if z_header.is_empty() {&String::from("z")} else {z_header};
+        let vx_header = if vx_header.is_empty() {&String::from("vx")} else {vx_header};
+        let vz_header = if vz_header.is_empty() {&String::from("vz")} else {vz_header};
+
+        let x_data = csv_reader.get_data(x_header)?;
+        let z_data = csv_reader.get_data(z_header)?;
+        let vx_data = csv_reader.get_data(vx_header)?;
+        let vz_data = csv_reader.get_data(vz_header)?;
+
+        if (x_data.len() != z_data.len()) | (vx_data.len() != vz_data.len()) | (x_data.len() != vx_data.len()) {
+            Err(anyhow!(FromCsvError::DataInconsistentLen))
+        } else {
+            let mut vecs: Vec<Vector2Rep> = vec![];
+            let mut origins: Vec<[f32; 2]> = vec![];
+
+            for k in 0..x_data.len() {
+                vecs.push(Vector2Rep::new(vx_data[k], vz_data[k]));
+                origins.push([x_data[k], z_data[k]]);
+            }
+
+            Ok(DispProfile::new(vecs, origins)?)
+        }
+    }
+}
+
+impl DispData {
+    pub fn from_csv_reader(csv_reader: &CSVReader, x_header: &mut String, amp_header: &mut String,) -> Result<Self> {
+        let x_header = if x_header.is_empty() {&String::from("x")} else {x_header};
+        let amp_header = if amp_header.is_empty() {&String::from("disp")} else {amp_header};
+
+        let x_data = csv_reader.get_data(x_header)?;
+        let amp_data = csv_reader.get_data(amp_header)?;
+
+        if x_data.len() != amp_data.len() {
+            Err(anyhow!(FromCsvError::DataInconsistentLen))
+        } else {
+            Ok(DispData::new(x_data, amp_data)?)
+        }
     }
 }
 
@@ -114,8 +163,8 @@ mod tests {
         let path = String::from("./test_data/dem.csv");
         let csv = CSVReader::new(path, None).unwrap();
         println!("all csv infos: {:?}", csv);
-        println!("x data: {:?}", csv.get_data(String::from("x")).unwrap());
-        println!("z data: {:?}", csv.get_data(String::from("z")).unwrap());
+        println!("x data: {:?}", csv.get_data(&String::from("x")).unwrap());
+        println!("z data: {:?}", csv.get_data(&String::from("z")).unwrap());
     }
 
 }
