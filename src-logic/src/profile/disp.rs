@@ -58,19 +58,6 @@ fn intersection_on_topo(x: &Vec<f32>, z: &Vec<f32>, xx :(f32, f32), zz: (f32, f3
     None
 }
 
-/// Converts a slope (rad) to a 2D vector (x-z local coordinates) 
-pub(super) fn slope2vec(slope: &Vec<f32>, dir: i8, first_index: usize, last_index: usize) -> (Vec<f32>, Vec<f32>) {
-    let mut vec_x: Vec<f32> = slope.clone().iter().map(|x| x.cos() * dir as f32).collect();
-    let mut vec_z: Vec<f32> = slope.clone().iter().map(|z| z.sin() * dir as f32).collect();
-    for k in 0..vec_x.len() {
-        if k < first_index || k > last_index {
-            vec_x[k] = 0.;
-            vec_z[k] = 0.;
-        }
-    }
-    (vec_x, vec_z)
-}
-
 pub(super) fn amplitude_gradient(target: &Vec<f32>, gradient_weights: &Vec<(usize, f32)>) -> Vec<f32> {
     let gradient_vector = interpol_linear(&gradient_weights.iter().map(|(a, _)| *a as f32).collect(), 
     &gradient_weights.iter().map(|(_, b)| *b).collect(), 

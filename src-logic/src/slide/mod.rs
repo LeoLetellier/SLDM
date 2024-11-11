@@ -1,5 +1,6 @@
-use crate::types::*;
-use std::{f32::consts::PI, ops::Deref};
+use crate::{prelude::Vector2Rep, types::*};
+use std::f32::consts::PI;
+use assert_approx_eq::assert_approx_eq;
 
 
 /// Method selected to compute the SLBL failure surface
@@ -276,6 +277,28 @@ pub(super) fn slope1d(x: &Vec<f32>, z: &Vec<f32>) -> Vec<f32> {
     slope_v
 }
 
+#[derive(Debug)]
+pub enum SlopeError {
+    InconsistentLen,
+    VecTooSmall,
+}
+
+pub fn slope_asvec2(x: &Vec<f32>, z: &Vec<f32>) -> Result<Vec<Vector2Rep>, SlopeError> {
+    if x.len() != z.len() {
+        Err(SlopeError::InconsistentLen)
+    } else if x.len() < 3 {
+        Err(SlopeError::VecTooSmall)
+    } else {
+        let mut slope_vecs = vec![];
+        slope_vecs.push(Vector2Rep::new(x[1] - x[0], z[1] - z[0]));
+        for k in 1..(x.len() - 1) {
+            slope_vecs.push(Vector2Rep::new(x[k + 1] - x[k - 1], z[k + 1] - z[k - 1]));
+        }
+        slope_vecs.push(Vector2Rep::new(x[x.len() - 1] - x[x.len() - 2], z[x.len() - 1] - z[x.len() - 2]));
+        Ok(slope_vecs)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -304,5 +327,17 @@ mod tests {
 
         let result = find_nearest_abscissa(&xs, 12.);
         assert_eq!(result, 5);
+    }
+
+    #[test]
+    fn test_slope_asvec2() {
+        let x = vec![0., 1., 2., 3., 4., 5.];
+        let z = vec![6., 4., 2., 2., 6., 7.];
+        let slope_vecs = slope_asvec2(&x, &z).unwrap();
+        let result: Vec<f32> = slope_vecs.iter().map(|v| v.angle_rad()).collect();
+        let expect: Vec<f32> = vec![(-2.0_f32/1.).atan(), (-4.0_f32/2.).atan(), (-2.0_f32/2.).atan(), (4.0_f32/2.).atan(), (5.0_f32/2.).atan(), (1.0_f32/1.).atan()];
+        for k in 0..result.len() {
+            assert_approx_eq!(result[k], expect[k]);
+        }
     }
 }

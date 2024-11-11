@@ -2,7 +2,7 @@ use eframe::egui;
 use super::AppDM;
 use egui_phosphor::regular as Phosphor;
 use egui_plot::{Line, Plot, Points, Arrows};
-use src_logic::types::*;
+use src_logic::prelude::*;
 
 impl AppDM {
     pub(super) fn ui_viewer(&mut self, ui: &mut egui::Ui) {

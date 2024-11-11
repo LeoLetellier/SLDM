@@ -102,8 +102,19 @@ impl DispProfile {
         }
     }
 
-    pub fn from_slope_params(slope: Vec<f32>, amplitude: Vec<f32>, ox: Vec<f32>, oz: Vec<f32>) -> Self {
-        todo!()
+    pub fn from_slope_params(slope: Vec<f32>, amplitude: Vec<f32>, ox: Vec<f32>, oz: Vec<f32>, is_facing_right: bool) -> Result<Self, VectorInputError> {
+        let mut vecs: Vec<Vector2Rep> = vec![];
+        let mut origins: Vec<[f32; 2]> = vec![];
+
+        for k in 0..slope.len() {
+            let mut vec = Vector2Rep::from_deg(slope[k], is_facing_right);
+            vec.with_norm(amplitude[k]);
+            let origin = [ox[k], oz[k]];
+            vecs.push(vec);
+            origins.push(origin);
+        }
+
+        DispProfile::new(vecs, origins)
     }
 }
 

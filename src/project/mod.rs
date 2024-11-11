@@ -1,6 +1,7 @@
-use src_logic::types::*;
-use src_logic::io_csv::*;
+use src_logic::prelude::*;
 use anyhow::Result;
+
+pub(crate) mod io;
 
 
 #[derive(Debug)]
@@ -77,7 +78,7 @@ impl Project {
     }
 
     pub(crate) fn disp_from_surf(&mut self, surf_index: usize, first_pnt: usize, last_pnt: usize) -> Result<()> {
-        let disp = DispProfile::from_surface(&mut self.surfaces[surf_index].surface, &self.dem.dem, first_pnt, last_pnt);
+        let disp = DispProfile::from_surface(&mut self.surfaces[surf_index].surface, &self.dem.dem, first_pnt, last_pnt)?;
         let mut bundle = BundleUnitModel::default();
         bundle.name = self.surfaces[surf_index].name.clone() + "_" + first_pnt.to_string().as_str() + "_" + last_pnt.to_string().as_str();
         bundle.profile = disp;

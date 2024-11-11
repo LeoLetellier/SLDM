@@ -8,26 +8,12 @@
 pub mod slide;
 pub mod types;
 pub mod io_csv;
-// pub mod plotter;
 pub mod profile;
 pub mod data;
+// pub mod plotter;
 
 pub mod prelude {
-    pub use crate::types;
-    // pub use crate::project;
-}
-
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+    pub use crate::types::{Dem1D, Surface1D, DispProfile, DispData, Orientation};
+    pub use crate::data::vec_proj::{Vector2Rep, Vector3Rep};
+    pub use crate::io_csv::CSVReader;
 }

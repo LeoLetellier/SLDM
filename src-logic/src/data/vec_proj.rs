@@ -6,6 +6,7 @@
 
 use std::{f32::consts::PI, fmt::Display};
 use assert_approx_eq::assert_approx_eq;
+use std::ops::Mul;
 
 
 /// Vector2Rep wrap all functionnalities to represent 2D vectors in cartesian
@@ -46,6 +47,12 @@ impl Vector2Rep {
 
     pub fn coords(&self) -> (f32, f32) {
         (self.x, self.y)
+    }
+
+    pub fn with_coords(&mut self, x: f32, y: f32) -> &Self {
+        self.x = x;
+        self.y = y;
+        self
     }
 
     /// Get the angle of the vector in radians
@@ -135,6 +142,12 @@ impl Vector2Rep {
             self.x = 0.;
             self.y = 0.;
         }
+        self
+    }
+
+    pub fn multiply(&mut self, factor: f32) -> &Self {
+        self.x *= factor;
+        self.y *= factor;
         self
     }
 }
@@ -285,6 +298,13 @@ impl Vector3Rep {
         (self.x, self.y, self.z)
     }
 
+    pub fn with_coords(&mut self, x: f32, y: f32, z: f32) -> &Self {
+        self.x = x;
+        self.y = y;
+        self.z = z;
+        self
+    }
+
     /// Get the spherical angles of the vector in radians
     pub fn angle_rad(&self) -> (f32, f32) {
         let (ux, uy, uz) = self.get_unit();
@@ -362,6 +382,13 @@ impl Vector3Rep {
             self.y = 0.;
             self.z = 0.;
         }
+        self
+    }
+
+    pub fn multiply(&mut self, factor: f32) -> &Self {
+        self.x *= factor;
+        self.y *= factor;
+        self.z *= factor;
         self
     }
 

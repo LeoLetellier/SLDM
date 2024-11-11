@@ -1,12 +1,8 @@
-use std::default;
-use std::marker::PhantomData;
-
 use eframe::egui;
-use egui::{Button, DragValue, ScrollArea, Separator};
+use egui::ScrollArea;
 
 use crate::{app::AppDM, project};
-use src_logic::types::*;
-use src_logic::slide::slbl_matrix2;
+use src_logic::prelude::*;
 use egui_phosphor::regular as Phosphor;
 
 #[derive(Debug, Default, Clone)]
