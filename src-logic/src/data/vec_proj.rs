@@ -6,8 +6,6 @@
 
 use std::{f32::consts::PI, fmt::Display};
 use assert_approx_eq::assert_approx_eq;
-use std::ops::Mul;
-
 
 /// Vector2Rep wrap all functionnalities to represent 2D vectors in cartesian
 /// or spherical coordinates.
@@ -82,7 +80,7 @@ impl Vector2Rep {
         let (vx, vy) = match slope {
             s if s == PI / 2. => (0., 1.),
             s if s == - PI / 2. => (0., -1.),
-            s => (x_sign * s.cos().abs(), s.sin()),
+            s => (x_sign * s.cos().abs(), x_sign * s.sin()),
         };
 
         Vector2Rep::new(vx, vy)
@@ -226,7 +224,7 @@ mod tests_vec2 {
 
     #[test]
     fn test_from_angle_diag() {
-        let vec = Vector2Rep::from_deg(-45., false);
+        let vec = Vector2Rep::from_deg(45., false);
         assert_eq!((vec.x, vec.y), (-1. / (2.0_f32.sqrt()), -1. / (2.0_f32.sqrt())));
     }
 

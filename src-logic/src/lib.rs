@@ -14,6 +14,6 @@ pub mod data;
 
 pub mod prelude {
     pub use crate::types::{Dem1D, Surface1D, DispProfile, DispData, Orientation};
-    pub use crate::data::vec_proj::{Vector2Rep, Vector3Rep};
+    pub use crate::data::vec_proj::{Vector2Rep, Vector3Rep, deg2rad, rad2deg};
     pub use crate::io_csv::CSVReader;
 }

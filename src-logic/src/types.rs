@@ -1,7 +1,7 @@
 //! This module defines the types used to hold the information in this project.
 
 use std::f32::consts::PI;
-use crate::data::vec_proj::{Vector2Rep, Vector3Rep};
+use crate::data::vec_proj::{deg2rad, Vector2Rep, Vector3Rep};
 use thiserror::Error;
 
 /// The 1D Digital Elevation Model representation.
@@ -156,12 +156,12 @@ pub struct Orientation {
     /// Azimuth angle
     /// 
     /// Represent the clockwise angle between the North and the azimuth of the acquisition sensor
-    pub(crate) azimuth : f32,
+    pub azimuth : f32,
     /// Incidence angle
     /// 
     /// Represent the angle between the perpendicular projection to the ground and the actual
     /// sensor inclination
-    pub(crate) incidence : f32,
+    pub incidence : f32,
 }
 
 impl Into<Vector3Rep> for Orientation {
@@ -172,7 +172,7 @@ impl Into<Vector3Rep> for Orientation {
 }
 
 #[derive(Debug, Error)]
-enum OrientationError {
+pub enum OrientationError {
     #[error("The azimuth value {0} is out of range")]
     AzimuthOutOfRange(f32),
     #[error("The incidence value {0} is out of range")]
@@ -192,6 +192,12 @@ impl Orientation {
         } else {
             Ok(Orientation { azimuth, incidence })
         }
+    }
+
+    pub fn from_deg(azimuth: f32, incidence: f32) -> Result<Self, OrientationError> {
+        let azimuth_rad = deg2rad(azimuth);
+        let incidence_rad = deg2rad(incidence);
+        Self::new(azimuth_rad, incidence_rad)
     }
 }
 

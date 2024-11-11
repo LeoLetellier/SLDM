@@ -1,9 +1,7 @@
 use eframe::egui;
-
-use egui::panel::PanelState;
 use egui_phosphor::regular as Phosphor;
 use super::AppDM;
-use crate::components::command::{CalibrateModel, DemGeometry, ModelCombine, ModelGradient, ModelSurface, Note, OpenDem, OpenDisp, OpenSurface, ProjectCommand, SatGeometry, SlblExact, SlblRoutine, SurfaceMax, SurfaceMin};
+use crate::components::command::{CalibrateModel, DemGeometry, ModelNew, Note, OpenDem, OpenDisp, OpenSurface, ProjectCommand, SatGeometry, SlblExact, SlblRoutine, SurfaceMax, SurfaceMin};
 use crate::app::action_panel::Panel;
 
 impl AppDM {
@@ -92,20 +90,10 @@ impl AppDM {
             // Menu Model
             ui.menu_button(header_model.strong(), |ui| {
                 ui.set_max_width(200.);
-                let header_from_surface = Self::header(Phosphor::STACK.to_string() + " From surface");
-                let header_add_gradient = Self::header(Phosphor::GRADIENT.to_string() + " Add gradient");
-                let header_create_combined_model = Self::header(Phosphor::ROWS_PLUS_TOP.to_string() + " Create combined model");
+                let header_new_model = Self::header(Phosphor::ROWS_PLUS_TOP.to_string() + " New model");
 
-                if ui.button(header_from_surface).clicked() {
-                    self.open_command(ProjectCommand::ModelSurface(ModelSurface::default()));
-                    ui.close_menu();
-                }
-                if ui.button(header_add_gradient).clicked() {
-                    self.open_command(ProjectCommand::ModelGradient(ModelGradient::default()));
-                    ui.close_menu();
-                }
-                if ui.button(header_create_combined_model).clicked() {
-                    self.open_command(ProjectCommand::ModelCombine(ModelCombine::default()));
+                if ui.button(header_new_model).clicked() {
+                    self.open_command(ProjectCommand::ModelNew(ModelNew::default()));
                     ui.close_menu();
                 }
             });

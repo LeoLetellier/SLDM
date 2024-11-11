@@ -53,10 +53,9 @@ impl DispProfile {
 
     /// Construct a disp profile directly from a surface
     pub fn from_surface(surface: &mut Surface1D, dem: &Dem1D, first_x: usize, last_x: usize) -> Result<Self, VectorInputError> {
-        match surface.slope {
-            None => {surface.get_slope(dem); ()},
-            _ => (),
-        };
+        if surface.slope.is_none() {
+            surface.get_slope(dem);
+        }
         let slope = surface.slope.clone().unwrap();
         let len = slope.len();
         let origin = pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z);
@@ -70,6 +69,10 @@ impl DispProfile {
         let is_right = if surface.z[last_x] >= surface.z[first_x] {false} else {true};
         
         DispProfile::from_slope_params(slope, amplitude, origin.0, origin.1, is_right)
+    }
+
+    pub fn from_surface_direct(surface: &mut Surface1D, dem: &Dem1D) -> Result<Self, VectorInputError> {
+        Self::from_surface(surface, dem, 1, dem.x.len() - 2)
     }
 
     /// Apply a defined gradient onto the vectors amplitude

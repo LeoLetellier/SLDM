@@ -1,12 +1,12 @@
 use eframe::egui;
-use egui::ScrollArea;
+use egui::{DragValue, ScrollArea};
 
-use crate::{app::AppDM, project};
+use crate::{app::AppDM, project::{self, BundleSar}};
 use src_logic::prelude::*;
 use egui_phosphor::regular as Phosphor;
 
 #[derive(Debug, Default, Clone)]
-pub(crate) enum ProjectCommand { // Make it own the data with box
+pub(crate) enum ProjectCommand {
     #[default]
     NoCommand,
     Note(Note),
@@ -17,9 +17,7 @@ pub(crate) enum ProjectCommand { // Make it own the data with box
     SlblRoutine(SlblRoutine),
     SurfaceMin(SurfaceMin),
     SurfaceMax(SurfaceMax),
-    ModelSurface(ModelSurface),
-    ModelGradient(ModelGradient),
-    ModelCombine(ModelCombine),
+    ModelNew(ModelNew),
     SatGeometry(SatGeometry),
     OpenDisp(OpenDisp),
     CalibrateModel(CalibrateModel),
@@ -51,14 +49,8 @@ impl AppDM {
                 ProjectCommand::SurfaceMax(_) => {
                     if dem_loaded {self.ui_surface_max(ui)} else {self.ui_no_dem(ui)}
                 },
-                ProjectCommand::ModelSurface(_) => {
-                    if dem_loaded {self.ui_model_surface(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::ModelGradient(_) => {
-                    if dem_loaded {self.ui_model_gradient(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::ModelCombine(_) => {
-                    if dem_loaded {self.ui_model_combine(ui)} else {self.ui_no_dem(ui)}
+                ProjectCommand::ModelNew(_) => {
+                    if dem_loaded {self.ui_model_new(ui)} else {self.ui_no_dem(ui)}
                 },
                 ProjectCommand::SatGeometry(_) => {
                     if dem_loaded {self.ui_sat_geometry(ui)} else {self.ui_no_dem(ui)}
@@ -182,48 +174,35 @@ impl Default for SurfaceMax {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct ModelSurface {
-    status: CommandStatus,
-    surface_index: usize,
-    first_pnt: usize,
-    last_pnt: usize,
-}
-
-impl Default for ModelSurface {
-    fn default() -> Self {
-        ModelSurface {
-            status: CommandStatus::default(),
-            surface_index: 0,
-            first_pnt: 0,
-            last_pnt: 1,
-        }
-    }
-}
-
 #[derive(Debug, Default, Clone)]
-pub struct ModelGradient {
-    status: CommandStatus,
-    selected_unit_model_index: usize,
-    gradient_points: Vec<(usize, f32)>
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct ModelCombine {
+pub struct ModelNew {
     status: CommandStatus,
     name: String,
-    unit_model_indexes: Vec<usize>,
-    unit_weights: Vec<f32>,
+    surface_params: Vec<SurfaceParams>,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct SurfaceParams {
+    pub(crate) index: usize,
+    pub(crate) boundaries: (usize, usize),
+    pub(crate) gradient_points: Vec<(usize, f32)>,
+    pub(crate) weight: f32,
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct SatGeometry {
     status: CommandStatus,
+    name: String,
+    azimuth: f32,
+    incidence: f32,
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct OpenDisp {
     status: CommandStatus,
+    sar_index: usize,
+    file_path: String,
+    name: String,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -270,7 +249,7 @@ impl AppDM {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
 
-        if !self.project.surfaces.is_empty() | !self.project.unit_models.is_empty() | !self.project.composition_models.is_empty() | !self.project.sars.is_empty() {
+        if !self.project.surfaces.is_empty() | !self.project.models.is_empty() | !self.project.models.is_empty() | !self.project.sars.is_empty() {
             data.status = CommandStatus::Error(CommandError::ProjectInitialized);
         }
 
@@ -344,7 +323,7 @@ impl AppDM {
             ui.vertical(|ui| {
                 ui.label(title);
                 ui.separator();
-                ui.add(egui::Slider::new(&mut data.azimuth, 0.0..=360.0).text("Section azimuth"))
+                ui.add(egui::Slider::new(&mut data.azimuth, 0.0..=359.99).text("Section azimuth"));
 
             });
         });
@@ -367,6 +346,7 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
+                    self.project.dem.section_geometry = Some(Orientation::from_deg(data.azimuth, 0.).unwrap());
                     // Logic part
                     data.status = CommandStatus::Complete;
                 }
@@ -645,174 +625,56 @@ impl AppDM {
         });
     }
 
-    fn ui_model_surface(&mut self, ui: &mut egui::Ui) {
-        let title = egui::RichText::new("Generate a Unit Model fro a Reference Surface");
-        let ProjectCommand::ModelSurface(data) = &mut self.current_command else {
+    fn ui_model_new(&mut self, ui: &mut egui::Ui) {
+        let title = egui::RichText::new("Create a New model from surfaces combination");
+        let ProjectCommand::ModelNew(data) = &mut self.current_command else {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
 
-        let nb_surf = self.project.surfaces.len();
+        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
+            ui.vertical(|ui| {
+                ui.label(title);
+                ui.separator();
 
-        if nb_surf >= 1 {
-            ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-                ui.vertical(|ui| {
-                    ui.label(title);
-                    ui.separator();
-                    ui.add(egui::Slider::new(&mut data.first_pnt, 0..=(data.last_pnt - 1)).text("First point"));
-                    ui.add(egui::Slider::new(&mut data.last_pnt, (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1)).text("Last point"));
-                    egui::ComboBox::from_label("From surface")
-                        .selected_text(self.project.surfaces[data.surface_index].name.clone())
-                        .show_ui(ui, |ui| {
-                            for k in 0..nb_surf {
-                                ui.selectable_value(&mut data.surface_index, k, self.project.surfaces[k].name.clone());
-                            }
-                        })
-                });
-            });
-        } else {
-            ui.label("Need a surface to perform");
-        }
-
-        
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
-                _ => (),
-            }
-        });
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
-                CommandStatus::Clean => egui::RichText::new("Apply"),
-                CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
-                CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
-            };
-            let apply_button= ui.button(apply_text);
-            
-            if apply_button.clicked() {
-                if data.status != CommandStatus::Clean {
-                    data.status = CommandStatus::Clean;
+                if self.project.surfaces.is_empty() {
+                    ui.label("no surfaces to use");
                 } else {
-                    self.project.disp_from_surf(data.surface_index, data.first_pnt, data.last_pnt);
-                    // Logic part
-                    data.status = CommandStatus::Complete;
-                }
-            }
-        });
-    }
-
-    fn ui_model_gradient(&mut self, ui: &mut egui::Ui) {
-        let title = egui::RichText::new("Add an Amplitude Gradient to an Existing Model");
-        let ProjectCommand::ModelGradient(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
-        };
-        if !self.project.unit_models.is_empty() {
-            ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-                ui.vertical(|ui| {
-                    ui.label(title);
-                    ui.separator();
-                    egui::ComboBox::from_label("on model")
-                        .selected_text(self.project.unit_models[data.selected_unit_model_index].name.clone())
-                        .show_ui(ui, |ui| {
-                            for k in 0..self.project.unit_models.len() {
-                                ui.selectable_value(&mut data.selected_unit_model_index, k, self.project.unit_models[k].name.clone());
-                            }
-                        });
-                    for k in 0..data.gradient_points.len() {
-                        ui.horizontal(|ui| {
-                            ui.label("point: ");
-                            ui.add(egui::DragValue::new(&mut data.gradient_points[k].0).range(0..=(self.project.dem.dem.x.len() - 1)));
-                            ui.label("weight: ");
-                            ui.add(egui::DragValue::new(&mut data.gradient_points[k].1).range(0..=10));
-                        });
-                    }
-                    ui.horizontal(|ui| {
-                        if ui.button(Phosphor::MINUS).clicked() {
-                            data.gradient_points.pop();
-                        }
-                        if ui.button(Phosphor::PLUS).clicked() {
-                            data.gradient_points.push((0, 1.));
-                        }
-                    });
-                });
-            });
-        } else {
-            ui.label("No models found");
-        }
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
-                _ => (),
-            }
-        });
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
-                CommandStatus::Clean => egui::RichText::new("Apply"),
-                CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
-                CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
-            };
-            let apply_button= ui.button(apply_text);
-            
-            if apply_button.clicked() {
-                if data.status != CommandStatus::Clean {
-                    data.status = CommandStatus::Clean;
-                } else {
-                    // TODO check that there is no duplicate gradient otherwise error !
-                    self.project.apply_model_gradient(data.selected_unit_model_index, &data.gradient_points);
-                    // Logic part
-                    data.status = CommandStatus::Complete;
-                }
-            }
-        });
-    }
-
-    fn ui_model_combine(&mut self, ui: &mut egui::Ui) {
-        let title = egui::RichText::new("Combine Multiple Unit Model");
-        let ProjectCommand::ModelCombine(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
-        };
-
-        if self.project.unit_models.len() >= 2 {
-            ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-                ui.vertical(|ui| {
-                    ui.label(title);
-                    ui.separator();
-                    ui.horizontal(|ui| {
-                        ui.label("name");
-                        ui.text_edit_singleline(&mut data.name);
-                    });
-                    for k in 0..data.unit_weights.len() {
+                    ui.text_edit_singleline(&mut data.name);
+                    for k in 0..data.surface_params.len() {
                         ui.push_id(k, |ui| {
-                            ui.horizontal(|ui| {
-                                egui::ComboBox::from_label("Unit model")
-                            .selected_text(self.project.unit_models[data.unit_model_indexes[k]].name.clone())
-                            .show_ui(ui, |ui| {
-                                for model in 0..self.project.unit_models.len() {
-                                    ui.selectable_value(&mut data.unit_model_indexes[k], model, self.project.unit_models[model].name.clone());
-                                }
+                            egui::ComboBox::from_label("Surface")
+                                .selected_text(self.project.surfaces[data.surface_params[k].index].name.to_owned())
+                                .show_ui(ui, |ui| {
+                                    for s in 0..self.project.surfaces.len() {
+                                        ui.selectable_value(&mut data.surface_params[s].index, k, self.project.surfaces[s].name.to_owned());
+                                    }
                             });
-                            ui.add(egui::DragValue::new(&mut data.unit_weights[k]));
-                            });
+                            ui.add(egui::DragValue::new(&mut data.surface_params[k].boundaries.0).range(0..=(self.project.dem.dem.x.len() - 1)));
+                            ui.add(egui::DragValue::new(&mut data.surface_params[k].boundaries.1).range(0..=(self.project.dem.dem.x.len() - 1)));
+                            ui.add(egui::DragValue::new(&mut data.surface_params[k].weight));
+                            for i in 0..data.surface_params[k].gradient_points.len() {
+                                ui.push_id(i, |ui| {
+                                    ui.add(egui::DragValue::new(&mut data.surface_params[k].gradient_points[i].0).range(0..=self.project.dem.dem.x.len()));
+                                    ui.add(egui::Slider::new(&mut data.surface_params[k].gradient_points[i].1, -1000.0..=1000.0).logarithmic(true));
+                                });
+                            }
+                            if ui.button("+").clicked() {
+                                data.surface_params[k].gradient_points.push((0, 1.));
+                            }
+                            if ui.button("-").clicked() {
+                                data.surface_params[k].gradient_points.pop();
+                            }
                         });
                     }
-                    ui.horizontal(|ui| {
-                        if ui.button(Phosphor::MINUS).clicked() {
-                            data.unit_model_indexes.pop();
-                            data.unit_weights.pop();
-                        }
-                        if ui.button(Phosphor::PLUS).clicked() {
-                            if data.unit_model_indexes.len() < self.project.unit_models.len() {
-                                data.unit_model_indexes.push(0);
-                                data.unit_weights.push(1.);
-                            }
-                        }
-                    });
-                });
+                    if ui.button("+").clicked() {
+                        data.surface_params.push(SurfaceParams::default());
+                    }
+                    if ui.button("-").clicked() {
+                        data.surface_params.pop();
+                    }
+                }
             });
-        } else {
-            ui.label("Need at least 2 unit models to combine...");
-        }
+        });
 
         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
             match &data.status {
@@ -832,9 +694,8 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    // Need at least one
-                    let nb_combined = data.unit_model_indexes.len();
-                    self.project.combine_unit_models(&data.unit_model_indexes, &data.unit_weights);
+                    self.project.combine_unit_models(&data.name, &data.surface_params);
+                    // check input is valid
                     data.status = CommandStatus::Complete;
                 }
             }
@@ -851,6 +712,9 @@ impl AppDM {
             ui.vertical(|ui| {
                 ui.label(title);
                 ui.separator();
+                ui.text_edit_singleline(&mut data.name);
+                ui.add(egui::Slider::new(&mut data.azimuth, 0.0..=359.99).text("LOS azimuth"));
+                ui.add(egui::Slider::new(&mut data.incidence, 0.0..=90.).text("LOS incidence"));
             });
         });
 
@@ -872,8 +736,18 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    // Logic part
-                    data.status = CommandStatus::Complete;
+                    let mut new_bundle = BundleSar::default();
+                    let orientation = Orientation::from_deg(data.azimuth, data.incidence);
+                    match orientation {
+                        Err(_) => data.status = CommandStatus::Error(CommandError::MiscError),
+                        Ok(orientation) => {
+                            new_bundle.sar_geometry = orientation;
+                            new_bundle.name = data.name.to_owned();
+                            self.project.sars.push(new_bundle);
+
+                            data.status = CommandStatus::Complete;
+                        },
+                    }                    
                 }
             }
         });
@@ -885,12 +759,29 @@ impl AppDM {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
+        if self.project.sars.is_empty() {
+            ui.label("No geometry defined");
+        } else {
+            ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
+                ui.vertical(|ui| {
+                    ui.label(title);
+                    ui.separator();
+                    ui.text_edit_singleline(&mut data.name);
+                    egui::ComboBox::from_label("With geometry")
+                        .selected_text(self.project.sars[data.sar_index].name.to_owned())
+                        .show_ui(ui, |ui| {
+                            for k in (0..self.project.sars.len()) {
+                                ui.selectable_value(&mut data.sar_index, k, self.project.sars[k].name.to_owned());
+                            }
+                    });
+                    if ui.button("Select file").clicked() {
+                        if let Some(path) = rfd::FileDialog::new().pick_file() {
+                            data.file_path = path.display().to_string();
+                        }
+                    }
+                });
             });
-        });
+        }
 
         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
             match &data.status {
@@ -910,8 +801,10 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    // Logic part
-                    data.status = CommandStatus::Complete;
+                    data.status = match self.project.new_sar_data(&data.name, data.sar_index, data.file_path.to_owned()) {
+                        Err(e) => CommandStatus::Error(CommandError::MiscError),
+                        Ok(_) => CommandStatus::Complete,
+                    }
                 }
             }
         });
