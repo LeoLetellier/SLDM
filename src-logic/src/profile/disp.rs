@@ -3,9 +3,15 @@
 use std::f32::consts::PI;
 use super::interpol_linear;
 
+#[derive(Debug)]
+pub enum PillarError {
+    InvalidSlope,
+    NoIntersection,
+}
+
 /// Computes the displacement projected from the failure surface into the topography (DEM) perpendicularly 
 /// to the slope of the failure surface
-pub fn pillar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &Vec<f32>, x: &Vec<f32>, z: &Vec<f32>) -> (Vec<f32>, Vec<f32>) {
+pub fn pillar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &Vec<f32>, x: &Vec<f32>, z: &Vec<f32>) -> Result<(Vec<f32>, Vec<f32>), PillarError> {
     let mut ground_proj_x = x.clone();
     let mut ground_proj_z = z.clone();
 
@@ -14,18 +20,18 @@ pub fn pillar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &V
         let coeff_dir = match coeff_dir { // convert slope to perpendicular slope
             a if a >= 0. => a - PI/2.,
             a if a < 0. => a + PI/2.,
-            _ => panic!("Not expecting a slope between pi/2 and 3pi/2 in pilar_slope."),
+            _ => {return Err(PillarError::InvalidSlope);},
         };
         let xx: (f32, f32) = (x.first().unwrap().to_owned(), x.last().unwrap().to_owned());
         let zz: (f32, f32) = (slide_z[k] + coeff_dir.tan() * (xx.0 - x[k]), slide_z[k] + coeff_dir.tan() * (xx.1 - x[k]));
         let intercept = intersection_on_topo(x, z, xx, zz);
         if intercept.is_none() {
-            panic!("No intersection found in pilar_slope at point {}", k);
+            {return Err(PillarError::NoIntersection);};
         }
         ground_proj_x[k] = intercept.unwrap().0;
         ground_proj_z[k] = intercept.unwrap().1;
     }
-    (ground_proj_x, ground_proj_z)
+    Ok((ground_proj_x, ground_proj_z))
 }
 
 /// Compute the intersection between two segments, if exist

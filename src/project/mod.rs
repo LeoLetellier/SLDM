@@ -55,7 +55,7 @@ impl Project {
 
     pub(crate) fn surface_from_exact_slbl(&mut self, first_pnt: usize, last_pnt: usize, tol: f32) -> Result<()> {
         let mut surface = Surface1D::from_slbl_exact(&self.dem.dem, first_pnt, last_pnt, tol);
-        let profile = DispProfile::from_surface_direct(&mut surface, &self.dem.dem)?;
+        let profile = DispProfile::from_surface(&mut surface, &self.dem.dem, first_pnt, last_pnt)?;
         let mut bundle = BundleSurface::default();
         bundle.surface = surface;
         bundle.profile = profile;
@@ -129,6 +129,8 @@ pub(crate) struct BundleDem {
     pub(crate) dem: Dem1D,
     pub(crate) section_geometry: Option<Orientation>,
     pub(crate) section_surface: bool,
+    pub(crate) min_bound: [f64; 2],
+    pub(crate) max_bound: [f64; 2],
 }
 
 impl Default for BundleDem {
@@ -137,11 +139,13 @@ impl Default for BundleDem {
             dem: Dem1D::default(),
             section_geometry: None,
             section_surface: true,
+            min_bound: [0., 0.],
+            max_bound: [0., 0.]
         }
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(crate) struct BundleSurface {
     pub(crate) name: String,
     pub(crate) surface: Surface1D,
@@ -153,6 +157,22 @@ pub(crate) struct BundleSurface {
     pub(crate) section_pillar: bool,
     pub(crate) property_disp: bool,
     pub(crate) property_proj_disp: bool,
+}
+
+impl Default for BundleSurface {
+    fn default() -> Self {
+        BundleSurface {
+            name: String::new(),
+            surface: Surface1D::default(),
+            section_surface: true,
+            profile: DispProfile::default(),
+            section_arrow: false,
+            arrow_scaling_factor: 1.0,
+            section_pillar: false,
+            property_disp: false,
+            property_proj_disp: false,
+        }
+    }
 }
 
 #[derive(Debug, Default)]

@@ -32,6 +32,8 @@ pub enum VectorInputError {
     },
     #[error("Input vectors are empty")]
     EmptyVecs,
+    #[error("Error in pillar method")]
+    PillarError,
 }
 
 impl Dem1D {
@@ -107,7 +109,7 @@ impl DispProfile {
         let mut origins: Vec<[f32; 2]> = vec![];
 
         for k in 0..slope.len() {
-            let mut vec = Vector2Rep::from_deg(slope[k], is_facing_right);
+            let mut vec = Vector2Rep::from_rad(slope[k], is_facing_right);
             vec.with_norm(amplitude[k]);
             let origin = [ox[k], oz[k]];
             vecs.push(vec);

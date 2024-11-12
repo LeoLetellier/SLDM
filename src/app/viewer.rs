@@ -1,7 +1,10 @@
+use std::default;
+
 use eframe::egui;
+use egui::Vec2b;
 use super::AppDM;
 use egui_phosphor::regular as Phosphor;
-use egui_plot::{Line, Plot, Points, Arrows};
+use egui_plot::{Arrows, Line, Plot, PlotBounds, Points};
 use src_logic::prelude::*;
 
 impl AppDM {
@@ -28,7 +31,11 @@ impl AppDM {
                 }
 
                 if button_section.on_hover_text("Section").clicked() {
-                    self.is_viewer_properties = false;
+                    if !self.is_viewer_properties {
+                        self.graph_bound = true;
+                    } else {
+                        self.is_viewer_properties = false;
+                    }
                 }
                 if button_properties.on_hover_text("Properties").clicked() {
                     self.is_viewer_properties = true;
@@ -121,10 +128,28 @@ impl AppDM {
             dem_line.push(line);
         }
 
+        if !self.project.dem.dem.x.is_empty() & self.graph_bound {
+            let min_x = self.project.dem.dem.x.first().unwrap();
+            let max_x = self.project.dem.dem.x.last().unwrap();
+            let amp_x = (max_x - min_x).abs();
+            let mean_y = self.project.dem.dem.surface.z.iter().fold(0.0, |acc, k| acc + k) / (self.project.dem.dem.surface.z.len() as f32);
+
+            let bound_x_min = min_x - 0.05 * amp_x;
+            let bound_x_max = max_x + 0.05 * amp_x;
+            let bound_y_min = mean_y - (1.1 * amp_x * ui.available_height() / (ui.available_width() - 64.)) / 2.;
+            let bound_y_max = mean_y + (1.1 * amp_x * ui.available_height() / (ui.available_width() - 64.)) / 2.;
+            self.project.dem.min_bound = [bound_x_min as f64, bound_y_min as f64];
+            self.project.dem.max_bound = [bound_x_max as f64, bound_y_max as f64];
+        }
+
         Plot::new("Section plot")
             .width(ui.available_width() - 64.)
             .height(ui.available_height())
             .show(ui, |plot_ui| {
+                if self.graph_bound {
+                    plot_ui.set_plot_bounds(PlotBounds::from_min_max(self.project.dem.min_bound, self.project.dem.max_bound));
+                    self.graph_bound = false;
+                }
                 for line in pillar_lines {
                     plot_ui.line(line);
                 }

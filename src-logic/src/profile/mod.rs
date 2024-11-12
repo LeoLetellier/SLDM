@@ -58,7 +58,11 @@ impl DispProfile {
         }
         let slope = surface.slope.clone().unwrap();
         let len = slope.len();
-        let origin = pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z);
+        let mut origin;
+        match pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z) {
+            Err(_) => return Err(VectorInputError::PillarError),
+            Ok(o) => origin = o,
+        }
         let mut amplitude: Vec<f32> = Vec::new();
         (0..len).for_each(|k| match k {
             k if k < first_x => amplitude.push(0.),

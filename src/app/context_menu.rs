@@ -17,7 +17,7 @@ impl AppDM {
         let header_file = Self::header_main(Phosphor::FILE.to_string() + " File");
         let header_surface = Self::header_main(Phosphor::LINE_SEGMENTS.to_string() + " Surface");
         let header_model = Self::header_main(Phosphor::VECTOR_TWO.to_string() + " Model");
-        let header_calibration = Self::header_main(Phosphor::TRAY_ARROW_DOWN.to_string() + " Calibration");
+        let header_calibration = Self::header_main(Phosphor::PLANET.to_string() + " Satellite");
         let header_about = Self::header_main(Phosphor::INFO.to_string() + " About");
 
         ui.horizontal(|ui| {
@@ -91,9 +91,14 @@ impl AppDM {
             ui.menu_button(header_model.strong(), |ui| {
                 ui.set_max_width(200.);
                 let header_new_model = Self::header(Phosphor::ROWS_PLUS_TOP.to_string() + " New model");
+                let header_calibrate_model = Self::header(Phosphor::TRAY_ARROW_DOWN.to_string() + " Calibrate model");
 
                 if ui.button(header_new_model).clicked() {
                     self.open_command(ProjectCommand::ModelNew(ModelNew::default()));
+                    ui.close_menu();
+                }
+                if ui.button(header_calibrate_model).clicked() {
+                    self.open_command(ProjectCommand::CalibrateModel(CalibrateModel::default()));
                     ui.close_menu();
                 }
             });
@@ -101,10 +106,9 @@ impl AppDM {
             // Menu Calibration
             ui.menu_button(header_calibration.strong(), |ui| {
                 ui.set_max_width(200.);
-                let header_new_satellite_geometry = Self::header(Phosphor::COMPASS_TOOL.to_string() + " New satellite geometry");
+                let header_new_satellite_geometry = Self::header(Phosphor::COMPASS_TOOL.to_string() + " New acquisition geometry");
                 let header_displacement_data = Self::header(Phosphor::ARROWS_OUT_CARDINAL.to_string() + " Displacement data");
-                let header_calibrate_model = Self::header(Phosphor::TRAY_ARROW_DOWN.to_string() + " Calibrate model");
-
+                
                 if ui.button(header_new_satellite_geometry).clicked() {
                     self.open_command(ProjectCommand::SatGeometry(SatGeometry::default()));
                     ui.close_menu();
@@ -115,10 +119,6 @@ impl AppDM {
                         ui.close_menu();
                     }
                 });
-                if ui.button(header_calibrate_model).clicked() {
-                    self.open_command(ProjectCommand::CalibrateModel(CalibrateModel::default()));
-                    ui.close_menu();
-                }
             });
             
             if ui.button(header_about.strong()).clicked() {
