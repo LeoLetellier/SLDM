@@ -1,0 +1,22 @@
+[project]
+name = "My dear little project"
+note = "Usefull data I want to remember about my project"
+dem_file_name = "dem.csv"
+
+[[surface]]
+file_name = "surf1.csv"
+
+[[surface]]
+file_name = "surf2.csv"
+
+[[model]]
+file_name = "model1.csv"
+
+[[model]]
+file_name = "model2.csv"
+
+[[model]]
+file_name = "model3.csv"
+
+[[disp_data]]
+file_name = "disp.csv"

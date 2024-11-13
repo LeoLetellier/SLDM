@@ -80,6 +80,7 @@ pub enum CommandError {
     EmptyName,
     MethodError,
     InputError,
+    EmptySar,
 }
 
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -222,6 +223,9 @@ pub struct OpenDisp {
 #[derive(Debug, Default, Clone)]
 pub struct CalibrateModel {
     status: CommandStatus,
+    model: usize,
+    sar_geom: usize,
+    sar_data: usize,
 }
 
 impl AppDM {
@@ -1000,7 +1004,10 @@ impl AppDM {
                     ui.add_space(5.);
                     ui.separator();
                     ui.add_space(15.);
-                    ui.text_edit_singleline(&mut data.name);
+                    ui.horizontal(|ui| {
+                        ui.label("Name: ");
+                        ui.text_edit_singleline(&mut data.name);
+                    });
                     egui::ComboBox::from_label("With geometry")
                         .selected_text(self.project.sars[data.sar_index].name.to_owned())
                         .show_ui(ui, |ui| {
@@ -1066,43 +1073,102 @@ impl AppDM {
     }
 
     fn ui_calibrate_model(&mut self, ui: &mut egui::Ui) {
-        let title = egui::RichText::new("Calibrate a Model using Displacement Data");
+        let title = egui::RichText::new("Calibrate a Model using Displacement Data").heading();
         let ProjectCommand::CalibrateModel(data) = &mut self.current_command else {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
-            });
-        });
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
-                _ => (),
+        if !self.project.sars.is_empty() & !self.project.models.is_empty() & !self.project.dem.section_geometry.is_none() {
+            let sars: Vec<&BundleSar> = self.project.sars.iter().filter(|sar| !sar.disp_data.is_empty()).collect();
+            if !sars.is_empty() {
+                ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
+                    ui.vertical(|ui| {
+                        ui.label(title);
+                        ui.separator();
+                        ui.add_space(10.);
+                        ui.label("Use this command to calibrate a model using InSAR data.");
+                        ui.add_space(5.);
+                        ui.separator();
+                        ui.add_space(15.);
+                        egui::ComboBox::from_label("On model")
+                            .selected_text(self.project.models[data.model].name.to_string())
+                            .show_ui(ui, |ui| {
+                                for k in 0..self.project.models.len() {
+                                    ui.selectable_value(&mut data.model, k, self.project.models[k].name.to_string());
+                                }
+                            });
+                        ui.add_space(10.);
+                        egui::ComboBox::from_label("With geometry")
+                            .selected_text(self.project.sars[data.sar_geom].name.to_string())
+                            .show_ui(ui, |ui| {
+                                for k in 0..self.project.sars.len() {
+                                    ui.selectable_value(&mut data.sar_geom, k, self.project.sars[k].name.to_string());
+                                }
+                            });
+                        if !self.project.sars[data.sar_geom].disp_data.is_empty() {
+                            egui::ComboBox::from_label("With data")
+                                .selected_text(self.project.sars[data.sar_geom].disp_data[data.sar_data].name.to_string())
+                                .show_ui(ui, |ui| {
+                                    for k in 0..self.project.sars[data.sar_geom].disp_data.len() {
+                                        ui.selectable_value(&mut data.sar_data, k, self.project.sars[data.sar_geom].disp_data[k].name.to_string());
+                                    }
+                                });
+                        }
+                    });
+                });
+        
+                ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
+                    match &data.status {
+                        CommandStatus::Error(e) => match e {
+                            CommandError::EmptySar => {ui.label("No data in selected sar geometry.");},
+                            CommandError::MethodError => {ui.label("An error occured with the solver.");},
+                            _ => (),
+                        },
+                        _ => (),
+                    }
+                });
+        
+                ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                    let apply_text= match data.status {
+                        CommandStatus::Clean => egui::RichText::new("Apply"),
+                        CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
+                        CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
+                    };
+                    let apply_button= ui.button(apply_text.size(22.));
+                    
+                    if apply_button.clicked() {
+                        if data.status != CommandStatus::Clean {
+                            data.status = CommandStatus::Clean;
+                        } else {
+                            if self.project.sars[data.sar_geom].disp_data.is_empty() {
+                                data.status = CommandStatus::Error(CommandError::EmptySar);
+                            } else {
+                                match self.project.calibrate_model(data.model, data.sar_geom, data.sar_data) {
+                                    Err(e) => data.status = CommandStatus::Error(CommandError::MethodError),
+                                    Ok(_) => data.status = CommandStatus::Complete,
+                                };
+                            }
+                        }
+                    }
+                });
+            } else {
+                ui.label("No available data in sar geometry.");
             }
-        });
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
-                CommandStatus::Clean => egui::RichText::new("Apply"),
-                CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
-                CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
-            };
-            let apply_button= ui.button(apply_text.size(22.));
-            
-            if apply_button.clicked() {
-                if data.status != CommandStatus::Clean {
-                    data.status = CommandStatus::Clean;
-                } else {
-                    // Logic part
-                    data.status = CommandStatus::Complete;
-                }
-            }
-        });
+        } else {
+            ui.label("No model or sar geometry or dem geometry available available.");
+        }
     }
 
+    fn ui_view_surface(&mut self, ui: &mut egui::Ui) {
+        // Surface data
+        // color
+    }
+
+    fn ui_view_model(&mut self, ui: &mut egui::Ui) {
+        // Model data
+        // metric compared to sar data (RMSE)
+        // color
+    }
 }
 
 /// from https://sts10.github.io/2019/06/06/is-all-equal-function.html

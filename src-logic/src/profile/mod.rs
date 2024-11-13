@@ -58,6 +58,11 @@ impl DispProfile {
         if surface.slope.is_none() {
             surface.get_slope(dem);
         }
+        Self::from_surface_with_slope(surface, dem, first_x, last_x)
+    }
+
+    /// Construct a disp profile directly from a surface
+    pub fn from_surface_with_slope(surface: &Surface1D, dem: &Dem1D, first_x: usize, last_x: usize) -> Result<Self, VectorInputError> {
         let slope = surface.slope.clone().unwrap();
         let len = slope.len();
         let mut origin;
@@ -126,7 +131,7 @@ impl DispProfile {
         DispProfile::new(vecs, regul_origins)
     }
 
-    pub fn from_solver(dem: &Dem1D, surfaces: &mut Vec<Surface1D>, boundaries: &Vec<[usize; 2]>, gradient: &Vec<Vec<(usize, f32)>>, disp_data: &DispData, section_orientation: &Orientation, los_orientation: &Orientation) -> Result<Self, VectorInputError> {
+    pub fn from_solver(dem: &Dem1D, surfaces: &Vec<Surface1D>, boundaries: &Vec<[usize; 2]>, gradient: &Vec<Vec<(usize, f32)>>, disp_data: &DispData, section_orientation: &Orientation, los_orientation: &Orientation) -> Result<(Self, Vec<f32>), VectorInputError> {
         let regul_origins: Vec<[f32; 2]> = (0..dem.x.len()).map(|k| {
             [dem.x[k], dem.surface.z[k]]
         }).collect();
@@ -138,7 +143,7 @@ impl DispProfile {
 
         for surf in 0..surfaces.len() {
             // Create the profile from surface
-            let mut current_unit_profile = DispProfile::from_surface(&mut surfaces[surf], dem, boundaries[surf][0], boundaries[surf][1])?;
+            let mut current_unit_profile = DispProfile::from_surface_with_slope(&surfaces[surf], dem, boundaries[surf][0], boundaries[surf][1])?;
             // Apply the gradient to the unit profile
             if !gradient[surf].is_empty() {
                 current_unit_profile.apply_amplitude_gradient(&gradient[surf]);
@@ -166,7 +171,10 @@ impl DispProfile {
                     Vector2Rep::new(sum_vx[k], sum_vz[k])
                 }).collect();
 
-                DispProfile::new(vecs, regul_origins)
+                match DispProfile::new(vecs, regul_origins) {
+                    Err(e) => Err(e),
+                    Ok(p) => Ok((p, weights)),
+                }
             },
             Err(e) => Err(VectorInputError::SolverError(e)),
         }
@@ -253,7 +261,7 @@ mod test_fitter {
         let section_orientation = Orientation::from_deg(260., 90.).unwrap();
         let los_orientation = Orientation::from_deg(286., 35.).unwrap();
         let surf_topo = vec![1., 2., 2., 4., 5., 5., 6., 7., 9., 10., 10.];
-        let dem = Dem1D { orientation: Some(section_orientation.clone()), x: x, surface: Surface1D::new(surf_topo) };
+        let dem = Dem1D { x, surface: Surface1D::new(surf_topo) };
         let surf1 = vec![1., 2., 2., 3., 4., 5., 6., 7., 9., 10., 10.];
         let surf2 = vec![1., 2., 2., 2., 3., 3., 4., 5., 6., 10., 10.];
         let mut surf1 = Surface1D::new(surf1);

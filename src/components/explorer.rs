@@ -71,7 +71,9 @@ impl AppDM {
                                         };
                                     });
                                 });
-                                ui.add(egui::Slider::new(&mut bundle.arrow_scaling_factor, 0.0..=1000.0).logarithmic(true));
+                                if bundle.section_arrow {
+                                    ui.add(egui::Slider::new(&mut bundle.arrow_scaling_factor, 0.0..=1000.0).logarithmic(true));
+                                }
                                 ui.horizontal(|ui| {
                                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
                                         ui.label("Pillars");

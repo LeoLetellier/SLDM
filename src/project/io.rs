@@ -9,8 +9,7 @@ use toml;
 struct ProjectFile {
     project: ProjectRelated,
     surface: Vec<SurfaceRelated>,
-    unit_model: Vec<UnitModelRelated>,
-    combined_model: Vec<CombinedModelRelated>,
+    model: Vec<ModelRelated>,
     disp_data: Vec<DispDataRelated>,
 }
 
@@ -27,12 +26,7 @@ struct SurfaceRelated {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct UnitModelRelated {
-    file_name: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct CombinedModelRelated {
+struct ModelRelated {
     file_name: String,
 }
 
@@ -53,6 +47,8 @@ impl Project {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Write;
+
     use super::*;
 
     #[test]
@@ -64,14 +60,14 @@ mod tests {
             },
             surface: vec![SurfaceRelated{file_name: String::from("surf1.csv")},
             SurfaceRelated{file_name: String::from("surf2.csv")}],
-            unit_model: vec![UnitModelRelated{file_name: String::from("unit1.csv")},
-            UnitModelRelated{file_name: String::from("unit2.csv")}],
-            combined_model: vec![CombinedModelRelated{file_name: String::from("model1.csv")},
-            CombinedModelRelated{file_name: String::from("model2.csv")},
-            CombinedModelRelated{file_name: String::from("model3.csv")}],
+            model: vec![ModelRelated{file_name: String::from("model1.csv")},
+            ModelRelated{file_name: String::from("model2.csv")},
+            ModelRelated{file_name: String::from("model3.csv")}],
             disp_data: vec![DispDataRelated{file_name: String::from("disp.csv")}],
         };
         let toml = toml::to_string(&proj).unwrap();
         println!("toml:\n{}", toml);
+        let mut file = fs::File::create("src-logic/test_data/fiiileeee.toml").unwrap();
+        file.write_all(toml.as_bytes()).unwrap();
     }
 }

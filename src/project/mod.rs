@@ -1,6 +1,6 @@
 use eframe::wgpu::core::resource;
 use src_logic::prelude::*;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 use crate::components::command::SurfaceParams;
 
@@ -95,7 +95,7 @@ impl Project {
         let mut weights = vec![];
         for s in 0..surface_params.len() {
             let param = &surface_params[s];
-            new_bundle.profiles.push(self.surfaces[param.index].profile.clone());
+            new_bundle.surfaces.push(self.surfaces[param.index].surface.clone());
             new_bundle.weights.push(param.weight);
             new_bundle.boundaries.push(param.boundaries);
             new_bundle.gradients.push(param.gradient_points.to_owned());
@@ -109,11 +109,6 @@ impl Project {
         Ok(())
     }
 
-    pub(crate) fn new_sar_geometry() -> Result<()> {
-        todo!();
-        Ok(())
-    }
-
     pub(crate) fn new_sar_data(&mut self, name: &String, sar_index: usize, file_path: String) -> Result<()> {
         let mut new_bundle = BundleDispData::default();
         let reader = CSVReader::new(file_path, None)?;
@@ -121,6 +116,26 @@ impl Project {
         new_bundle.disp_data = DispData::from_csv_reader(&reader, &mut String::new(), &mut String::new())?;
         self.sars[sar_index].disp_data.push(new_bundle);
         Ok(())
+    }
+
+    pub(crate) fn calibrate_model(&mut self, model_index: usize, sar_index: usize, sar_data_index: usize) -> Result<()> {
+        let model = &self.models[model_index];
+        let sar_geom = &self.sars[sar_index];
+        let sar_data = &sar_geom.disp_data[sar_data_index];
+        let mut bundle = model.clone();
+        let boundaries = model.boundaries.iter().map(|(a, b)| [*a, *b]).collect();
+        let result = DispProfile::from_solver(&self.dem.dem, &model.surfaces, &boundaries, &model.gradients, &sar_data.disp_data, &self.dem.section_geometry.clone().unwrap(), &sar_geom.sar_geometry);
+
+        match result {
+            Ok((profile, weights)) => {
+                bundle.weights = weights;
+                bundle.resulting_profile = profile;
+                bundle.name = "Calibrated_".to_string() + bundle.name.as_str();
+                self.models.push(bundle);
+                Ok(())
+            }
+            Err(e) => Err(anyhow!(e)),
+        }
     }
 }
 
@@ -175,11 +190,11 @@ impl Default for BundleSurface {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub(crate) struct BundleModel {
     pub(crate) name: String,
 
-    pub(crate) profiles: Vec<DispProfile>,
+    pub(crate) surfaces: Vec<Surface1D>,
     pub(crate) weights: Vec<f32>,
     pub(crate) boundaries: Vec<(usize, usize)>,
     pub(crate) gradients: Vec<Vec<(usize, f32)>>,

@@ -14,10 +14,6 @@ use thiserror::Error;
 /// of th topography at each sampling points.
 #[derive(Default, Debug, Clone)]
 pub struct Dem1D {
-    /// Orientation of the 2D section
-    /// 
-    /// Only the azimuth field should matter
-    pub orientation: Option<Orientation>,
     /// Sampling values for the layers    
     pub x: Vec<f32>,
     /// Elevation value of the topography at each sampling points
@@ -52,12 +48,8 @@ impl Dem1D {
             Err(VectorInputError::EmptyVecs)
         } else {
             let surface = Surface1D::new(z);
-            Ok(Dem1D {orientation: None, x, surface})
+            Ok(Dem1D {x, surface})
         }
-    }
-
-    pub fn with_orientation(&mut self, orientation: Orientation) {
-        self.orientation = Some(orientation);
     }
 
     pub fn interpolate_elevation_on_x(&self, new_x: &Vec<f32>) -> Vec<f32> {
