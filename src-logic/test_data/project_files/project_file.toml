@@ -1,0 +1,43 @@
+[project]
+name = "My dear little project"
+note = "Usefull data I want to remember about my project"
+dem_file_name = "dem.csv"
+dem_azimuth = 289.0
+
+[[surface]]
+name = "surf1"
+file_name = "surf1.csv"
+
+[[surface]]
+name = "surf2"
+file_name = "surf2.csv"
+
+[[model]]
+name = "model one"
+file_name = "model1.csv"
+
+[[model]]
+name = "model two"
+file_name = "model2.csv"
+
+[[model]]
+name = "model three"
+file_name = "model3.csv"
+
+[[disp_data]]
+name = "sat_geometry"
+azimuth = 260.0
+incidence = 35.0
+
+[[disp_data.datas]]
+name = "data one"
+file_name = "data1.csv"
+
+[[disp_data.datas]]
+name = "data two"
+file_name = "data2.csv"
+
+[[disp_data]]
+name = "sat_geometry2"
+azimuth = 260.0
+incidence = 35.0

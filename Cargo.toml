@@ -13,8 +13,10 @@ egui-phosphor = "0.7.3"
 egui_commonmark = { version = "0.18.0", features = ["macros"] }
 egui_plot = "0.29.0"
 env_logger = "0.11.5"
+filenamify = "0.1.2"
 rfd = "0.15.0"
 serde = { version = "1.0.214", features = ["derive"] }
+thiserror = "2.0.3"
 toml = "0.8.19"
 
 [workspace]
