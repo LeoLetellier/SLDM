@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, panic::RefUnwindSafe, vec};
 
-use crate::{prelude::Vector2Rep, types::*};
+use crate::{data::ComposedModel, prelude::Vector2Rep, types::*};
 pub mod disp;
 use disp::*;
 
@@ -32,9 +32,11 @@ impl DispProfile {
         let new_vx = interpol_linear(&x_old, &vx_old, &x_new);
         let new_vz = interpol_linear(&x_old, &vz_old, &x_new);
         self.origins = new_origins;
-        for k in 0..self.vecs.len() {
-            self.vecs[k].with_coords(new_vx[k], new_vz[k]);
+        let mut new_vecs = Vec::with_capacity(self.origins.len());
+        for k in 0..self.origins.len() {
+            new_vecs.push(Vector2Rep::new(new_vx[k], new_vz[k]));
         }
+        self.vecs = new_vecs;
         self
     }
 
@@ -123,6 +125,52 @@ impl DispProfile {
 
         DispProfile::new(vecs, regul_origins)
     }
+
+    pub fn from_solver(dem: &Dem1D, surfaces: &mut Vec<Surface1D>, boundaries: &Vec<[usize; 2]>, gradient: &Vec<Vec<(usize, f32)>>, disp_data: &DispData, section_orientation: &Orientation, los_orientation: &Orientation) -> Result<Self, VectorInputError> {
+        let regul_origins: Vec<[f32; 2]> = (0..dem.x.len()).map(|k| {
+            [dem.x[k], dem.surface.z[k]]
+        }).collect();
+
+        let mut sum_vx = vec![0.; regul_origins.len()];
+        let mut sum_vz = vec![0.; regul_origins.len()];
+
+        let mut updated_profiles = vec![];
+
+        for surf in 0..surfaces.len() {
+            // Create the profile from surface
+            let mut current_unit_profile = DispProfile::from_surface(&mut surfaces[surf], dem, boundaries[surf][0], boundaries[surf][1])?;
+            // Apply the gradient to the unit profile
+            if !gradient[surf].is_empty() {
+                current_unit_profile.apply_amplitude_gradient(&gradient[surf]);
+            }
+            // Interpolate vectors on common regulate origins
+            current_unit_profile.interpolate_on_origins(&regul_origins);
+            updated_profiles.push(current_unit_profile);
+        }
+
+        let composed_model = ComposedModel::new(dem, &updated_profiles, section_orientation, los_orientation, disp_data);
+        match composed_model.fit_disp() {
+            Ok(weights) => {
+                #[cfg(test)]
+                dbg!(&weights);
+
+                for p in 0..updated_profiles.len() {
+                    updated_profiles[p].weight_disp(weights[p]);
+                    for k in 0..sum_vx.len() {
+                        sum_vx[k] += updated_profiles[p].vecs[k].coords().0;
+                        sum_vz[k] += updated_profiles[p].vecs[k].coords().1;
+                    }
+                }
+
+                let vecs = (0..regul_origins.len()).map(|k| {
+                    Vector2Rep::new(sum_vx[k], sum_vz[k])
+                }).collect();
+
+                DispProfile::new(vecs, regul_origins)
+            },
+            Err(e) => Err(VectorInputError::SolverError(e)),
+        }
+    }
 }
 
 /// Direct linear interpolation between an old sampling to a new one 
@@ -191,5 +239,36 @@ mod tests {
         (0..result.len()).for_each(|k|
             assert_approx_eq!(result[k], expect[k])
         );
+    }
+}
+
+
+#[cfg(test)]
+mod test_fitter {
+    use super::*;
+
+    #[test]
+    fn test_fitter() {
+        let x: Vec<f32> = (0..=10).map(|k| 2. * k as f32).collect();
+        let section_orientation = Orientation::from_deg(260., 90.).unwrap();
+        let los_orientation = Orientation::from_deg(286., 35.).unwrap();
+        let surf_topo = vec![1., 2., 2., 4., 5., 5., 6., 7., 9., 10., 10.];
+        let dem = Dem1D { orientation: Some(section_orientation.clone()), x: x, surface: Surface1D::new(surf_topo) };
+        let surf1 = vec![1., 2., 2., 3., 4., 5., 6., 7., 9., 10., 10.];
+        let surf2 = vec![1., 2., 2., 2., 3., 3., 4., 5., 6., 10., 10.];
+        let mut surf1 = Surface1D::new(surf1);
+        let mut surf2 = Surface1D::new(surf2);
+
+        let disp_data = DispData::new(vec![6., 10., 12., 17.], vec![-5., -3., -2., -0.5]).unwrap();
+        let profile1 = DispProfile::from_surface(&mut surf1, &dem, 2, 5);
+        assert!(profile1.is_ok());
+        let profile2 = DispProfile::from_surface(&mut surf2, &dem, 2, 9);
+        assert!(profile2.is_ok());
+
+        let profile = DispProfile::from_solver(&dem, &mut vec![surf1, surf2], &vec![[2, 5], [2, 9]], &vec![vec![], vec![]], &disp_data, &section_orientation, &los_orientation).unwrap();
+        // for k in 0..profile.vecs.len() {
+        //     dbg!((profile.vecs[k]));
+        //     dbg!(profile.vecs[k].amplitude());
+        // }
     }
 }

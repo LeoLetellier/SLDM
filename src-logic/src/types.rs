@@ -1,7 +1,8 @@
 //! This module defines the types used to hold the information in this project.
 
 use std::f32::consts::PI;
-use crate::data::vec_proj::{deg2rad, Vector2Rep, Vector3Rep};
+use crate::{data::vec_proj::{deg2rad, Vector2Rep, Vector3Rep}, profile::interpol_linear};
+use eqsolver::SolverError;
 use thiserror::Error;
 
 /// The 1D Digital Elevation Model representation.
@@ -34,6 +35,8 @@ pub enum VectorInputError {
     EmptyVecs,
     #[error("Error in pillar method")]
     PillarError,
+    #[error("Error in solver eqsolver")]
+    SolverError(SolverError),
 }
 
 impl Dem1D {
@@ -55,6 +58,10 @@ impl Dem1D {
 
     pub fn with_orientation(&mut self, orientation: Orientation) {
         self.orientation = Some(orientation);
+    }
+
+    pub fn interpolate_elevation_on_x(&self, new_x: &Vec<f32>) -> Vec<f32> {
+        interpol_linear(&self.x, &self.surface.z, &new_x)
     }
 }
 
@@ -126,7 +133,7 @@ impl DispProfile {
 /// may differs from the dem sampling
 /// 
 /// Must be associated with the acquisition orientation
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct DispData {
     /// x samples where displacement data were recorded
     pub x: Vec<f32>,
