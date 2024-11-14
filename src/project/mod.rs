@@ -35,14 +35,14 @@ impl Default for Project {
 
 impl Project {
     pub(crate) fn open_dem_from_file(&mut self, path: String) -> Result<()> {
-        let reader = CSVReader::new(path, None)?;
+        let reader = CSVReader::read(path, None)?;
         let dem = Dem1D::from_csv_reader(&reader, &mut String::new(), &mut String::new())?;
         self.dem.dem = dem;
         Ok(())
     }
 
     pub(crate) fn open_surface_from_file(&mut self, path: String, name: String) -> Result<()> {
-        let reader = CSVReader::new(path, None)?;
+        let reader = CSVReader::read(path, None)?;
         let mut surface = Surface1D::from_csv_reader(&reader, &self.dem.dem, &mut String::new(), &mut String::new())?;
         let profile = DispProfile::from_surface_direct(&mut surface, &self.dem.dem)?;
         let mut bundle = BundleSurface::default();
@@ -60,6 +60,17 @@ impl Project {
         bundle.surface = surface;
         bundle.profile = profile;
         bundle.name = String::from("SLBL_E_") + first_pnt.to_string().as_str() + "_" + last_pnt.to_string().as_str() + "_" + tol.to_string().as_str();
+        self.surfaces.push(bundle);
+        Ok(())
+    }
+
+    pub(crate) fn surface_from_routine_slbl(&mut self, first_pnt: usize, last_pnt: usize, tol: f32, n_it: usize, elevation_min: f32, slope_max: f32) -> Result<()> {
+        let mut surface = Surface1D::from_slbl_routine(&self.dem.dem, first_pnt, last_pnt, tol, n_it, Some(elevation_min), Some(slope_max));
+        let profile = DispProfile::from_surface(&mut surface, &self.dem.dem, first_pnt, last_pnt)?;
+        let mut bundle = BundleSurface::default();
+        bundle.surface = surface;
+        bundle.profile = profile;
+        bundle.name = String::from("SLBL_R_") + first_pnt.to_string().as_str() + "_" + last_pnt.to_string().as_str() + "_" + tol.to_string().as_str();
         self.surfaces.push(bundle);
         Ok(())
     }
@@ -111,7 +122,7 @@ impl Project {
 
     pub(crate) fn new_sar_data(&mut self, name: &String, sar_index: usize, file_path: String) -> Result<()> {
         let mut new_bundle = BundleDispData::default();
-        let reader = CSVReader::new(file_path, None)?;
+        let reader = CSVReader::read(file_path, None)?;
         new_bundle.name = name.to_owned();
         new_bundle.disp_data = DispData::from_csv_reader(&reader, &mut String::new(), &mut String::new())?;
         self.sars[sar_index].disp_data.push(new_bundle);

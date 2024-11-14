@@ -1,49 +1,38 @@
-use crate::app;
-
 use super::Project;
 use serde::{Deserialize, Serialize};
-use src_logic::prelude::*;
 use anyhow::Result as AResult;
 use anyhow::bail;
-use thiserror::Error;
+use src_logic::io_csv::CsvWriter;
 use std::fs;
 use std::io::Write;
 use std::path::Path;
 use toml;
-use filenamify::filenamify;
 use super::*;
 
 impl Project {
     pub(crate) fn save(&self) -> AResult<()> {
-        let path = match self.path.clone() {
+        // Assume that root was well defined by the user
+        let root = match self.path.clone() {
             Some(p) => p,
-            None => bail!(SaveTomlError::NoPath),
+            None => bail!("No saving path specified"),
         };
 
-        let root_folder = path.to_string() + "/" + filenamify(self.name.to_string()).as_str();
-        let path = Path::new(path.as_str());
-        
-        match Path::new(path).exists() {
-            true => fs::create_dir(root_folder.to_string())?,
-            false => bail!(SaveTomlError::InvalidPath),
-        };
-
-        save_toml(self, &root_folder)?;
-        save_all_csv(self, &root_folder)?;
+        save_toml(self, &root)?;
+        save_all_csv(self, &root)?;
         Ok(())
     }
 
-    fn load(&mut self) -> AResult<()> {
-        todo!()
-    }
-}
+    pub(crate) fn load(&mut self, path: &String) -> AResult<Project> {
+        let path = match path {
+            p if p.is_empty() => bail!("No saving path specified"),
+            p => p.to_string(),
+        };
 
-#[derive(Debug, Error)]
-pub enum SaveTomlError {
-    #[error("No saving path registered")]
-    NoPath,
-    #[error("The specified saving path is invalid")]
-    InvalidPath,
+        let (mut project, project_file) = load_toml(&path)?;
+        load_all_csv(&mut project, &project_file)?;
+
+        Ok(project)
+    }
 }
 
 pub(crate) fn save_toml(project: &Project, root_folder: &String) -> AResult<()> {
@@ -56,8 +45,99 @@ pub(crate) fn save_toml(project: &Project, root_folder: &String) -> AResult<()> 
     Ok(())
 }
 
+fn load_toml(path: &String) -> AResult<(Project, ProjectFile)> {
+    let toml_contents = fs::read_to_string(path)?;
+    let project_file: ProjectFile = toml::from_str(&toml_contents)?;
+    let project = project_file.to_project(path);
+    Ok((project, project_file))
+}
+
 pub(crate) fn save_all_csv(project: &Project, root_folder: &String) -> AResult<()> {
-    todo!();
+    let path = root_folder.to_string() + "/dem.csv";
+    if !project.dem.dem.x.is_empty() {
+        project.dem.to_csv(&path)?;
+    }
+
+    for s in 0..project.surfaces.len() {
+        let path = root_folder.to_string() + "/surface_" + (s + 1).to_string().as_str() + ".csv";
+        project.surfaces[s].to_csv(&path, &project.dem.dem.x)?;
+    }
+
+    for m in 0..project.models.len() {
+        let path = root_folder.to_string() + "/model_" + (m + 1).to_string().as_str() + ".csv";
+        project.models[m].to_csv(&path,&project.dem.dem.x)?;
+    }
+
+    for g in 0..project.sars.len() {
+        for d in 0..project.sars[g].disp_data.len() {
+            let path = root_folder.to_string() + "/disp_" + (g + 1).to_string().as_str() + "_data_" + (d + 1).to_string().as_str() + ".csv";
+            project.sars[g].disp_data[d].to_csv(&path)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn load_all_csv(project: &mut Project, project_file: &ProjectFile) -> AResult<()> {
+    let root = match &project.path {
+        None => bail!("No root path"),
+        Some(p) => p,
+    };
+
+    let root = Path::parent(Path::new(root));
+    let root = match root {
+        Some(path) => {
+            match path.to_str() {
+                Some(path) => {
+                    path.to_string() + "\\"
+                },
+                None => bail!(""),
+            }
+        },
+        None => bail!("No parent folder. What have you done ?"),
+    };
+
+    let path = root.to_string() + project_file.project.dem_file_name.as_str();
+    project.dem.from_csv(&path)?;
+
+    match &project_file.surface {
+        Some(surfaces) => {
+            for s in 0..surfaces.len() {
+                let path = root.to_string() + surfaces[s].file_name.to_string().as_str();
+                project.surfaces[s].from_csv(&path)?;
+            }
+        },
+        None => (),
+    }
+
+    match &project_file.model {
+        Some(models) => {
+            for m in 0..models.len() {
+                let path = root.to_string() + models[m].file_name.to_string().as_str();
+                project.models[m].from_csv(&path)?;
+            }
+        },
+        None => (),
+    }
+
+    match &project_file.disp_data {
+        Some(geoms) => {
+            for g in 0..geoms.len() {
+                match &geoms[g].datas {
+                    Some(datas) => {
+                        for d in 0..datas.len() {
+                            let path = root.to_string() + datas[d].file_name.to_string().as_str();
+                            project.sars[g].disp_data[d].from_csv(&path)?;
+                        }
+                    },
+                    None => (),
+                }
+            }
+        },
+        None => (),
+    }
+
+    Ok(())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -89,32 +169,39 @@ impl ProjectFile {
 
         Self { project, surface, model, disp_data }
     }
-}
 
-#[derive(Debug)]
-enum ProjectError {
-    MissingField(TomlField),
-    Project(Box<ProjectError>),
-    Surface(Box<ProjectError>),
-    Model(Box<ProjectError>),
-    DispData(Box<ProjectError>),
-    Datas(Box<ProjectError>),
-}
+    fn to_project(&self, root_folder: &String) -> Project {
+        let mut project = ProjectRelated::to_project(&self.project, root_folder);
 
-#[derive(Debug)]
-enum TomlField {
-    Project,
-    Surface,
-    Model,
-    DispData,
-    Name,
-    Note,
-    DemFilePath,
-    DemAzimuth,
-    FilePath,
-    Azimuth,
-    Incidence,
-    Datas,
+        match &self.surface {
+            Some(s) => {
+                for surface_related in s {
+                    SurfaceRelated::to_project(&surface_related, &mut project);
+                }
+            },
+            None => (),
+        }
+
+        match &self.model {
+            Some(m) => {
+                for model_related in m {
+                    ModelRelated::to_project(&model_related, &mut project);
+                }
+            },
+            None => (),
+        }
+
+        match &self.disp_data {
+            Some(d) => {
+                for disp_related in d {
+                    DispGeomRelated::to_project(&disp_related, &mut project);
+                }
+            },
+            None => (),
+        }
+
+        project
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -141,6 +228,25 @@ impl ProjectRelated {
 
         Self {name, note, dem_file_name, dem_azimuth}
     }
+
+    fn to_project(&self, root_folder: &String) -> Project {
+        let name = self.name.to_string();
+        let path = Some(root_folder.to_string());
+        let note = match self.note.to_owned() {
+            Some(n) => n,
+            None => String::new(),
+        };
+        let mut dem = BundleDem::default();
+        dem.section_geometry = match self.dem_azimuth {
+            Some(az) => match Orientation::from_deg(az, 90.) {
+                Err(_) => None,
+                Ok(o) => Some(o),
+            },
+            None => None,
+        };
+
+        Project { name, path, note, dem, surfaces: vec![], models: vec![], sars: vec![] }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -160,12 +266,21 @@ impl SurfaceRelated {
         }
         relateds
     }
+
+    fn to_project(&self, project: &mut Project) {
+        let mut bundle = BundleSurface::default();
+        bundle.name = self.name.to_string();
+        project.surfaces.push(bundle);
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ModelRelated {
     name: String,
     file_name: String,
+    weights: Vec<f32>,
+    boundaries: Vec<(usize, usize)>,
+    gradients: Vec<Vec<(usize, f32)>>,
 }
 
 impl ModelRelated {
@@ -174,10 +289,22 @@ impl ModelRelated {
         for k in 0..models.len() {
             let name = models[k].name.to_string();
             let file_name = "model_".to_string() + (k + 1).to_string().as_str() + ".csv";
-            let model_related = Self {name, file_name};
+            let weights = models[k].weights.clone();
+            let boundaries = models[k].boundaries.clone();
+            let gradients = models[k].gradients.clone();
+            let model_related = Self {name, file_name, weights, boundaries, gradients};
             relateds.push(model_related);
         }
         relateds
+    }
+
+    fn to_project(&self, project: &mut Project) {
+        let mut bundle = BundleModel::default();
+        bundle.name = self.name.to_string();
+        bundle.weights = self.weights.clone();
+        bundle.boundaries = self.boundaries.clone();
+        bundle.gradients = self.gradients.clone();
+        project.models.push(bundle);
     }
 }
 
@@ -199,12 +326,29 @@ impl DispGeomRelated {
             let datas = if sar[k].disp_data.is_empty() {
                 None
             } else {
-                Some(DispDataRelated::from_project(&sar[k].disp_data))
+                Some(DispDataRelated::from_project(&sar[k].disp_data, k))
             };
             let geom_related = Self { name, azimuth, incidence, datas };
             relateds.push(geom_related);            
         }
         relateds
+    }
+
+    fn to_project(&self, project: &mut Project) {
+        let mut bundle = BundleSar::default();
+        bundle.name = self.name.to_string();
+        bundle.sar_geometry = Orientation::from_deg(self.azimuth, self.incidence).unwrap_or_default();
+        let mut sub_bundles = vec![];
+        match &self.datas {
+            Some(data) => {
+                for d in data {
+                    sub_bundles.push(DispDataRelated::to_project(&d));
+                }
+            },
+            None => (),
+        }
+        bundle.disp_data = sub_bundles;
+        project.sars.push(bundle);
     }
 }
 
@@ -215,15 +359,112 @@ struct DispDataRelated {
 }
 
 impl DispDataRelated {
-    fn from_project(data: &Vec<BundleDispData>) -> Vec<Self> {
+    fn from_project(data: &Vec<BundleDispData>, geom_index: usize) -> Vec<Self> {
         let mut relateds = vec![];
         for k in 0..data.len() {
             let name = data[k].name.to_string();
-            let file_name = "data_".to_string() + (k + 1).to_string().as_str() + ".csv";
+            let file_name = "disp".to_string() + "_" + (geom_index + 1).to_string().as_str() 
+            + "_data_" + (k + 1).to_string().as_str() + ".csv";
             let data_related = Self {name, file_name};
             relateds.push(data_related);
         }
         relateds
+    }
+
+    fn to_project(&self) -> BundleDispData {
+        let mut bundle = BundleDispData::default();
+        bundle.name = self.name.to_string();
+        bundle
+    }
+}
+
+impl BundleDem {
+    fn from_csv(&mut self, path: &String) -> AResult<()> {
+        let reader = CSVReader::read(path.to_string(), None)?;
+        let datas = reader.get_datas(&vec!["x".to_string(), "z".to_string()])?;
+        self.dem.x = datas[0].clone();
+        self.dem.surface.z = datas[1].clone();
+        Ok(())
+    }
+
+    fn to_csv(&self, path: &String) -> AResult<()> {
+        let datas = vec![self.dem.x.clone(), self.dem.surface.z.clone()];
+        let headers = vec!["x".to_string(), "z".to_string()];
+        let writer = CsvWriter::from_datas_headers(datas, headers)?;
+        writer.write(path, None)?;
+        Ok(())
+    }
+}
+
+impl BundleSurface {
+    fn from_csv(&mut self, path: &String) -> AResult<()> {
+        let reader = CSVReader::read(path.to_string(), None)?;
+        let datas = reader.get_datas(&vec!["x".to_string(), "z".to_string()])?;
+        let x = datas[0].clone();
+        // check if is not the same data as DEM TODO
+        self.surface.z = datas[1].clone();
+        Ok(())
+    }
+
+    fn to_csv(&self, path: &String, x_dem: &Vec<f32>) -> AResult<()> {
+        let datas = vec![x_dem.clone(), self.surface.z.clone()];
+        let headers = vec!["x".to_string(), "z".to_string()];
+        let writer = CsvWriter::from_datas_headers(datas, headers)?;
+        writer.write(path, None)?;
+        Ok(())
+    }
+
+    fn export_values(&self, path: &String) -> AResult<()> {
+        todo!()
+    }
+}
+
+impl BundleModel {
+    fn from_csv(&mut self, path: &String) -> AResult<()> {
+        let reader = CSVReader::read(path.to_string(), None)?;
+        let nb_headers = reader.headers.len();
+        let x = reader.get_data(&"x".to_string())?;
+        // check if is not the same data as DEM TODO
+        for k in 0..(nb_headers - 1) {
+            let z = reader.get_data(&("z".to_string() + k.to_string().as_str()))?;
+            let surface = Surface1D::new(z);
+            self.surfaces.push(surface);
+        }
+        Ok(())
+    }
+
+    fn to_csv(&self, path: &String, x_dem: &Vec<f32>) -> AResult<()> {
+        let mut datas = vec![x_dem.clone()];
+        let mut headers = vec!["x".to_string()];
+        for k in 0..self.surfaces.len() {
+            datas.push(self.surfaces[k].z.clone());
+            headers.push("z".to_string() + k.to_string().as_str());
+        }
+        let writer = CsvWriter::from_datas_headers(datas, headers)?;
+        writer.write(path, None)?;
+        Ok(())
+    }
+
+    fn export_values(&self, path: &String) -> AResult<()> {
+        todo!()
+    }
+}
+
+impl BundleDispData {
+    fn from_csv(&mut self, path: &String) -> AResult<()> {
+        let reader = CSVReader::read(path.clone(), None)?;
+        let datas = reader.get_datas(&vec!["x".to_string(), "disp".to_string()])?;
+        self.disp_data.x = datas[0].clone();
+        self.disp_data.amplitude = datas[1].clone();
+        Ok(())
+    }
+
+    fn to_csv(&self, path: &String) -> AResult<()> {
+        let datas = vec![self.disp_data.x.clone(), self.disp_data.amplitude.clone()];
+        let headers = vec!["x".to_string(), "disp".to_string()];
+        let writer = CsvWriter::from_datas_headers(datas, headers)?;
+        writer.write(&path.clone(), None)?;
+        Ok(())
     }
 }
 
@@ -258,9 +499,9 @@ mod tests {
             },
             surface: Some(vec![SurfaceRelated{name: String::from("surf1"), file_name: String::from("surf1.csv")},
             SurfaceRelated{name: String::from("surf2"), file_name: String::from("surf2.csv")}]),
-            model: Some(vec![ModelRelated{name: String::from("model one"), file_name: String::from("model1.csv")},
-            ModelRelated{name: String::from("model two"), file_name: String::from("model2.csv")},
-            ModelRelated{name: String::from("model three"), file_name: String::from("model3.csv")}]),
+            model: Some(vec![ModelRelated{name: String::from("model one"), file_name: String::from("model1.csv"), weights: vec![], boundaries: vec![], gradients: vec![]},
+            ModelRelated{name: String::from("model two"), file_name: String::from("model2.csv"), weights: vec![], boundaries: vec![], gradients: vec![]},
+            ModelRelated{name: String::from("model three"), file_name: String::from("model3.csv"), weights: vec![], boundaries: vec![], gradients: vec![]}]),
             disp_data: Some(vec![DispGeomRelated{
                 name: String::from("sat_geometry"),
                 azimuth: 260.,

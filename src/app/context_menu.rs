@@ -29,11 +29,11 @@ impl AppDM {
 
                 ui.menu_button(header_project, |ui| {
                     if ui.button(Self::header(Phosphor::FOLDER_OPEN.to_string() + " Open")).clicked() {
-                        // directly open the project here, no need for command window, ask path
+                        self.load_project();
                         ui.close_menu();
                     }
                     if ui.button(Self::header(Phosphor::FLOPPY_DISK.to_string() + " Save")).clicked() {
-                        // directly save project, ask path
+                        self.save_project();
                         ui.close_menu();
                     }
                     if ui.button(Self::header(Phosphor::NOTE.to_string() + " Note")).clicked() {
@@ -134,5 +134,36 @@ impl AppDM {
         self.current_panel = Panel::Command;
         self.current_command = command;
         self.show_panel = true;
+    }
+
+    fn save_project(&mut self) {
+        if self.project.path.is_none() {
+            if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                self.project.path = Some(path.display().to_string());
+            }
+        }
+        match &self.project.path {
+            Some(_) => {
+                let _ = self.project.save();
+            },
+            None => (),
+        }
+    }
+
+    fn load_project(&mut self) {
+        let project_path: String;
+        match rfd::FileDialog::new().add_filter("TOML", &["toml"]).pick_file() {
+            Some(path) => {
+                project_path = path.display().to_string();
+                match self.project.load(&project_path) {
+                    Ok(project_loading) => {
+                        self.save_project();
+                        self.reset_with_project(project_loading);
+                    },
+                    Err(_) => (),
+                }
+            },
+            None => (),
+        };
     }
 }

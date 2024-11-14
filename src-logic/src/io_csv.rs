@@ -1,5 +1,6 @@
 use crate::data::vec_proj::Vector2Rep;
 use crate::types::*;
+use anyhow::bail;
 use csv;
 use std::fs::File;
 use std::vec;
@@ -23,7 +24,7 @@ enum CsvReadError{
 }
 
 impl CSVReader {
-    pub fn new(file_path: String, delimiter: Option<u8>) -> Result<Self>  {
+    pub fn read(file_path: String, delimiter: Option<u8>) -> Result<Self>  {
         let delimiter = match delimiter {
             Some(d) => d,
             _ => b';',
@@ -57,12 +58,59 @@ impl CSVReader {
         })
     }
 
-    fn get_data(&self, header: &String) -> Result<Vec<f32>> {
+    pub fn get_data(&self, header: &String) -> Result<Vec<f32>> {
         if self.headers.contains(&header) {
             Ok(self.data[self.headers.iter().position(|s| s == header).unwrap()].clone())
         } else {
             Err(anyhow!(CsvReadError::InvalidHeader(header.clone())))
         }
+    }
+
+    pub fn get_datas(&self, headers: &Vec<String>) -> Result<Vec<Vec<f32>>> {
+        let mut results = vec![];
+        for header in headers {
+            results.push(self.get_data(header)?);
+        }
+        Ok(results)
+    }
+}
+
+#[derive(Debug)]
+pub struct CsvWriter {
+    pub headers: Vec<String>,
+    datas: Vec<Vec<f32>>,
+}
+
+impl CsvWriter {
+    pub fn from_datas_headers(datas: Vec<Vec<f32>>, headers: Vec<String>) -> Result<Self> {
+        if datas.len() != headers.len() {
+            bail!("Datas and headers dos not match.");
+        }
+        let csv_writer = CsvWriter { headers, datas };
+        Ok(csv_writer)
+    }
+
+    pub fn write(self, file_path: &String, delimiter: Option<u8>) -> Result<()> {
+        let delimiter = match delimiter {
+            Some(d) => d,
+            _ => b';',
+        };
+
+        let mut writer = csv::WriterBuilder::new().delimiter(delimiter).from_path(file_path)?;
+
+        // Write headers
+        writer.write_record(self.headers)?;
+
+        // Write data as strings
+        for k in 0..self.datas[0].len() {
+            let mut line = vec![];
+            for d in 0..self.datas.len() {
+                line.push(self.datas[d][k].to_string());
+            }
+            writer.write_record(line)?;
+        }
+        writer.flush()?;
+        Ok(())
     }
 }
 
@@ -161,10 +209,29 @@ mod tests {
     #[test]
     fn test_csv() {
         let path = String::from("./test_data/dem.csv");
-        let csv = CSVReader::new(path, None).unwrap();
+        let csv = CSVReader::read(path, None).unwrap();
         println!("all csv infos: {:?}", csv);
         println!("x data: {:?}", csv.get_data(&String::from("x")).unwrap());
         println!("z data: {:?}", csv.get_data(&String::from("z")).unwrap());
+    }
+
+    #[test]
+    fn test_writing() {
+        let x: Vec<f32> = vec![0., 1., 2., 3., 4., 5.];
+        let z: Vec<f32> = vec![12., 56.56, 48., 0., 1.2, 7.];
+        let writer = CsvWriter::from_datas_headers(vec![x, z], vec!["x".to_string(), "z".to_string()]).unwrap();
+        writer.write(&"./test_data/project_files/test_csv.csv".to_string(), None).unwrap();
+    }
+
+    #[test]
+    fn test_writing_reading() {
+        test_writing();
+        let z: Vec<f32> = vec![12., 56.56, 48., 0., 1.2, 7.];
+        let reader = CSVReader::read("./test_data/project_files/test_csv.csv".to_string(), None).unwrap();
+        let get_z = reader.get_data(&"z".to_string()).unwrap();
+        for k in 0..z.len() {
+            assert_eq!(z[k], get_z[k]);
+        }
     }
 
 }

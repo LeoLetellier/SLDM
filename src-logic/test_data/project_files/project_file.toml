@@ -15,14 +15,23 @@ file_name = "surf2.csv"
 [[model]]
 name = "model one"
 file_name = "model1.csv"
+weights = []
+boundaries = []
+gradients = []
 
 [[model]]
 name = "model two"
 file_name = "model2.csv"
+weights = []
+boundaries = []
+gradients = []
 
 [[model]]
 name = "model three"
 file_name = "model3.csv"
+weights = []
+boundaries = []
+gradients = []
 
 [[disp_data]]
 name = "sat_geometry"

@@ -146,13 +146,29 @@ impl Default for SlblExact {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct SlblRoutine {
     status: CommandStatus,
-    first_x: f32,
-    last_x: f32,
+    first_pnt: usize,
+    last_pnt: usize,
     tol: f32,
     n_it: usize,
+    min_elev: f32,
+    max_slope: f32,
+}
+
+impl Default for SlblRoutine {
+    fn default() -> Self {
+        SlblRoutine {
+            status: CommandStatus::default(),
+            first_pnt: 1,
+            last_pnt: 2,
+            tol: 2.,
+            n_it: 300,
+            min_elev: 0.,
+            max_slope: 90.,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -550,7 +566,7 @@ impl AppDM {
                 ui.add_space(5.);
                 ui.add(egui::Slider::new(&mut data.last_pnt, (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1)).text(text_last));
                 ui.add_space(5.);
-                ui.add(egui::Slider::new(&mut data.tol, 0.0..=2.0).text("Tolerance"));
+                ui.add(egui::Slider::new(&mut data.tol, 0.0..=100.0).text("Tolerance"));
             });
         });
 
@@ -599,11 +615,44 @@ impl AppDM {
             ui.vertical(|ui| {
                 ui.label(title);
                 ui.separator();
+                ui.add_space(10.);
+                ui.label("Use this command to create a surface from the SLBL routine.");
+                ui.add_space(5.);
+                ui.separator();
+                ui.add_space(5.);
+                let text_first = "First point at ".to_string() + self.project.dem.dem.x[data.first_pnt].to_string().as_str() + "m";
+                let text_last = "Last point at ".to_string() + self.project.dem.dem.x[data.last_pnt].to_string().as_str() + "m";
+                ui.add(egui::Slider::new(&mut data.first_pnt, 0..=(data.last_pnt - 1)).text(text_first));
+                ui.add_space(5.);
+                ui.add(egui::Slider::new(&mut data.last_pnt, (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1)).text(text_last));
+                ui.add_space(5.);
+                ui.add(egui::Slider::new(&mut data.tol, 0.0..=100.0).text("Tolerance"));
+                ui.add_space(5.);
+                ui.add(egui::Slider::new(&mut data.n_it, 10..=2000).text("Iterations number"));
+                ui.add_space(5.);
+
+                ui.horizontal(|ui| {
+                    ui.label("Minimum elevation (m): ");
+                    ui.add(egui::DragValue::new(&mut data.min_elev));
+                });
+
+                ui.add_space(5.);
+
+                ui.horizontal(|ui| {
+                    ui.label("Maximum slope (°)");
+                    ui.add(egui::DragValue::new(&mut data.max_slope));
+                });
             });
         });
 
         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
             match &data.status {
+                CommandStatus::Error(e) => {
+                    match e {
+                        CommandError::MethodError => {ui.label("The method cannot perform with the given parameters.");},
+                        _ => (),
+                    }
+                }
                 _ => (),
             }
         });
@@ -620,8 +669,10 @@ impl AppDM {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    // Logic part
-                    data.status = CommandStatus::Complete;
+                    match self.project.surface_from_routine_slbl(data.first_pnt, data.last_pnt, data.tol, data.n_it, data.min_elev, data.max_slope) {
+                        Err(e) => data.status = CommandStatus::Error(CommandError::MethodError),
+                        Ok(_) => data.status = CommandStatus::Complete,
+                    }
                 }
             }
         });

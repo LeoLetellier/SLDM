@@ -1,4 +1,4 @@
-use crate::{prelude::Vector2Rep, types::*};
+use crate::{prelude::{rad2deg, Vector2Rep}, types::*};
 use std::f32::consts::PI;
 use assert_approx_eq::assert_approx_eq;
 
@@ -134,16 +134,16 @@ fn slbl_routine_thresholds(z_topo: &Vec<f32>, n_it: usize, tol: f32, elevation_m
     let mut current_it: usize = 0;
     'routine : while current_it < n_it {
         let z_temp = z_slbl.clone();
-        '_section : for i in 1..z_slbl.len()-1 {
-            let local_mean = (z_temp[i-1] + z_temp[i+1]) / 2. - tol;
+        '_section : for i in 1..(z_slbl.len() - 1) {
+            let local_mean = (z_temp[i - 1] + z_temp[i + 1]) / 2. - tol;
             if let Some(elevation_min) = elevation_min {
                 if local_mean < elevation_min {
                     break 'routine; // vs continue 'section
                 }
             }
             if let Some((slope_max, x_spacing)) = slope_max { // not only left slope
-                if (local_slope(z_slbl[i-1], local_mean, x_spacing),
-                local_slope(local_mean, z_slbl[i+1], x_spacing)) > (slope_max, slope_max) {
+                if (local_slope_deg(z_slbl[i - 1], local_mean, x_spacing).abs(),
+                local_slope_deg(local_mean, z_slbl[i + 1], x_spacing).abs()) > (slope_max.abs(), slope_max.abs()) {
                     break 'routine;
                  }
             }
@@ -158,8 +158,13 @@ fn slbl_routine_thresholds(z_topo: &Vec<f32>, n_it: usize, tol: f32, elevation_m
 
 /// Compute the slope between two succesive points, given their respective values and the spacing between them
 fn local_slope(first_point: f32, second_point: f32, spacing: f32) -> f32 {
-    let result: f32 = ((first_point - second_point).abs() / spacing).atan() * 180. / PI; // degrees
-    result
+    let local_vec = Vector2Rep::new(spacing, (second_point - first_point));
+    local_vec.angle_rad()
+}
+
+fn local_slope_deg(first_point: f32, second_point: f32, spacing: f32) -> f32 {
+    let local_slope_rad = local_slope(first_point, second_point, spacing);
+    rad2deg(local_slope_rad)
 }
 
 /// Sign function which gives
@@ -211,6 +216,24 @@ impl Surface1D {
     pub fn from_slbl_exact(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32) -> Self {
         let z_slbl = slbl_matrix2(dem, first_pnt, last_pnt, tol);
         Surface1D::new(z_slbl)
+    }
+
+    pub fn from_slbl_routine(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32, n_it: usize, elevation_min: Option<f32>, slope_max: Option<f32>) -> Self {
+        debug_assert!(first_pnt < last_pnt);
+        debug_assert!(last_pnt <= dem.x.len());
+        let x_spacing = dem.x.last().unwrap_or(&f32::default()) - dem.x.first().unwrap_or(&f32::default());
+        let slope_max = match slope_max {
+            Some(s) if x_spacing != f32::default() => Some((s, x_spacing)),
+            _ => None,
+        };
+        let crop_dem = dem.surface.z[first_pnt..=last_pnt].to_owned();
+        let (result_routine, _) = slbl_routine_thresholds(&crop_dem, n_it, tol, elevation_min, slope_max);
+        let mut result_global = dem.surface.z.clone();
+        for k in first_pnt..=last_pnt {
+            result_global[k] = result_routine[k - first_pnt];
+        }
+        
+        Surface1D::new(result_global)
     }
 
     pub fn from_min_surf(surf1: &Surface1D, surf2: &Surface1D) -> Surface1D {

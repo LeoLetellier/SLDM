@@ -82,4 +82,13 @@ impl AppDM {
                     ui.hyperlink_to("GitHub", Self::REPOSITORY);
                 });
     }
+
+    pub(crate) fn reset_with_project(&mut self, project: Project) {
+        self.project = project;
+        self.is_about_open = false;
+        self.is_viewer_properties = false;
+        self.show_panel = false;
+        self.current_panel = Panel::Explorer;
+        self.current_command = ProjectCommand::NoCommand;
+    }
 }

@@ -20,7 +20,9 @@ impl AppDM {
                 ui.set_width(ui.available_width());
                 match self.current_panel {
                     Panel::Explorer => {
-                        self.ui_explorer(ui);
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            self.ui_explorer(ui);
+                        });
                     },
                     Panel::Command => {
                         self.ui_command(ui);
