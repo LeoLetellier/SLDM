@@ -157,7 +157,12 @@ impl AppDM {
                 project_path = path.display().to_string();
                 match self.project.load(&project_path) {
                     Ok(project_loading) => {
-                        self.save_project();
+                        match &self.project.path {
+                            Some(_) => {
+                                let _ = self.project.save();
+                            },
+                            None => (),
+                        };
                         self.reset_with_project(project_loading);
                     },
                     Err(_) => (),

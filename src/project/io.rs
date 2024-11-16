@@ -104,7 +104,7 @@ fn load_all_csv(project: &mut Project, project_file: &ProjectFile) -> AResult<()
         Some(surfaces) => {
             for s in 0..surfaces.len() {
                 let path = root.to_string() + surfaces[s].file_name.to_string().as_str();
-                project.surfaces[s].from_csv(&path)?;
+                project.surfaces[s].from_csv(&path, &project.dem.dem)?;
             }
         },
         None => (),
@@ -114,7 +114,7 @@ fn load_all_csv(project: &mut Project, project_file: &ProjectFile) -> AResult<()
         Some(models) => {
             for m in 0..models.len() {
                 let path = root.to_string() + models[m].file_name.to_string().as_str();
-                project.models[m].from_csv(&path)?;
+                project.models[m].from_csv(&path, &project.dem.dem)?;
             }
         },
         None => (),
@@ -397,12 +397,14 @@ impl BundleDem {
 }
 
 impl BundleSurface {
-    fn from_csv(&mut self, path: &String) -> AResult<()> {
+    fn from_csv(&mut self, path: &String, dem: &Dem1D) -> AResult<()> {
         let reader = CSVReader::read(path.to_string(), None)?;
         let datas = reader.get_datas(&vec!["x".to_string(), "z".to_string()])?;
         let x = datas[0].clone();
         // check if is not the same data as DEM TODO
         self.surface.z = datas[1].clone();
+        let profile = DispProfile::from_surface_direct(&mut self.surface, dem)?;
+        self.profile = profile;
         Ok(())
     }
 
@@ -420,7 +422,7 @@ impl BundleSurface {
 }
 
 impl BundleModel {
-    fn from_csv(&mut self, path: &String) -> AResult<()> {
+    fn from_csv(&mut self, path: &String, dem: &Dem1D) -> AResult<()> {
         let reader = CSVReader::read(path.to_string(), None)?;
         let nb_headers = reader.headers.len();
         let x = reader.get_data(&"x".to_string())?;
@@ -430,6 +432,8 @@ impl BundleModel {
             let surface = Surface1D::new(z);
             self.surfaces.push(surface);
         }
+        let boundaries = self.boundaries.iter().map(|(a, b)| [*a, *b]).collect();
+        self.resulting_profile = DispProfile::from_surfaces(dem, &mut self.surfaces, &boundaries, &self.gradients, &self.weights)?;
         Ok(())
     }
 

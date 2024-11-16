@@ -16,20 +16,23 @@ pub fn pillar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &V
     let mut ground_proj_z = z.clone();
 
     for k in (first_x + 1)..last_x {
-        let coeff_dir = slope[k].to_owned();
-        let coeff_dir = match coeff_dir { // convert slope to perpendicular slope
-            a if a >= 0. => a - PI/2.,
-            a if a < 0. => a + PI/2.,
-            _ => {return Err(PillarError::InvalidSlope);},
-        };
-        let xx: (f32, f32) = (x.first().unwrap().to_owned(), x.last().unwrap().to_owned());
-        let zz: (f32, f32) = (slide_z[k] + coeff_dir.tan() * (xx.0 - x[k]), slide_z[k] + coeff_dir.tan() * (xx.1 - x[k]));
-        let intercept = intersection_on_topo(x, z, xx, zz);
-        if intercept.is_none() {
-            {return Err(PillarError::NoIntersection);};
+        if (slide_z[k] - z[k]) > 1e-6_f32 {
+            let coeff_dir = slope[k].to_owned();
+            let coeff_dir = match coeff_dir { // convert slope to perpendicular slope
+                a if a >= 0. => a - PI/2.,
+                a if a < 0. => a + PI/2.,
+                _ => {return Err(PillarError::InvalidSlope);},
+            };
+            let xx: (f32, f32) = (x.first().unwrap().to_owned(), x.last().unwrap().to_owned());
+            let zz: (f32, f32) = (slide_z[k] + coeff_dir.tan() * (xx.0 - x[k]), slide_z[k] + coeff_dir.tan() * (xx.1 - x[k]));
+            let intercept = intersection_on_topo(x, z, xx, zz);
+            let intercept = match intercept {
+                Some(i) => i,
+                None => return Err(PillarError::NoIntersection),
+            };
+            ground_proj_x[k] = intercept.0;
+            ground_proj_z[k] = intercept.1;
         }
-        ground_proj_x[k] = intercept.unwrap().0;
-        ground_proj_z[k] = intercept.unwrap().1;
     }
     Ok((ground_proj_x, ground_proj_z))
 }
