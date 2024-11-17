@@ -1,7 +1,7 @@
 use eframe::egui;
 use egui_phosphor::regular as Phosphor;
 use super::AppDM;
-use crate::components::command::{CalibrateModel, DemGeometry, ModelNew, Note, OpenDem, OpenDisp, OpenSurface, ProjectCommand, SatGeometry, SlblExact, SlblRoutine, SurfaceMax, SurfaceMin};
+use crate::components::command::*;
 use crate::app::action_panel::Panel;
 
 impl AppDM {
@@ -133,7 +133,6 @@ impl AppDM {
     fn open_command(&mut self, command: ProjectCommand) {
         self.current_panel = Panel::Command;
         self.current_command = command;
-        self.show_panel = true;
     }
 
     fn save_project(&mut self) {

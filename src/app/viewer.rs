@@ -1,11 +1,7 @@
-use std::default;
-
 use eframe::egui;
-use egui::Vec2b;
 use super::AppDM;
 use egui_phosphor::regular as Phosphor;
-use egui_plot::{Arrows, Line, Plot, PlotBounds, Points};
-use src_logic::prelude::*;
+use egui_plot::{Arrows, Line, Plot, PlotBounds};
 
 impl AppDM {
     pub(super) fn ui_viewer(&mut self, ui: &mut egui::Ui) {
@@ -38,7 +34,7 @@ impl AppDM {
                     }
                 }
                 if button_properties.on_hover_text("Properties").clicked() {
-                    self.is_viewer_properties = true;
+                    // self.is_viewer_properties = true;
                 }
             });
         });
@@ -62,7 +58,11 @@ impl AppDM {
                         }
                         data
                     });
-                    surface_lines.push(line);
+                    let line = line.name("Surface Elevation");
+                    match surf.color_surface {
+                        Some(c) => surface_lines.push(line.color(c)),
+                        None => surface_lines.push(line),
+                    }
                 }
                 // Plot surface unit model vectors
                 if !surf.profile.vecs.is_empty() & surf.section_arrow {
@@ -79,7 +79,11 @@ impl AppDM {
                                 (origins[1] + coords.1 * surf.arrow_scaling_factor) as f64]
                             );
                         });
-                    arrows.push(Arrows::new(base, tip));
+                    let arrow = Arrows::new(base, tip).name("Displacement Vectors");
+                    match surf.color_arrow {
+                        Some(c) => arrows.push(arrow.color(c)),
+                        None => arrows.push(arrow),
+                    }
                 }
                 // Plot surface unit model pillars
                 if !surf.profile.vecs.is_empty() & surf.section_pillar {
@@ -88,7 +92,8 @@ impl AppDM {
                         let z = surf.surface.z[k];
                         let x_pillar = surf.profile.origins[k][0];
                         let z_pillar = surf.profile.origins[k][1];
-                        pillar_lines.push(Line::new(vec![[x as f64, z as f64], [x_pillar as f64, z_pillar as f64]]));
+                        let line = Line::new(vec![[x as f64, z as f64], [x_pillar as f64, z_pillar as f64]]);
+                        pillar_lines.push(line.color(egui::Color32::DARK_GRAY).name("Pillars"));
                     }
                 }
             }
@@ -110,7 +115,11 @@ impl AppDM {
                                 (origins[1] + coords.1 * model.arrow_scaling_factor) as f64]
                             );
                         });
-                        arrows.push(Arrows::new(base, tip));
+                    let arrow = Arrows::new(base, tip).name("Displacement Vectors");
+                    match model.arrow_color {
+                        Some(c) => arrows.push(arrow.color(c)),
+                        None => arrows.push(arrow),
+                    }
                 }
             }
         }
@@ -125,7 +134,7 @@ impl AppDM {
                     data
                 }
             );
-            dem_line.push(line);
+            dem_line.push(line.color(egui::Color32::ORANGE).width(2.).name("DEM"));
         }
 
         if !self.project.dem.dem.x.is_empty() & self.graph_bound {
@@ -142,9 +151,18 @@ impl AppDM {
             self.project.dem.max_bound = [bound_x_max as f64, bound_y_max as f64];
         }
 
+        let legend = match &self.project.dem.dem.surface.z {
+            z if z.is_empty() => egui_plot::Legend::default(),
+            z if z.last().unwrap_or(&f32::MIN) > z.first().unwrap_or(&f32::MAX) => egui_plot::Legend::default().position(egui_plot::Corner::LeftTop),
+            _z => egui_plot::Legend::default().position(egui_plot::Corner::RightTop),
+        };
+
         Plot::new("Section plot")
             .width(ui.available_width() - 64.)
             .height(ui.available_height())
+            .x_axis_label("Section (m)")
+            .y_axis_label("Elevation (m)")
+            .legend(legend)
             .show(ui, |plot_ui| {
                 if self.graph_bound {
                     plot_ui.set_plot_bounds(PlotBounds::from_min_max(self.project.dem.min_bound, self.project.dem.max_bound));
@@ -165,17 +183,17 @@ impl AppDM {
         });
     }
 
-    fn ui_viewer_properties(&mut self, ui: &mut egui::Ui) {
-        let data = vec![[0., 2.], [1., 1.], [2., 1.], [3., 2.]];
-        let tips = vec![[1., 3.], [2., 2.], [3., 2.], [4., 3.]];
-        let line = Line::new(data.to_owned());
-        let arrows = Arrows::new(data.to_owned(), tips);
-        Plot::new("Section plot")
-            .width(ui.available_width() - 64.)
-            .height(ui.available_height())
-            .show(ui, |plot_ui| {
-                plot_ui.line(line);
-                plot_ui.arrows(arrows);
-            });
+    fn ui_viewer_properties(&mut self, _ui: &mut egui::Ui) {
+        // let data = vec![[0., 2.], [1., 1.], [2., 1.], [3., 2.]];
+        // let tips = vec![[1., 3.], [2., 2.], [3., 2.], [4., 3.]];
+        // let line = Line::new(data.to_owned());
+        // let arrows = Arrows::new(data.to_owned(), tips);
+        // Plot::new("Section plot")
+        //     .width(ui.available_width() - 64.)
+        //     .height(ui.available_height())
+        //     .show(ui, |plot_ui| {
+        //         plot_ui.line(line);
+        //         plot_ui.arrows(arrows);
+        //     });
     }
 }

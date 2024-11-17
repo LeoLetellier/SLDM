@@ -18,12 +18,12 @@ impl DispProfile {
 
 
 impl DispData {
-    pub fn project_on_section(&mut self, section: Orientation) {
+    pub fn project_on_section(&mut self, _section: Orientation) {
         todo!()
     }
 }
 
-fn rmse(prediction: &Vec<f32>, observation: &Vec<f32>) -> f32 {
+fn rmse(prediction: &[f32], observation: &[f32]) -> f32 {
     debug_assert_eq!(prediction.len(), observation.len());
     let len = prediction.len();
     (0..len).fold(0.0, |acc, k| acc + (prediction[k] - observation[k]) * (prediction[k] - observation[k]) / (len as f32)).sqrt()
@@ -47,10 +47,10 @@ pub(crate) struct ComposedModel {
 }
 
 impl ComposedModel {
-    pub fn new(dem: &Dem1D, profiles_regul: &Vec<DispProfile>, section_geometry: &Orientation, los_geometry: &Orientation, los_data: &DispData) -> Self {
+    pub fn new(dem: &Dem1D, profiles_regul: &[DispProfile], section_geometry: &Orientation, los_geometry: &Orientation, los_data: &DispData) -> Self {
         ComposedModel {
             dem: dem.clone(),
-            profiles_regul: profiles_regul.clone(),
+            profiles_regul: profiles_regul.to_owned(),
             section_geometry: section_geometry.clone(),
             los_geometry: los_geometry.clone(),
             los_data: los_data.clone(),

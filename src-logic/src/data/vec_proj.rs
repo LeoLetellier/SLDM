@@ -5,6 +5,7 @@
 //! The vecs store their axis components, and also handles their angle definition.
 
 use std::{f32::consts::PI, fmt::Display};
+#[allow(unused_imports)]  // actually used but raises unused import
 use assert_approx_eq::assert_approx_eq;
 
 /// Vector2Rep wrap all functionnalities to represent 2D vectors in cartesian

@@ -44,7 +44,7 @@ impl Dem1D {
     pub(crate) fn new(x: Vec<f32>, z: Vec<f32>) -> Result<Self, VectorInputError> {
         if x.len() != z.len() {
             Err(VectorInputError::InconsistentLen { vec1: x.len(), vec2: z.len() })
-        } else if x.len() == 0 {
+        } else if x.is_empty() {
             Err(VectorInputError::EmptyVecs)
         } else {
             let surface = Surface1D::new(z);
@@ -143,7 +143,7 @@ impl DispData {
     pub fn new(x: Vec<f32>, amplitude: Vec<f32>) -> Result<Self, VectorInputError> {
         if x.len() != amplitude.len() {
             Err(VectorInputError::InconsistentLen { vec1: x.len(), vec2: amplitude.len() })
-        } else if x.len() == 0 {
+        } else if x.is_empty() {
             Err(VectorInputError::EmptyVecs)
         } else {
             Ok(DispData { x, amplitude, projected_vecs: Vec::<Vector2Rep>::new() })
@@ -165,10 +165,10 @@ pub struct Orientation {
     pub incidence : f32,
 }
 
-impl Into<Vector3Rep> for Orientation {
+impl From<Orientation> for Vector3Rep {
     /// Convert an orientation geometry into a vec3 Vector3Rep
-    fn into(self) -> Vector3Rep {
-        Vector3Rep::from_rad(self.azimuth, self.incidence - PI / 2.)
+    fn from(val: Orientation) -> Self {
+        Vector3Rep::from_rad(val.azimuth, val.incidence - PI / 2.)
     }
 }
 

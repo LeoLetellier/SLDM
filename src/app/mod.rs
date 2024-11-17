@@ -2,12 +2,10 @@ pub(crate) mod context_menu;
 mod action_panel;
 mod viewer;
 
-use std::env;
-
+use action_panel::Panel;
 use egui_phosphor::regular as Phosphor;
 use crate::project::Project;
-use action_panel::Panel;
-use crate::components::command::{ProjectCommand};
+use crate::components::command::ProjectCommand;
 
 #[derive(Debug, Default)]
 pub(crate) struct AppDM {
@@ -16,13 +14,12 @@ pub(crate) struct AppDM {
     pub(crate) is_about_open: bool,
     pub(crate) is_viewer_properties: bool,
     pub(crate) current_panel: Panel,
-    pub(crate) show_panel: bool,
     pub(crate) current_command: ProjectCommand,
     pub(crate) graph_bound: bool,
 }
 
 impl eframe::App for AppDM {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("context_menu")
             .exact_height(40.)
             .show_separator_line(false)
@@ -35,7 +32,7 @@ impl eframe::App for AppDM {
             .show(ctx, |ui| {
                 self.ui_panel_header(ui);
             });
-        if self.show_panel {
+        if self.current_panel != Panel::NoPanel {
             egui::SidePanel::left("action_panel")
                 .resizable(true)
                 .min_width(180.)
@@ -87,8 +84,7 @@ impl AppDM {
         self.project = project;
         self.is_about_open = false;
         self.is_viewer_properties = false;
-        self.show_panel = false;
-        self.current_panel = Panel::Explorer;
         self.current_command = ProjectCommand::NoCommand;
+        self.current_panel = Panel::NoPanel;
     }
 }

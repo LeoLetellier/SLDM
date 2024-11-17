@@ -13,6 +13,7 @@ dependencies = [
  "egui_commonmark",
  "egui_plot",
  "env_logger",
+ "image 0.25.5",
  "rfd",
  "serde",
  "src-logic",

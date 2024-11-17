@@ -1,7 +1,5 @@
 use eframe::egui;
-use egui::{DragValue, InnerResponse, ScrollArea};
-
-use crate::{app::AppDM, project::{self, BundleSar}};
+use crate::{app::AppDM, project::BundleSar};
 use src_logic::prelude::*;
 use egui_phosphor::regular as Phosphor;
 
@@ -26,7 +24,7 @@ pub(crate) enum ProjectCommand {
 impl AppDM {
     pub(crate) fn ui_command(&mut self, ui: &mut egui::Ui) {
         let dem_loaded = !self.project.dem.dem.x.is_empty();
-        ui.vertical(|ui|{
+        ui.vertical(|ui| {
             match &mut self.current_command {
                 ProjectCommand::NoCommand => self.ui_no_command(ui),
                 ProjectCommand::Note(_) => {self.ui_note(ui)},
@@ -73,8 +71,6 @@ pub enum CommandError {
     MiscError,
     InvalidFile,
     NoFile,
-    InvalidFolder,
-    NoFolder,
     ProjectInitialized,
     InvalidOrientation,
     EmptyName,
@@ -92,9 +88,7 @@ pub enum CommandStatus {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct Note {
-    status: CommandStatus,
-}
+pub struct Note {}
 
 #[derive(Debug, Default, Clone)]
 pub struct OpenDem {
@@ -131,7 +125,6 @@ pub struct SlblExact {
     first_pnt: usize,
     last_pnt: usize,
     tol: f32,
-    pub(crate) temp_surface: Surface1D,
 }
 
 impl Default for SlblExact {
@@ -141,7 +134,6 @@ impl Default for SlblExact {
             first_pnt: 0,
             last_pnt: 1,
             tol: 1.,
-            temp_surface: Surface1D::default(),
         }
     }
 }
@@ -296,7 +288,7 @@ impl AppDM {
 
     fn ui_note(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Note on the Current Project");
-        let ProjectCommand::Note(data) = &mut self.current_command else {
+        let ProjectCommand::Note(_data) = &mut self.current_command else {
             panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
         };
         ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
@@ -357,7 +349,7 @@ impl AppDM {
                 if let Some(f) = &data.file_path {
                     ui.horizontal(|ui| {
                         ui.label("Selected file: ");
-                        ScrollArea::horizontal().show(ui, |ui| {
+                        egui::ScrollArea::horizontal().show(ui, |ui| {
                             ui.label(f);
                         });
                     });
@@ -492,7 +484,7 @@ impl AppDM {
                 if let Some(f) = &data.file_path {
                     ui.horizontal(|ui| {
                         ui.label("Selected file: ");
-                        ScrollArea::horizontal().show(ui, |ui| {
+                        egui::ScrollArea::horizontal().show(ui, |ui| {
                             ui.label(f);
                         });
                     });
@@ -566,7 +558,7 @@ impl AppDM {
                 ui.add_space(5.);
                 ui.add(egui::Slider::new(&mut data.last_pnt, (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1)).text(text_last));
                 ui.add_space(5.);
-                ui.add(egui::Slider::new(&mut data.tol, 0.0..=100.0).text("Tolerance"));
+                ui.add(egui::Slider::new(&mut data.tol, 0.0..=100.0).text("Tolerance").logarithmic(true));
             });
         });
 
@@ -670,7 +662,7 @@ impl AppDM {
                     data.status = CommandStatus::Clean;
                 } else {
                     match self.project.surface_from_routine_slbl(data.first_pnt, data.last_pnt, data.tol, data.n_it, data.min_elev, data.max_slope) {
-                        Err(e) => data.status = CommandStatus::Error(CommandError::MethodError),
+                        Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
                         Ok(_) => data.status = CommandStatus::Complete,
                     }
                 }
@@ -1062,7 +1054,7 @@ impl AppDM {
                     egui::ComboBox::from_label("With geometry")
                         .selected_text(self.project.sars[data.sar_index].name.to_owned())
                         .show_ui(ui, |ui| {
-                            for k in (0..self.project.sars.len()) {
+                            for k in 0..self.project.sars.len() {
                                 ui.selectable_value(&mut data.sar_index, k, self.project.sars[k].name.to_owned());
                             }
                     });
@@ -1076,7 +1068,7 @@ impl AppDM {
                     if let Some(f) = &data.file_path {
                         ui.horizontal(|ui| {
                             ui.label("Selected file: ");
-                            ScrollArea::horizontal().show(ui, |ui| {
+                            egui::ScrollArea::horizontal().show(ui, |ui| {
                                 ui.label(f);
                             });
                         });
@@ -1195,7 +1187,7 @@ impl AppDM {
                                 data.status = CommandStatus::Error(CommandError::EmptySar);
                             } else {
                                 match self.project.calibrate_model(data.model, data.sar_geom, data.sar_data) {
-                                    Err(e) => data.status = CommandStatus::Error(CommandError::MethodError),
+                                    Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
                                     Ok(_) => data.status = CommandStatus::Complete,
                                 };
                             }
@@ -1208,17 +1200,6 @@ impl AppDM {
         } else {
             ui.label("No model or sar geometry or dem geometry available available.");
         }
-    }
-
-    fn ui_view_surface(&mut self, ui: &mut egui::Ui) {
-        // Surface data
-        // color
-    }
-
-    fn ui_view_model(&mut self, ui: &mut egui::Ui) {
-        // Model data
-        // metric compared to sar data (RMSE)
-        // color
     }
 }
 

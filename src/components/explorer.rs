@@ -1,7 +1,5 @@
-use egui::CollapsingHeader;
 use src_logic::prelude::*;
-
-use crate::{app::AppDM, project};
+use crate::app::AppDM;
 use egui_phosphor::regular as Phosphor;
 
 impl AppDM {
@@ -10,7 +8,7 @@ impl AppDM {
         if self.project.dem.section_geometry.is_some() {
             dem_header = dem_header + " (az: " + rad2deg(self.project.dem.section_geometry.to_owned().unwrap().azimuth).to_string().as_str() + "°)";
         }
-        CollapsingHeader::new(dem_header)
+        egui::CollapsingHeader::new(dem_header)
             .default_open(true)
             .show(ui, |ui| {
                 if !self.project.dem.dem.x.is_empty() {
@@ -34,13 +32,13 @@ impl AppDM {
         ui.separator();
         
         let nb_surfaces = self.project.surfaces.len();
-        CollapsingHeader::new("Surfaces (".to_string() + nb_surfaces.to_string().as_str() + ")")
+        egui::CollapsingHeader::new("Surfaces (".to_string() + nb_surfaces.to_string().as_str() + ")")
             .default_open(true)
             .show(ui, |ui| {
                 (0..self.project.surfaces.len()).for_each(|k| {
                     let bundle = &mut self.project.surfaces[k];
                     ui.push_id(k, |ui|{
-                        CollapsingHeader::new(bundle.name.clone())
+                        egui::CollapsingHeader::new(bundle.name.clone())
                             .default_open(true)
                             .show(ui, |ui| {
                                 ui.horizontal(|ui| {
@@ -68,11 +66,14 @@ impl AppDM {
                                         }
                                         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_arrow)).clicked() {
                                             bundle.section_arrow = !bundle.section_arrow;
-                                        };
+                                        }
+                                        if ui.button(egui::RichText::new(Phosphor::GEAR)).clicked() {
+                                            
+                                        }
                                     });
                                 });
                                 if bundle.section_arrow {
-                                    ui.add(egui::Slider::new(&mut bundle.arrow_scaling_factor, 0.0..=1000.0).logarithmic(true));
+                                    ui.add(egui::Slider::new(&mut bundle.arrow_scaling_factor, 0.01..=1000.0).logarithmic(true));
                                 }
                                 ui.horizontal(|ui| {
                                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
@@ -85,7 +86,10 @@ impl AppDM {
                                         }
                                         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_pillar)).clicked() {
                                             bundle.section_pillar = !bundle.section_pillar;
-                                        };
+                                        }
+                                        if ui.button(egui::RichText::new(Phosphor::GEAR)).clicked() {
+                                            
+                                        }
                                     });
                                 });
                             });
@@ -96,13 +100,13 @@ impl AppDM {
         ui.separator();
 
         let nb_models = self.project.models.len();
-        CollapsingHeader::new("Models (".to_string() + nb_models.to_string().as_str() + ")")
+        egui::CollapsingHeader::new("Models (".to_string() + nb_models.to_string().as_str() + ")")
             .default_open(true)
             .show(ui, |ui| {
                 (0..self.project.models.len()).for_each(|k| {
                     let bundle = &mut self.project.models[k];
                     ui.push_id(k, |ui|{
-                        CollapsingHeader::new(bundle.name.clone())
+                        egui::CollapsingHeader::new(bundle.name.clone())
                             .default_open(true)
                             .show(ui, |ui| {
                                 ui.horizontal(|ui| {
@@ -116,10 +120,15 @@ impl AppDM {
                                         }
                                         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_arrow)).clicked() {
                                             bundle.section_arrow = !bundle.section_arrow;
-                                        };
+                                        }
+                                        if ui.button(egui::RichText::new(Phosphor::GEAR)).clicked() {
+
+                                        }
                                     });
                                 });
-                                ui.add(egui::Slider::new(&mut bundle.arrow_scaling_factor, 0.0..=1000.0).logarithmic(true));
+                                if bundle.section_arrow{
+                                    ui.add(egui::Slider::new(&mut bundle.arrow_scaling_factor, 0.01..=1000.0).logarithmic(true));
+                                }
                             });
                     });
                 });
@@ -128,7 +137,7 @@ impl AppDM {
         ui.separator();
         
         let nb_sat = self.project.sars.len();
-        CollapsingHeader::new("Calibration data (".to_string() + nb_sat.to_string().as_str() + ")")
+        egui::CollapsingHeader::new("Calibration data (".to_string() + nb_sat.to_string().as_str() + ")")
             .default_open(true)
             .show(ui, |ui| {
                 for k in 0..nb_sat {
@@ -139,7 +148,7 @@ impl AppDM {
                         if nb_disp_data != 0 {
                             bundle_name = bundle_name + " (" + nb_disp_data.to_string().as_str() + ")";
                         }
-                        CollapsingHeader::new(bundle_name)
+                        egui::CollapsingHeader::new(bundle_name)
                             .default_open(true)
                             .show(ui, |ui| {
                                 ui.label(format!("az: {}° ; i: {}°", rad2deg(bundle.sar_geometry.azimuth), rad2deg(bundle.sar_geometry.incidence)));

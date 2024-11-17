@@ -9,10 +9,7 @@ use anyhow::Result;
 use thiserror::Error;
 
 #[derive(Debug)]
-pub struct CSVReader {
-    file_path: String,
-    delimiter: u8,
-    reader: csv::Reader<File>,
+pub struct CsvReader {
     pub headers: Vec<String>,
     data: Vec<Vec<f32>>,
 }
@@ -23,7 +20,7 @@ enum CsvReadError{
     InvalidHeader(String),
 }
 
-impl CSVReader {
+impl CsvReader {
     pub fn read(file_path: String, delimiter: Option<u8>) -> Result<Self>  {
         let delimiter = match delimiter {
             Some(d) => d,
@@ -49,17 +46,14 @@ impl CSVReader {
             };
         }
         
-        Ok(CSVReader {
-            file_path,
-            delimiter,
-            reader,
+        Ok(CsvReader {
             headers,
             data,
         })
     }
 
     pub fn get_data(&self, header: &String) -> Result<Vec<f32>> {
-        if self.headers.contains(&header) {
+        if self.headers.contains(header) {
             Ok(self.data[self.headers.iter().position(|s| s == header).unwrap()].clone())
         } else {
             Err(anyhow!(CsvReadError::InvalidHeader(header.clone())))
@@ -125,7 +119,7 @@ enum FromCsvError {
 }
 
 impl Dem1D {
-    pub fn from_csv_reader(csv_reader: &CSVReader, x_header: &mut String, z_header: &mut String) -> Result<Self> {
+    pub fn from_csv_reader(csv_reader: &CsvReader, x_header: &mut String, z_header: &mut String) -> Result<Self> {
         let x_header = if x_header.is_empty() {&String::from("x")} else {x_header};
         let z_header = if z_header.is_empty() {&String::from("z")} else {z_header};
 
@@ -136,7 +130,7 @@ impl Dem1D {
 }
 
 impl Surface1D {
-    pub fn from_csv_reader(csv_reader: &CSVReader, dem: &Dem1D, x_header: &mut String, surface_header: &mut String) -> Result<Self> {
+    pub fn from_csv_reader(csv_reader: &CsvReader, dem: &Dem1D, x_header: &mut String, surface_header: &mut String) -> Result<Self> {
         let x_header = if x_header.is_empty() {&String::from("x")} else {x_header};
         let surface_header = if surface_header.is_empty() {&String::from("z")} else {surface_header};
 
@@ -158,7 +152,7 @@ impl Surface1D {
 }
 
 impl DispProfile {
-    pub fn from_csv_reader(csv_reader: &CSVReader, x_header: &mut String, 
+    pub fn from_csv_reader(csv_reader: &CsvReader, x_header: &mut String, 
         z_header: &mut String, vx_header: &mut String, vz_header: &mut String) -> Result<Self> {
         let x_header = if x_header.is_empty() {&String::from("x")} else {x_header};
         let z_header = if z_header.is_empty() {&String::from("z")} else {z_header};
@@ -187,7 +181,7 @@ impl DispProfile {
 }
 
 impl DispData {
-    pub fn from_csv_reader(csv_reader: &CSVReader, x_header: &mut String, amp_header: &mut String,) -> Result<Self> {
+    pub fn from_csv_reader(csv_reader: &CsvReader, x_header: &mut String, amp_header: &mut String,) -> Result<Self> {
         let x_header = if x_header.is_empty() {&String::from("x")} else {x_header};
         let amp_header = if amp_header.is_empty() {&String::from("disp")} else {amp_header};
 
@@ -209,7 +203,7 @@ mod tests {
     #[test]
     fn test_csv() {
         let path = String::from("./test_data/dem.csv");
-        let csv = CSVReader::read(path, None).unwrap();
+        let csv = CsvReader::read(path, None).unwrap();
         println!("all csv infos: {:?}", csv);
         println!("x data: {:?}", csv.get_data(&String::from("x")).unwrap());
         println!("z data: {:?}", csv.get_data(&String::from("z")).unwrap());
@@ -227,7 +221,7 @@ mod tests {
     fn test_writing_reading() {
         test_writing();
         let z: Vec<f32> = vec![12., 56.56, 48., 0., 1.2, 7.];
-        let reader = CSVReader::read("./test_data/project_files/test_csv.csv".to_string(), None).unwrap();
+        let reader = CsvReader::read("./test_data/project_files/test_csv.csv".to_string(), None).unwrap();
         let get_z = reader.get_data(&"z".to_string()).unwrap();
         for k in 0..z.len() {
             assert_eq!(z[k], get_z[k]);

@@ -13,6 +13,7 @@ egui-phosphor = "0.7.3"
 egui_commonmark = { version = "0.18.0", features = ["macros"] }
 egui_plot = "0.29.0"
 env_logger = "0.11.5"
+image = "0.25.5"
 rfd = "0.15.0"
 serde = { version = "1.0.214", features = ["derive"] }
 toml = "0.8.19"

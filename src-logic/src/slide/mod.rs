@@ -1,76 +1,9 @@
 use crate::{prelude::{rad2deg, Vector2Rep}, types::*};
-use std::f32::consts::PI;
+#[allow(unused_imports)]  // actually used but raises unused import
 use assert_approx_eq::assert_approx_eq;
 
 
-/// Method selected to compute the SLBL failure surface
-/// 
-/// * RoutineSimple: Iterative method with basic ending conditions
-/// * RoutineThreshold: Iterative method with more ending conditions (slope limit, elevation limit)
-/// * ExactMatrix: Resolution by matrix inversion, gives the exact solution but don't implement additionnal limits
-#[derive(Debug)]
-pub enum SlideMethod {
-    RoutineSimple,
-    RoutineThreshold,
-    ExactMatrix,
-}
-
-/// Parameters needed for SLBL computation, depending on the chosen method
-#[derive(Debug)]
-pub struct SlideConfig {
-    method: SlideMethod,
-    first_pnt: usize,
-    last_pnt: usize,
-    tol: f32,
-    n_it: Option<usize>,
-    elevation_min: Option<f32>,
-    slope_max: Option<f32>,
-}
-
-impl SlideConfig {
-    /// Initializing the slide configuration parameters
-    pub fn new(method: SlideMethod, first_pnt: usize, last_pnt: usize, tolerance: f32) -> SlideConfig{
-        SlideConfig{
-            method,
-            first_pnt, 
-            last_pnt, 
-            tol: tolerance, 
-            n_it: None, 
-            elevation_min: None, 
-            slope_max: None,
-        }
-    }
-}
-
-/// Select the function to compute SLBL given a configuration
-fn compute_slide(config: &SlideConfig, dem: &Dem1D) -> Vec<f32> {
-    let z_slide: Vec<f32> = match config.method {
-        SlideMethod::RoutineSimple => slbl_routine_simple(dem, config),
-        SlideMethod::RoutineThreshold => todo!(),
-        SlideMethod::ExactMatrix => slbl_matrix(dem, config),
-    };
-    z_slide
-}
-
-/// Compute the SLBL surface with matrix inversion
-/// 
-/// Implement with fast resolution of tridiagonal matrix
-fn slbl_matrix(dem: &Dem1D, config: &SlideConfig) -> Vec<f32> {
-    let dim: usize = config.last_pnt - config.first_pnt - 1;
-    let sub_diag: Vec<f32> = vec![-0.5 ; dim-1];
-    let mut main_diag: Vec<f32> = vec![1. ; dim];
-    let mut rhs: Vec<f32> = vec![-config.tol ; dim];
-    rhs[0] += dem.surface.z[config.first_pnt] / 2.;
-    rhs[dim-1] += dem.surface.z[config.last_pnt] / 2.;
-    let m_result = tridiag_matrix_non_conservative(dim, &sub_diag, &mut main_diag, &sub_diag, &mut rhs);
-    let mut result = dem.surface.z.to_owned();
-    for i in (config.first_pnt + 1)..config.last_pnt {
-        result[i] = m_result[i - config.first_pnt - 1]
-    }
-    result
-}
-
-pub fn slbl_matrix2(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32) -> Vec<f32> {
+pub fn slbl_matrix(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32) -> Vec<f32> {
     let dim: usize = last_pnt - first_pnt - 1;
     let sub_diag: Vec<f32> = vec![-0.5 ; dim-1];
     let mut main_diag: Vec<f32> = vec![1. ; dim];
@@ -85,30 +18,8 @@ pub fn slbl_matrix2(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32) ->
     result
 }
 
-/// Compute the SLBL surface with the simple iterative method
-fn slbl_routine_simple(dem: &Dem1D, config: &SlideConfig) -> Vec<f32> {
-    //z_topo: &Vec<f32>, n_it: usize, tol: f32
-    let mut m_result = dem.surface.z[config.first_pnt..=config.last_pnt].to_owned();
-    let mut result = dem.surface.z.to_owned();
-    let Some(it) = config.n_it else {
-        panic!("Missing parameter (n_it) for slbl_routine_simple");
-    };
-    for _ in 0..it {
-        let z_temp = m_result.clone();
-        for i in 1..m_result.len()-1 {
-            let local_mean = (z_temp[i-1] + z_temp[i+1]) / 2. - config.tol;
-            if local_mean < m_result[i] {
-                m_result[i] = local_mean;
-            }
-        }
-    }
-    for i in (config.first_pnt + 1)..config.last_pnt {
-        result[i] = m_result[i - config.first_pnt + 1]
-    }
-    result
-}
-
-fn slbl_routine_simple2(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32, n_it: usize) -> Vec<f32> {
+#[allow(dead_code)]
+fn slbl_routine_simple(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32, n_it: usize) -> Vec<f32> {
     let mut m_result = dem.surface.z[first_pnt..=last_pnt].to_owned();
     let mut result = dem.surface.z.to_owned();
 
@@ -130,7 +41,7 @@ fn slbl_routine_simple2(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32
 
 /// Compute the SLBL surface with the iterative method and additionnal thresholds
 fn slbl_routine_thresholds(z_topo: &Vec<f32>, n_it: usize, tol: f32, elevation_min: Option<f32>, slope_max: Option<(f32, f32)>) -> (Vec<f32>, usize) {
-    let mut z_slbl = z_topo.clone();
+    let mut z_slbl = z_topo.to_owned();
     let mut current_it: usize = 0;
     'routine : while current_it < n_it {
         let z_temp = z_slbl.clone();
@@ -158,24 +69,13 @@ fn slbl_routine_thresholds(z_topo: &Vec<f32>, n_it: usize, tol: f32, elevation_m
 
 /// Compute the slope between two succesive points, given their respective values and the spacing between them
 fn local_slope(first_point: f32, second_point: f32, spacing: f32) -> f32 {
-    let local_vec = Vector2Rep::new(spacing, (second_point - first_point));
+    let local_vec = Vector2Rep::new(spacing, second_point - first_point);
     local_vec.angle_rad()
 }
 
 fn local_slope_deg(first_point: f32, second_point: f32, spacing: f32) -> f32 {
     let local_slope_rad = local_slope(first_point, second_point, spacing);
     rad2deg(local_slope_rad)
-}
-
-/// Sign function which gives
-/// 
-/// * `1` if the number is positive or null
-/// * `-1` if the number is negative
-fn sign_to_coeff(number: f32) -> i8 {
-    match number {
-        i if i >= 0. => 1 as i8,
-        _ => -1 as i8,
-    }
 }
 
 /// Solver of linear system A.X=B where A is tridiagonal
@@ -208,13 +108,13 @@ impl Surface1D {
         self
     }
 
-    pub fn from_slbl(config: &SlideConfig, dem: &Dem1D) -> Self {
-        let z_slbl = compute_slide(config, dem);
-        Surface1D::new(z_slbl)
-    }
+    // pub fn from_slbl(config: &SlideConfig, dem: &Dem1D) -> Self {
+    //     let z_slbl = compute_slide(config, dem);
+    //     Surface1D::new(z_slbl)
+    // }
 
     pub fn from_slbl_exact(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32) -> Self {
-        let z_slbl = slbl_matrix2(dem, first_pnt, last_pnt, tol);
+        let z_slbl = slbl_matrix(dem, first_pnt, last_pnt, tol);
         Surface1D::new(z_slbl)
     }
 
@@ -229,9 +129,7 @@ impl Surface1D {
         let crop_dem = dem.surface.z[first_pnt..=last_pnt].to_owned();
         let (result_routine, _) = slbl_routine_thresholds(&crop_dem, n_it, tol, elevation_min, slope_max);
         let mut result_global = dem.surface.z.clone();
-        for k in first_pnt..=last_pnt {
-            result_global[k] = result_routine[k - first_pnt];
-        }
+        result_global[first_pnt..=last_pnt].copy_from_slice(&result_routine[0..=(last_pnt - first_pnt)]);
         
         Surface1D::new(result_global)
     }
@@ -261,31 +159,31 @@ impl Surface1D {
     }
 }
 
-fn find_nearest_abscissa(xs: &Vec<f32>, x: f32) -> usize {
-    let mut left = 0;
-    let mut right = xs.len() - 1;
-    assert!((xs.len() > 2) & (xs.is_sorted()));
-    assert!((xs[0] <= x) & (xs[xs.len() - 1] >= x));
+// fn find_nearest_abscissa(xs: &Vec<f32>, x: f32) -> usize {
+//     let mut left = 0;
+//     let mut right = xs.len() - 1;
+//     assert!((xs.len() > 2) & (xs.is_sorted()));
+//     assert!((xs[0] <= x) & (xs[xs.len() - 1] >= x));
 
-    while left < right {
-        let mid = (left + right) / 2;
-        if xs[mid] <= x {
-            left = mid + 1;
-        } else {
-            right = mid;
-        }
-        println!("{left}, {right}");
-    }
-    let dleft = x - xs[left - 1];
-    let dright = xs[left] - x;
-    println!("indexes {}, {}, values {}, {}", left - 1, left, xs[left - 1], xs[left]);
-    println!("{dleft}, {dright}");
-    if dleft <= dright {
-        left - 1
-    } else {
-        left
-    }
-}
+//     while left < right {
+//         let mid = (left + right) / 2;
+//         if xs[mid] <= x {
+//             left = mid + 1;
+//         } else {
+//             right = mid;
+//         }
+//         println!("{left}, {right}");
+//     }
+//     let dleft = x - xs[left - 1];
+//     let dright = xs[left] - x;
+//     println!("indexes {}, {}, values {}, {}", left - 1, left, xs[left - 1], xs[left]);
+//     println!("{dleft}, {dright}");
+//     if dleft <= dright {
+//         left - 1
+//     } else {
+//         left
+//     }
+// }
 
 /// Computes the slope of a property along the section and the given DEM
 pub(super) fn slope1d(x: &Vec<f32>, z: &Vec<f32>) -> Vec<f32> {
@@ -326,31 +224,31 @@ pub fn slope_asvec2(x: &Vec<f32>, z: &Vec<f32>) -> Result<Vec<Vector2Rep>, Slope
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_absissa() {
-        let xs: Vec<f32> = vec![1., 2., 3., 4., 5., 6.];
+    // #[test]
+    // fn test_absissa() {
+    //     let xs: Vec<f32> = vec![1., 2., 3., 4., 5., 6.];
 
-        let result = find_nearest_abscissa(&xs, 2.29);
-        assert_eq!(result, 1);
+    //     let result = find_nearest_abscissa(&xs, 2.29);
+    //     assert_eq!(result, 1);
 
-        let result = find_nearest_abscissa(&xs, 2.56);
-        assert_eq!(result, 2);
+    //     let result = find_nearest_abscissa(&xs, 2.56);
+    //     assert_eq!(result, 2);
 
-        let result = find_nearest_abscissa(&xs, 1.);
-        assert_eq!(result, 0);
+    //     let result = find_nearest_abscissa(&xs, 1.);
+    //     assert_eq!(result, 0);
 
-        let result = find_nearest_abscissa(&xs, 3.5);
-        assert_eq!(result, 2);
-    }
+    //     let result = find_nearest_abscissa(&xs, 3.5);
+    //     assert_eq!(result, 2);
+    // }
 
-    #[test]
-    #[should_panic]
-    fn test_absissa_fail () {
-        let xs: Vec<f32> = vec![1., 2., 3., 4., 5., 6.];
+    // #[test]
+    // #[should_panic]
+    // fn test_absissa_fail () {
+    //     let xs: Vec<f32> = vec![1., 2., 3., 4., 5., 6.];
 
-        let result = find_nearest_abscissa(&xs, 12.);
-        assert_eq!(result, 5);
-    }
+    //     let result = find_nearest_abscissa(&xs, 12.);
+    //     assert_eq!(result, 5);
+    // }
 
     #[test]
     fn test_slope_asvec2() {

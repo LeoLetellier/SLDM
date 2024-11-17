@@ -1,10 +1,8 @@
-use eframe::wgpu::core::resource;
+pub(crate) mod io;
+
 use src_logic::prelude::*;
 use anyhow::{anyhow, Result};
-
 use crate::components::command::SurfaceParams;
-
-pub(crate) mod io;
 
 
 #[derive(Debug)]
@@ -35,14 +33,14 @@ impl Default for Project {
 
 impl Project {
     pub(crate) fn open_dem_from_file(&mut self, path: String) -> Result<()> {
-        let reader = CSVReader::read(path, None)?;
+        let reader = CsvReader::read(path, None)?;
         let dem = Dem1D::from_csv_reader(&reader, &mut String::new(), &mut String::new())?;
         self.dem.dem = dem;
         Ok(())
     }
 
     pub(crate) fn open_surface_from_file(&mut self, path: String, name: String) -> Result<()> {
-        let reader = CSVReader::read(path, None)?;
+        let reader = CsvReader::read(path, None)?;
         let mut surface = Surface1D::from_csv_reader(&reader, &self.dem.dem, &mut String::new(), &mut String::new())?;
         let profile = DispProfile::from_surface_direct(&mut surface, &self.dem.dem)?;
         let mut bundle = BundleSurface::default();
@@ -122,7 +120,7 @@ impl Project {
 
     pub(crate) fn new_sar_data(&mut self, name: &String, sar_index: usize, file_path: String) -> Result<()> {
         let mut new_bundle = BundleDispData::default();
-        let reader = CSVReader::read(file_path, None)?;
+        let reader = CsvReader::read(file_path, None)?;
         new_bundle.name = name.to_owned();
         new_bundle.disp_data = DispData::from_csv_reader(&reader, &mut String::new(), &mut String::new())?;
         self.sars[sar_index].disp_data.push(new_bundle);
@@ -181,8 +179,8 @@ pub(crate) struct BundleSurface {
     pub(crate) section_arrow: bool,
     pub(crate) arrow_scaling_factor: f32,
     pub(crate) section_pillar: bool,
-    pub(crate) property_disp: bool,
-    pub(crate) property_proj_disp: bool,
+    pub(crate) color_surface: Option<egui::Color32>,
+    pub(crate) color_arrow: Option<egui::Color32>,
 }
 
 impl Default for BundleSurface {
@@ -195,13 +193,13 @@ impl Default for BundleSurface {
             section_arrow: false,
             arrow_scaling_factor: 1.0,
             section_pillar: false,
-            property_disp: false,
-            property_proj_disp: false,
+            color_surface: None,
+            color_arrow: None,
         }
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct BundleModel {
     pub(crate) name: String,
 
@@ -214,8 +212,23 @@ pub(crate) struct BundleModel {
 
     pub(crate) section_arrow: bool,
     pub(crate) arrow_scaling_factor: f32,
-    pub(crate) property_disp: bool,
-    pub(crate) property_proj_disp: bool,
+    pub(crate) arrow_color: Option<egui::Color32>,
+}
+
+impl Default for BundleModel {
+    fn default() -> Self {
+        BundleModel {
+            name: String::from("model"),
+            surfaces: vec![],
+            weights: vec![],
+            boundaries: vec![],
+            gradients: vec![],
+            resulting_profile: DispProfile::default(),
+            section_arrow: true,
+            arrow_scaling_factor: 10.0,
+            arrow_color: None,
+        }
+    }
 }
 
 #[derive(Debug, Default)]

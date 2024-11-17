@@ -1,6 +1,4 @@
-use std::{borrow::BorrowMut, panic::RefUnwindSafe, vec};
-
-use crate::{data::ComposedModel, prelude::Vector2Rep, types::*};
+use crate::{data::ComposedModel, data::vec_proj::Vector2Rep, types::*};
 pub mod disp;
 use disp::*;
 
@@ -8,7 +6,7 @@ impl DispProfile {
     /// Apply a single weight coefficient to all vectors amplitude
     pub fn weight_disp(&mut self, weight: f32) -> &Self {
         for v in 0..self.vecs.len() {
-            self.vecs[v].borrow_mut().multiply(weight);
+            self.vecs[v].multiply(weight);
         }
         self
     }
@@ -65,11 +63,10 @@ impl DispProfile {
     pub fn from_surface_with_slope(surface: &Surface1D, dem: &Dem1D, first_x: usize, last_x: usize) -> Result<Self, VectorInputError> {
         let slope = surface.slope.clone().unwrap();
         let len = slope.len();
-        let mut origin;
-        match pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z) {
+        let origin = match pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z) {
             Err(_) => return Err(VectorInputError::PillarError),
-            Ok(o) => origin = o,
-        }
+            Ok(o) => o,
+        };
         let mut amplitude: Vec<f32> = Vec::new();
         (0..len).for_each(|k| match k {
             k if k < first_x => amplitude.push(0.),
@@ -77,7 +74,7 @@ impl DispProfile {
             _ => amplitude.push(1.),
         });
 
-        let is_right = if surface.z[last_x] >= surface.z[first_x] {false} else {true};
+        let is_right = surface.z[last_x] < surface.z[first_x];
         
         DispProfile::from_slope_params(slope, amplitude, origin.0, origin.1, is_right)
     }
@@ -197,7 +194,7 @@ pub(crate) fn interpol_linear(x_old: &Vec<f32>, y_old: &Vec<f32>, x_new: &Vec<f3
                 interpol_linear_local(x_old[left_index - 1], x_old[left_index], y_old[left_index - 1], y_old[left_index], x_new[k])
             },
             x if x > x_old[left_index] => {
-                while !(x < x_old[left_index]) & (left_index < length - 1) {
+                while (x >= x_old[left_index]) & (left_index < length - 1) {
                     left_index += 1;
                 }
                 interpol_linear_local(x_old[left_index - 1], x_old[left_index], y_old[left_index - 1], y_old[left_index], x_new[k])
@@ -273,7 +270,7 @@ mod test_fitter {
         let profile2 = DispProfile::from_surface(&mut surf2, &dem, 2, 9);
         assert!(profile2.is_ok());
 
-        let profile = DispProfile::from_solver(&dem, &mut vec![surf1, surf2], &vec![[2, 5], [2, 9]], &vec![vec![], vec![]], &disp_data, &section_orientation, &los_orientation).unwrap();
+        let _profile = DispProfile::from_solver(&dem, &mut vec![surf1, surf2], &vec![[2, 5], [2, 9]], &vec![vec![], vec![]], &disp_data, &section_orientation, &los_orientation).unwrap();
         // for k in 0..profile.vecs.len() {
         //     dbg!((profile.vecs[k]));
         //     dbg!(profile.vecs[k].amplitude());

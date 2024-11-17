@@ -1,16 +1,12 @@
-use super::Project;
+use super::*;
 use serde::{Deserialize, Serialize};
-use anyhow::Result as AResult;
-use anyhow::bail;
-use src_logic::io_csv::CsvWriter;
-use std::fs;
+use anyhow::{Result, bail};
 use std::io::Write;
 use std::path::Path;
 use toml;
-use super::*;
 
 impl Project {
-    pub(crate) fn save(&self) -> AResult<()> {
+    pub(crate) fn save(&self) -> Result<()> {
         // Assume that root was well defined by the user
         let root = match self.path.clone() {
             Some(p) => p,
@@ -22,7 +18,7 @@ impl Project {
         Ok(())
     }
 
-    pub(crate) fn load(&mut self, path: &String) -> AResult<Project> {
+    pub(crate) fn load(&mut self, path: &String) -> Result<Project> {
         let path = match path {
             p if p.is_empty() => bail!("No saving path specified"),
             p => p.to_string(),
@@ -35,24 +31,24 @@ impl Project {
     }
 }
 
-pub(crate) fn save_toml(project: &Project, root_folder: &String) -> AResult<()> {
+pub(crate) fn save_toml(project: &Project, root_folder: &String) -> Result<()> {
     let project_definition = ProjectFile::from_project(project);
     let toml = toml::to_string(&project_definition)?;
 
-    let mut file = fs::File::create(root_folder.to_string() + "/project.toml")?;
+    let mut file = std::fs::File::create(root_folder.to_string() + "/project.toml")?;
     file.write_all(toml.as_bytes())?;
     
     Ok(())
 }
 
-fn load_toml(path: &String) -> AResult<(Project, ProjectFile)> {
-    let toml_contents = fs::read_to_string(path)?;
+fn load_toml(path: &String) -> Result<(Project, ProjectFile)> {
+    let toml_contents = std::fs::read_to_string(path)?;
     let project_file: ProjectFile = toml::from_str(&toml_contents)?;
     let project = project_file.to_project(path);
     Ok((project, project_file))
 }
 
-pub(crate) fn save_all_csv(project: &Project, root_folder: &String) -> AResult<()> {
+pub(crate) fn save_all_csv(project: &Project, root_folder: &String) -> Result<()> {
     let path = root_folder.to_string() + "/dem.csv";
     if !project.dem.dem.x.is_empty() {
         project.dem.to_csv(&path)?;
@@ -78,7 +74,7 @@ pub(crate) fn save_all_csv(project: &Project, root_folder: &String) -> AResult<(
     Ok(())
 }
 
-fn load_all_csv(project: &mut Project, project_file: &ProjectFile) -> AResult<()> {
+fn load_all_csv(project: &mut Project, project_file: &ProjectFile) -> Result<()> {
     let root = match &project.path {
         None => bail!("No root path"),
         Some(p) => p,
@@ -379,15 +375,15 @@ impl DispDataRelated {
 }
 
 impl BundleDem {
-    fn from_csv(&mut self, path: &String) -> AResult<()> {
-        let reader = CSVReader::read(path.to_string(), None)?;
+    fn from_csv(&mut self, path: &String) -> Result<()> {
+        let reader = CsvReader::read(path.to_string(), None)?;
         let datas = reader.get_datas(&vec!["x".to_string(), "z".to_string()])?;
         self.dem.x = datas[0].clone();
         self.dem.surface.z = datas[1].clone();
         Ok(())
     }
 
-    fn to_csv(&self, path: &String) -> AResult<()> {
+    fn to_csv(&self, path: &String) -> Result<()> {
         let datas = vec![self.dem.x.clone(), self.dem.surface.z.clone()];
         let headers = vec!["x".to_string(), "z".to_string()];
         let writer = CsvWriter::from_datas_headers(datas, headers)?;
@@ -397,10 +393,10 @@ impl BundleDem {
 }
 
 impl BundleSurface {
-    fn from_csv(&mut self, path: &String, dem: &Dem1D) -> AResult<()> {
-        let reader = CSVReader::read(path.to_string(), None)?;
+    fn from_csv(&mut self, path: &String, dem: &Dem1D) -> Result<()> {
+        let reader = CsvReader::read(path.to_string(), None)?;
         let datas = reader.get_datas(&vec!["x".to_string(), "z".to_string()])?;
-        let x = datas[0].clone();
+        let _x = datas[0].clone();
         // check if is not the same data as DEM TODO
         self.surface.z = datas[1].clone();
         let profile = DispProfile::from_surface_direct(&mut self.surface, dem)?;
@@ -408,7 +404,7 @@ impl BundleSurface {
         Ok(())
     }
 
-    fn to_csv(&self, path: &String, x_dem: &Vec<f32>) -> AResult<()> {
+    fn to_csv(&self, path: &String, x_dem: &Vec<f32>) -> Result<()> {
         let datas = vec![x_dem.clone(), self.surface.z.clone()];
         let headers = vec!["x".to_string(), "z".to_string()];
         let writer = CsvWriter::from_datas_headers(datas, headers)?;
@@ -416,16 +412,17 @@ impl BundleSurface {
         Ok(())
     }
 
-    fn export_values(&self, path: &String) -> AResult<()> {
+    #[allow(dead_code)]
+    fn export_values(&self, _path: &String) -> Result<()> {
         todo!()
     }
 }
 
 impl BundleModel {
-    fn from_csv(&mut self, path: &String, dem: &Dem1D) -> AResult<()> {
-        let reader = CSVReader::read(path.to_string(), None)?;
+    fn from_csv(&mut self, path: &String, dem: &Dem1D) -> Result<()> {
+        let reader = CsvReader::read(path.to_string(), None)?;
         let nb_headers = reader.headers.len();
-        let x = reader.get_data(&"x".to_string())?;
+        let _x = reader.get_data(&"x".to_string())?;
         // check if is not the same data as DEM TODO
         for k in 0..(nb_headers - 1) {
             let z = reader.get_data(&("z".to_string() + k.to_string().as_str()))?;
@@ -437,7 +434,7 @@ impl BundleModel {
         Ok(())
     }
 
-    fn to_csv(&self, path: &String, x_dem: &Vec<f32>) -> AResult<()> {
+    fn to_csv(&self, path: &String, x_dem: &Vec<f32>) -> Result<()> {
         let mut datas = vec![x_dem.clone()];
         let mut headers = vec!["x".to_string()];
         for k in 0..self.surfaces.len() {
@@ -449,21 +446,22 @@ impl BundleModel {
         Ok(())
     }
 
-    fn export_values(&self, path: &String) -> AResult<()> {
+    #[allow(dead_code)]
+    fn export_values(&self, _path: &String) -> Result<()> {
         todo!()
     }
 }
 
 impl BundleDispData {
-    fn from_csv(&mut self, path: &String) -> AResult<()> {
-        let reader = CSVReader::read(path.clone(), None)?;
+    fn from_csv(&mut self, path: &String) -> Result<()> {
+        let reader = CsvReader::read(path.clone(), None)?;
         let datas = reader.get_datas(&vec!["x".to_string(), "disp".to_string()])?;
         self.disp_data.x = datas[0].clone();
         self.disp_data.amplitude = datas[1].clone();
         Ok(())
     }
 
-    fn to_csv(&self, path: &String) -> AResult<()> {
+    fn to_csv(&self, path: &String) -> Result<()> {
         let datas = vec![self.disp_data.x.clone(), self.disp_data.amplitude.clone()];
         let headers = vec!["x".to_string(), "disp".to_string()];
         let writer = CsvWriter::from_datas_headers(datas, headers)?;
@@ -474,9 +472,6 @@ impl BundleDispData {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Write;
-
-    use fs::File;
 
     use super::*;
 
@@ -489,7 +484,7 @@ mod tests {
             disp_data: None,
         };
         let toml = toml::to_string(&project).unwrap();
-        let mut file = File::create("src-logic/test_data/project_files/empty_project.toml").unwrap();
+        let mut file = std::fs::File::create("src-logic/test_data/project_files/empty_project.toml").unwrap();
         file.write_all(toml.as_bytes()).unwrap();
     }
 
@@ -522,7 +517,7 @@ mod tests {
         };
         let toml = toml::to_string(&proj).unwrap();
         println!("toml:\n{}", toml);
-        let mut file = fs::File::create("src-logic/test_data/project_files/project_file.toml").unwrap();
+        let mut file = std::fs::File::create("src-logic/test_data/project_files/project_file.toml").unwrap();
         file.write_all(toml.as_bytes()).unwrap();
     }
 }
