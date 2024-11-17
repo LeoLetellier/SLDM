@@ -16,7 +16,8 @@ pub fn pillar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &V
     let mut ground_proj_z = z.clone();
 
     for k in (first_x + 1)..last_x {
-        if (slide_z[k] - z[k]) > 1e-8_f32 {
+        if (slide_z[k] - z[k]).abs() > 1e-6_f32 {
+            println!("enter in the matter");
             let coeff_dir = slope[k].to_owned();
             let coeff_dir = match coeff_dir { // convert slope to perpendicular slope
                 a if a >= 0. => a - PI/2.,
@@ -28,7 +29,7 @@ pub fn pillar_slope(first_x: usize, last_x: usize, slide_z: &Vec<f32>, slope: &V
             let intercept = intersection_on_topo(x, z, xx, zz);
             let intercept = match intercept {
                 Some(i) => i,
-                None => return Err(PillarError::NoIntersection),
+                None => {return Err(PillarError::NoIntersection);},
             };
             ground_proj_x[k] = intercept.0;
             ground_proj_z[k] = intercept.1;
