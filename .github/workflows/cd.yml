@@ -1,8 +1,6 @@
 name: cd
 on:
   push:
-    branches:
-    - main
     tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
 
 permissions:
@@ -13,7 +11,7 @@ env:
 
 jobs:
   ci:
-    uses: ./.github/workflows/ci
+    uses: ./.github/workflows/ci.yml
   
   publish:
     runs-on: ${{ matrix.os }}
@@ -38,7 +36,7 @@ jobs:
       - name: Build
         run: cargo build --release
       - name: Upload binaries
-        uses: svenstaro/upload-release-action@2.7.0
+        uses: svenstaro/upload-release-action@2.9.0
         with:
           repo_token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           file: ./target/release/${{ matrix.artifact_name }}
