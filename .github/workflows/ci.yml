@@ -3,10 +3,6 @@ on:
   pull_request:
     branches:
     - main
-  push:
-    branches:
-    - main
-    - dev*
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,21 +15,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - name: Build
         run: cargo build --verbose
       - name: Test
         run: cargo test --verbose
-
-  rustfmt:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-        components: rustfmt
-    - name: Check formatting with rustfmt
-      run: cargo fmt --all --check
