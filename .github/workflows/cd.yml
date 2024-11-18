@@ -30,7 +30,7 @@ jobs:
             asset_name: SLDM-macos-amd64
 
     needs: ci
-    step:
+    steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Build
