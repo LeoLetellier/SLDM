@@ -1,27 +1,27 @@
 //! This module define how the vec2 and vec3 of this project are structured.
-//! They are defined to perform cross-section operation using a vec2, 
+//! They are defined to perform cross-section operation using a vec2,
 //! and handling projection into a line of sight in the global 3D domain.
-//! 
+//!
 //! The vecs store their axis components, and also handles their angle definition.
 
-use std::{f32::consts::PI, fmt::Display};
-#[allow(unused_imports)]  // actually used but raises unused import
+#[allow(unused_imports)] // actually used but raises unused import
 use assert_approx_eq::assert_approx_eq;
+use std::{f32::consts::PI, fmt::Display};
 
 /// Vector2Rep wrap all functionnalities to represent 2D vectors in cartesian
 /// or spherical coordinates.
-/// 
+///
 /// Data actually stored are:
 /// * x-axis component
 /// * y-axis component
-/// 
+///
 /// Angle definition is defined from:
 /// * slope: [-PI/2, PI/2] | [-90, 90]
 /// * orientation: facing right, bool
-/// 
-/// The struct can be initialized from (x, y) using the `new` method, 
+///
+/// The struct can be initialized from (x, y) using the `new` method,
 /// or from angles using `from_rad` or `from_deg` accordingly. Note that
-/// a vector defined from an angle will be a unit vector that can then be 
+/// a vector defined from an angle will be a unit vector that can then be
 /// normed usig `with_norm`.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Vector2Rep {
@@ -33,8 +33,16 @@ pub struct Vector2Rep {
 
 impl Display for Vector2Rep {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "x: {}, y: {}, amp: {}, slope(rad|deg): {}|{}, facing_right: {}",
-         self.x, self.y, self.amplitude(), self.angle_rad(), self.angle_deg(), self.is_facing_right())
+        write!(
+            f,
+            "x: {}, y: {}, amp: {}, slope(rad|deg): {}|{}, facing_right: {}",
+            self.x,
+            self.y,
+            self.amplitude(),
+            self.angle_rad(),
+            self.angle_deg(),
+            self.is_facing_right()
+        )
     }
 }
 
@@ -59,9 +67,9 @@ impl Vector2Rep {
         if self.x != 0. {
             (self.y / self.x).atan()
         } else if self.y >= 0. {
-                PI / 2.
+            PI / 2.
         } else {
-                - PI / 2.
+            -PI / 2.
         }
     }
 
@@ -70,17 +78,16 @@ impl Vector2Rep {
         rad2deg(self.angle_rad())
     }
 
-
     /// Construct a new **unit** vector from an angle in radians
     /// and its orientation
     pub fn from_rad(slope: f32, is_facing_right: bool) -> Self {
         assert!(slope >= -PI / 2.);
         assert!(slope <= PI / 2.);
 
-        let x_sign = if is_facing_right {1.0} else {-1.0};
+        let x_sign = if is_facing_right { 1.0 } else { -1.0 };
         let (vx, vy) = match slope {
             s if s == PI / 2. => (0., 1.),
-            s if s == - PI / 2. => (0., -1.),
+            s if s == -PI / 2. => (0., -1.),
             s => (x_sign * s.cos().abs(), x_sign * s.sin()),
         };
 
@@ -117,7 +124,7 @@ impl Vector2Rep {
 
     /// Get the components of the corresponding unit vector
     pub fn get_unit(&self) -> (f32, f32) {
-        let amp  = self.amplitude();
+        let amp = self.amplitude();
         if amp != 0. {
             (self.x / amp, self.y / amp)
         } else {
@@ -131,7 +138,7 @@ impl Vector2Rep {
         self
     }
 
-    /// Transform the current vector to match a given norm 
+    /// Transform the current vector to match a given norm
     pub fn with_norm(&mut self, norm: f32) -> &Self {
         let (x, y) = self.get_unit();
         if norm != 0. {
@@ -158,7 +165,16 @@ mod tests_vec2 {
     #[test]
     fn test_vector2_simple() {
         let vec = Vector2Rep::new(1., 1.);
-        println!("x: {}, y: {}, rad: {}, deg: {}, amp: {}, right: {}, down: {}", vec.x, vec.y, vec.angle_rad(), vec.angle_deg(), vec.amplitude(), vec.is_facing_right(), vec.is_facing_down());
+        println!(
+            "x: {}, y: {}, rad: {}, deg: {}, amp: {}, right: {}, down: {}",
+            vec.x,
+            vec.y,
+            vec.angle_rad(),
+            vec.angle_deg(),
+            vec.amplitude(),
+            vec.is_facing_right(),
+            vec.is_facing_down()
+        );
         assert_eq!(vec.angle_rad(), 1.0_f32.atan());
         assert_eq!(vec.amplitude(), 2.0_f32.sqrt());
         assert!(vec.is_facing_right());
@@ -176,11 +192,10 @@ mod tests_vec2 {
     #[test]
     fn test_down() {
         let vec = Vector2Rep::new(0., -1.);
-        assert_eq!(vec.angle_rad(), - PI / 2.);
+        assert_eq!(vec.angle_rad(), -PI / 2.);
         assert_eq!(vec.amplitude(), 1.);
         assert!(vec.is_facing_down());
     }
-    
 
     #[test]
     fn test_left() {
@@ -189,7 +204,6 @@ mod tests_vec2 {
         assert_eq!(vec.amplitude(), 1.);
         assert!(vec.is_facing_right());
     }
-    
 
     #[test]
     fn test_right() {
@@ -226,7 +240,10 @@ mod tests_vec2 {
     #[test]
     fn test_from_angle_diag() {
         let vec = Vector2Rep::from_deg(45., false);
-        assert_eq!((vec.x, vec.y), (-1. / (2.0_f32.sqrt()), -1. / (2.0_f32.sqrt())));
+        assert_eq!(
+            (vec.x, vec.y),
+            (-1. / (2.0_f32.sqrt()), -1. / (2.0_f32.sqrt()))
+        );
     }
 
     #[test]
@@ -247,25 +264,25 @@ mod tests_vec2 {
 
 /// Vector3Rep wrap all functionnalities to represent 3D vectors in cartesian
 /// or spherical coordinates.
-/// 
+///
 /// Data actually stored are:
 /// * x-axis component
 /// * y-axis component
 /// * z-axis component
-/// 
+///
 /// Angle definition is defined from:
 /// * azimuth: [0, 2 PI[ | [0, 360[
 /// * dip: [-PI/2, PI/2] | [-90, 90]
-/// 
-/// The struct can be initialized from (x, y, z) using the `new` method, 
+///
+/// The struct can be initialized from (x, y, z) using the `new` method,
 /// or from angles using `from_rad` or `from_deg` accordingly. Note that
-/// a vector defined from an angle will be a unit vector that can then be 
+/// a vector defined from an angle will be a unit vector that can then be
 /// normed usig `with_norm`.
-/// 
-/// A vec3 can be derived from a vec2 and the according section azimuth 
-/// containing the vec2 using `from_vertical_section_rad` or 
+///
+/// A vec3 can be derived from a vec2 and the according section azimuth
+/// containing the vec2 using `from_vertical_section_rad` or
 /// `from_vertical_section_deg`.
-/// 
+///
 /// The projection can be used with the `inner_product`, or with the resulting
 /// projection vector using `project_onto`.
 #[derive(Debug, Default, Clone, Copy)]
@@ -282,8 +299,18 @@ impl Display for Vector3Rep {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let angles_deg = self.angle_deg();
         let angles_rad = self.angle_rad();
-        write!(f, "x: {}, y: {}, z: {}, amp: {}, azimuth(rad|deg): {}|{}, dip(rad|deg): {}|{}",
-         self.x, self.y, self.z, self.amplitude(), angles_rad.0, angles_deg.0, angles_rad.1, angles_deg.1)
+        write!(
+            f,
+            "x: {}, y: {}, z: {}, amp: {}, azimuth(rad|deg): {}|{}, dip(rad|deg): {}|{}",
+            self.x,
+            self.y,
+            self.z,
+            self.amplitude(),
+            angles_rad.0,
+            angles_deg.0,
+            angles_rad.1,
+            angles_deg.1
+        )
     }
 }
 
@@ -308,7 +335,7 @@ impl Vector3Rep {
     pub fn angle_rad(&self) -> (f32, f32) {
         let (ux, uy, uz) = self.get_unit();
 
-        let mut azimuth = - (ux / uy).atan();
+        let mut azimuth = -(ux / uy).atan();
         match (ux, uy) {
             (_vx, vy) if (vy < 0.) => azimuth += 3. * PI / 2.,
             (_vx, vy) if (vy > 0.) => azimuth += PI / 2.,
@@ -333,11 +360,15 @@ impl Vector3Rep {
         let mut vy = azimuth.sin() * dip.cos();
         let vz = dip.sin();
 
-        if (dip == PI / 2.) | (dip == - PI / 2.) {
+        if (dip == PI / 2.) | (dip == -PI / 2.) {
             (vx, vy) = (0., 0.);
         }
 
-        Vector3Rep { x: vx, y: vy, z: vz }
+        Vector3Rep {
+            x: vx,
+            y: vy,
+            z: vz,
+        }
     }
 
     /// Construct a new **unit** vector from its spherical definition in degrees
@@ -369,7 +400,7 @@ impl Vector3Rep {
         self
     }
 
-    /// Transform the current vector to match a given norm 
+    /// Transform the current vector to match a given norm
     pub fn with_norm(&mut self, norm: f32) -> &Self {
         let (x, y, z) = self.get_unit();
         if norm != 0. {
@@ -396,13 +427,10 @@ impl Vector3Rep {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
-    /// Construct a new 3D vector from a local 2D vector and the according 
+    /// Construct a new 3D vector from a local 2D vector and the according
     /// 2D section azimuth in radians (orientation of the increasing x_axis)
     pub fn from_vertical_section_rad(section_vec: &Vector2Rep, azimuth: f32) -> Self {
-        let Vector2Rep {
-            x: v2x,
-            y: v2y
-        } = section_vec;
+        let Vector2Rep { x: v2x, y: v2y } = section_vec;
 
         // Vertical component is conserved
         let v3z = *v2y;
@@ -414,15 +442,15 @@ impl Vector3Rep {
         Vector3Rep::new(v3x, v3y, v3z)
     }
 
-    /// Construct a new 3D vector from a local 2D vector and the according 
+    /// Construct a new 3D vector from a local 2D vector and the according
     /// 2D section azimuth in degrees (orientation of the increasing x_axis)
     pub fn from_vertical_section_deg(section_vec: &Vector2Rep, azimuth: f32) -> Self {
         let azimuth_rad = deg2rad(azimuth);
         Self::from_vertical_section_rad(section_vec, azimuth_rad)
     }
 
-    /// Perform the projection of one vector onto another. 
-    /// 
+    /// Perform the projection of one vector onto another.
+    ///
     /// Origin and Target vectors are not interchangeable
     pub fn project_onto(&self, other: &Self) -> Self {
         let mut projection_vector = *other.clone().unit();
@@ -444,7 +472,15 @@ mod test_vec3 {
             for d in &dip {
                 let vec = Vector3Rep::from_deg(*a, *d);
                 assert_approx_eq!(vec.amplitude(), 1.0);
-                println!("az: {}, d: {}, x: {}, y: {}, z: {}, amp: {}", a, d, vec.x, vec.y, vec.z, vec.amplitude());
+                println!(
+                    "az: {}, d: {}, x: {}, y: {}, z: {}, amp: {}",
+                    a,
+                    d,
+                    vec.x,
+                    vec.y,
+                    vec.z,
+                    vec.amplitude()
+                );
                 println!("az: {}, d: {}", vec.angle_deg().0, vec.angle_deg().1);
             }
         }
@@ -456,7 +492,16 @@ mod test_vec3 {
         let (azimuth, dip) = vec.angle_rad();
         assert_approx_eq!(azimuth, PI / 4.);
         assert_approx_eq!(dip, PI / 4.);
-        println!("x: {}, y: {}, z: {}, rad: {}|{}, deg: {}|{}", vec.x, vec.y, vec.z, vec.angle_rad().0, vec.angle_rad().1, vec.angle_deg().0, vec.angle_deg().1);
+        println!(
+            "x: {}, y: {}, z: {}, rad: {}|{}, deg: {}|{}",
+            vec.x,
+            vec.y,
+            vec.z,
+            vec.angle_rad().0,
+            vec.angle_rad().1,
+            vec.angle_deg().0,
+            vec.angle_deg().1
+        );
     }
 
     #[test]
@@ -504,7 +549,7 @@ mod test_vec3 {
         let vec = Vector3Rep::new(0., 0., -1.);
         let angles = vec.angle_rad();
         assert_approx_eq!(angles.0, 0.);
-        assert_approx_eq!(angles.1, - PI / 2.);
+        assert_approx_eq!(angles.1, -PI / 2.);
     }
 
     #[test]
@@ -570,11 +615,14 @@ mod test_vec3 {
         for azimuth in (0..36).map(|k| (k * 10) as f32) {
             let vec_global = Vector3Rep::from_vertical_section_deg(&vec_section, azimuth);
             let proj = vec_global.project_onto(&vec_sar);
-            println!("azimuth: {}, projected amplitude: {}", azimuth, vec_global.inner_product(&vec_sar).abs());
+            println!(
+                "azimuth: {}, projected amplitude: {}",
+                azimuth,
+                vec_global.inner_product(&vec_sar).abs()
+            );
             assert_approx_eq!(vec_global.inner_product(&vec_sar).abs(), proj.amplitude());
         }
     }
-
 }
 
 /// Transform an f32 radians angle into an f32 degrees angle
@@ -585,4 +633,4 @@ pub fn rad2deg(rad: f32) -> f32 {
 /// Transform an f32 degrees angle into an f32 radians angle
 pub fn deg2rad(deg: f32) -> f32 {
     deg * PI / 180.
-} 
+}

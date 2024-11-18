@@ -1,13 +1,13 @@
-use eframe::egui;
 use super::AppDM;
+use eframe::egui;
 use egui_phosphor::regular as Phosphor;
 
 #[derive(Debug, Default, PartialEq)]
 pub(crate) enum Panel {
-    #[default]
     NoPanel,
     Explorer,
     Command,
+    #[default]
     Documentation,
 }
 
@@ -21,13 +21,13 @@ impl AppDM {
                         egui::ScrollArea::vertical().show(ui, |ui| {
                             self.ui_explorer(ui);
                         });
-                    },
+                    }
                     Panel::Command => {
                         self.ui_command(ui);
-                    },
+                    }
                     Panel::Documentation => {
                         self.ui_documentation(ui);
-                    },
+                    }
                     Panel::NoPanel => (),
                 };
             });
@@ -44,12 +44,13 @@ impl AppDM {
         let icon_documentation = egui::RichText::new(Phosphor::FILE_DOC).size(32.).strong();
 
         ui.vertical(|ui| {
-            ui.with_layout(egui::Layout::top_down(egui::Align::Center) ,|ui| {
+            ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                 let button_explorer = ui.button(icon_explorer).on_hover_text("Explorer");
                 ui.separator();
                 let button_command = ui.button(icon_command).on_hover_text("Command");
                 ui.separator();
-                let button_documentation = ui.button(icon_documentation).on_hover_text("Documentation");
+                let button_documentation =
+                    ui.button(icon_documentation).on_hover_text("Documentation");
 
                 if button_explorer.clicked() {
                     if self.current_panel == Panel::Explorer {
@@ -74,9 +75,15 @@ impl AppDM {
                 }
 
                 match self.current_panel {
-                    Panel::Explorer => {button_explorer.highlight();},
-                    Panel::Command => {button_command.highlight();},
-                    Panel::Documentation => {button_documentation.highlight();},
+                    Panel::Explorer => {
+                        button_explorer.highlight();
+                    }
+                    Panel::Command => {
+                        button_command.highlight();
+                    }
+                    Panel::Documentation => {
+                        button_documentation.highlight();
+                    }
                     _ => (),
                 }
             });

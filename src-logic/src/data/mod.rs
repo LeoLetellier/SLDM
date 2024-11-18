@@ -1,21 +1,21 @@
-
 pub mod vec_proj;
-use vec_proj::*;
-use eqsolver::{SolverError, global_optimisers::ParticleSwarm};
+use eqsolver::{global_optimisers::ParticleSwarm, SolverError};
 use nalgebra::base::DVector;
+use vec_proj::*;
 
 use crate::types::*;
 
 impl DispProfile {
     pub fn projected_amplitude_onto(&self, los: Orientation, section: Orientation) -> Vec<f32> {
         let los3: &Vector3Rep = &los.into();
-        (0..self.vecs.len()).map(|k| {
-            let vec3 = Vector3Rep::from_vertical_section_rad(&self.vecs[k], section.azimuth);
-            vec3.inner_product(los3)
-        }).collect()
+        (0..self.vecs.len())
+            .map(|k| {
+                let vec3 = Vector3Rep::from_vertical_section_rad(&self.vecs[k], section.azimuth);
+                vec3.inner_product(los3)
+            })
+            .collect()
     }
 }
-
 
 impl DispData {
     pub fn project_on_section(&mut self, _section: Orientation) {
@@ -26,7 +26,11 @@ impl DispData {
 fn rmse(prediction: &[f32], observation: &[f32]) -> f32 {
     debug_assert_eq!(prediction.len(), observation.len());
     let len = prediction.len();
-    (0..len).fold(0.0, |acc, k| acc + (prediction[k] - observation[k]) * (prediction[k] - observation[k]) / (len as f32)).sqrt()
+    (0..len)
+        .fold(0.0, |acc, k| {
+            acc + (prediction[k] - observation[k]) * (prediction[k] - observation[k]) / (len as f32)
+        })
+        .sqrt()
 }
 
 pub fn vec_to_na(vec: Vec<f32>) -> DVector<f32> {
@@ -47,7 +51,13 @@ pub(crate) struct ComposedModel {
 }
 
 impl ComposedModel {
-    pub fn new(dem: &Dem1D, profiles_regul: &[DispProfile], section_geometry: &Orientation, los_geometry: &Orientation, los_data: &DispData) -> Self {
+    pub fn new(
+        dem: &Dem1D,
+        profiles_regul: &[DispProfile],
+        section_geometry: &Orientation,
+        los_geometry: &Orientation,
+        los_data: &DispData,
+    ) -> Self {
         ComposedModel {
             dem: dem.clone(),
             profiles_regul: profiles_regul.to_owned(),
@@ -77,9 +87,9 @@ impl ComposedModel {
             }
         }
 
-        let vecs = (0..nb_vecs).map(|k| {
-            Vector2Rep::new(sum_vx[k], sum_vz[k])
-        }).collect();
+        let vecs = (0..nb_vecs)
+            .map(|k| Vector2Rep::new(sum_vx[k], sum_vz[k]))
+            .collect();
 
         DispProfile::new(vecs, origins).unwrap()
     }
@@ -90,12 +100,14 @@ impl ComposedModel {
         let los_y = self.dem.interpolate_elevation_on_x(&los_x);
         let los_origins = &(0..los_x.len()).map(|k| [los_x[k], los_y[k]]).collect();
         profile.interpolate_on_origins(los_origins);
-        let predicted = profile.projected_amplitude_onto(self.los_geometry.to_owned(), self.section_geometry.to_owned());
-        
+        let predicted = profile.projected_amplitude_onto(
+            self.los_geometry.to_owned(),
+            self.section_geometry.to_owned(),
+        );
+
         self.current_rmse(&predicted)
     }
-    
-    
+
     pub fn fit_disp(&self) -> Result<Vec<f32>, SolverError> {
         // Profile weights can range from 0. to 1000.
         let lower_bounds = DVector::repeat(self.profiles_regul.len(), 0.0_f32);
@@ -105,10 +117,9 @@ impl ComposedModel {
         // Objective function definition
         let f = |v: DVector<f32>| self.objective_function(v);
         dbg!(&first_guess);
-    
+
         // Solver call
-        let solution = ParticleSwarm::new(f, lower_bounds, upper_bounds)
-            .solve(first_guess);
+        let solution = ParticleSwarm::new(f, lower_bounds, upper_bounds).solve(first_guess);
 
         // Propagate the error or convert to vector
         match solution {

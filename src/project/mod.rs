@@ -1,9 +1,8 @@
 pub(crate) mod io;
 
-use src_logic::prelude::*;
-use anyhow::{anyhow, Result};
 use crate::components::command::SurfaceParams;
-
+use anyhow::{anyhow, Result};
+use src_logic::prelude::*;
 
 #[derive(Debug)]
 pub(crate) struct Project {
@@ -41,7 +40,12 @@ impl Project {
 
     pub(crate) fn open_surface_from_file(&mut self, path: String, name: String) -> Result<()> {
         let reader = CsvReader::read(path, None)?;
-        let mut surface = Surface1D::from_csv_reader(&reader, &self.dem.dem, &mut String::new(), &mut String::new())?;
+        let mut surface = Surface1D::from_csv_reader(
+            &reader,
+            &self.dem.dem,
+            &mut String::new(),
+            &mut String::new(),
+        )?;
         let profile = DispProfile::from_surface_direct(&mut surface, &self.dem.dem)?;
         let mut bundle = BundleSurface::default();
         bundle.name = name;
@@ -51,51 +55,106 @@ impl Project {
         Ok(())
     }
 
-    pub(crate) fn surface_from_exact_slbl(&mut self, first_pnt: usize, last_pnt: usize, tol: f32) -> Result<()> {
+    pub(crate) fn surface_from_exact_slbl(
+        &mut self,
+        first_pnt: usize,
+        last_pnt: usize,
+        tol: f32,
+    ) -> Result<()> {
         let mut surface = Surface1D::from_slbl_exact(&self.dem.dem, first_pnt, last_pnt, tol);
         let profile = DispProfile::from_surface(&mut surface, &self.dem.dem, first_pnt, last_pnt)?;
         let mut bundle = BundleSurface::default();
         bundle.surface = surface;
         bundle.profile = profile;
-        bundle.name = String::from("SLBL_E_") + first_pnt.to_string().as_str() + "_" + last_pnt.to_string().as_str() + "_" + tol.to_string().as_str();
+        bundle.name = String::from("SLBL_E_")
+            + first_pnt.to_string().as_str()
+            + "_"
+            + last_pnt.to_string().as_str()
+            + "_"
+            + tol.to_string().as_str();
         self.surfaces.push(bundle);
         Ok(())
     }
 
-    pub(crate) fn surface_from_routine_slbl(&mut self, first_pnt: usize, last_pnt: usize, tol: f32, n_it: usize, elevation_min: f32, slope_max: f32) -> Result<()> {
-        let mut surface = Surface1D::from_slbl_routine(&self.dem.dem, first_pnt, last_pnt, tol, n_it, Some(elevation_min), Some(slope_max));
+    pub(crate) fn surface_from_routine_slbl(
+        &mut self,
+        first_pnt: usize,
+        last_pnt: usize,
+        tol: f32,
+        n_it: usize,
+        elevation_min: f32,
+        slope_max: f32,
+    ) -> Result<()> {
+        let mut surface = Surface1D::from_slbl_routine(
+            &self.dem.dem,
+            first_pnt,
+            last_pnt,
+            tol,
+            n_it,
+            Some(elevation_min),
+            Some(slope_max),
+        );
         let profile = DispProfile::from_surface(&mut surface, &self.dem.dem, first_pnt, last_pnt)?;
         let mut bundle = BundleSurface::default();
         bundle.surface = surface;
         bundle.profile = profile;
-        bundle.name = String::from("SLBL_R_") + first_pnt.to_string().as_str() + "_" + last_pnt.to_string().as_str() + "_" + tol.to_string().as_str();
+        bundle.name = String::from("SLBL_R_")
+            + first_pnt.to_string().as_str()
+            + "_"
+            + last_pnt.to_string().as_str()
+            + "_"
+            + tol.to_string().as_str();
         self.surfaces.push(bundle);
         Ok(())
     }
 
-    pub(crate) fn surface_from_min(&mut self, surf1_index: usize, surf2_index: usize) -> Result<()> {
-        let mut surface = Surface1D::from_min_surf(&self.surfaces[surf1_index].surface, &self.surfaces[surf2_index].surface);
+    pub(crate) fn surface_from_min(
+        &mut self,
+        surf1_index: usize,
+        surf2_index: usize,
+    ) -> Result<()> {
+        let mut surface = Surface1D::from_min_surf(
+            &self.surfaces[surf1_index].surface,
+            &self.surfaces[surf2_index].surface,
+        );
         let profile = DispProfile::from_surface_direct(&mut surface, &self.dem.dem)?;
         let mut bundle = BundleSurface::default();
         bundle.surface = surface;
         bundle.profile = profile;
-        bundle.name = String::from("MIN_") + &self.surfaces[surf1_index].name + "_" + &self.surfaces[surf2_index].name;
+        bundle.name = String::from("MIN_")
+            + &self.surfaces[surf1_index].name
+            + "_"
+            + &self.surfaces[surf2_index].name;
         self.surfaces.push(bundle);
         Ok(())
     }
 
-    pub(crate) fn surface_from_max(&mut self, surf1_index: usize, surf2_index: usize) -> Result<()> {
-        let mut surface = Surface1D::from_max_surf(&self.surfaces[surf1_index].surface, &self.surfaces[surf2_index].surface);
+    pub(crate) fn surface_from_max(
+        &mut self,
+        surf1_index: usize,
+        surf2_index: usize,
+    ) -> Result<()> {
+        let mut surface = Surface1D::from_max_surf(
+            &self.surfaces[surf1_index].surface,
+            &self.surfaces[surf2_index].surface,
+        );
         let profile = DispProfile::from_surface_direct(&mut surface, &self.dem.dem)?;
         let mut bundle = BundleSurface::default();
         bundle.surface = surface;
         bundle.profile = profile;
-        bundle.name = String::from("MAX_") + &self.surfaces[surf1_index].name + "_" + &self.surfaces[surf2_index].name;
+        bundle.name = String::from("MAX_")
+            + &self.surfaces[surf1_index].name
+            + "_"
+            + &self.surfaces[surf2_index].name;
         self.surfaces.push(bundle);
         Ok(())
     }
 
-    pub(crate) fn combine_unit_models(&mut self, name: &String, surface_params: &Vec<SurfaceParams>) -> Result<()> {
+    pub(crate) fn combine_unit_models(
+        &mut self,
+        name: &String,
+        surface_params: &Vec<SurfaceParams>,
+    ) -> Result<()> {
         let mut new_bundle = BundleModel::default();
         new_bundle.name = name.to_owned();
         let mut surfaces = vec![];
@@ -104,7 +163,9 @@ impl Project {
         let mut weights = vec![];
         for s in 0..surface_params.len() {
             let param = &surface_params[s];
-            new_bundle.surfaces.push(self.surfaces[param.index].surface.clone());
+            new_bundle
+                .surfaces
+                .push(self.surfaces[param.index].surface.clone());
             new_bundle.weights.push(param.weight);
             new_bundle.boundaries.push(param.boundaries);
             new_bundle.gradients.push(param.gradient_points.to_owned());
@@ -113,27 +174,52 @@ impl Project {
             gradient.push(param.gradient_points.to_owned());
             weights.push(param.weight);
         }
-        new_bundle.resulting_profile = DispProfile::from_surfaces(&self.dem.dem, &mut surfaces, &boundaries, &gradient, &weights)?;
+        new_bundle.resulting_profile = DispProfile::from_surfaces(
+            &self.dem.dem,
+            &mut surfaces,
+            &boundaries,
+            &gradient,
+            &weights,
+        )?;
         self.models.push(new_bundle);
         Ok(())
     }
 
-    pub(crate) fn new_sar_data(&mut self, name: &String, sar_index: usize, file_path: String) -> Result<()> {
+    pub(crate) fn new_sar_data(
+        &mut self,
+        name: &String,
+        sar_index: usize,
+        file_path: String,
+    ) -> Result<()> {
         let mut new_bundle = BundleDispData::default();
         let reader = CsvReader::read(file_path, None)?;
         new_bundle.name = name.to_owned();
-        new_bundle.disp_data = DispData::from_csv_reader(&reader, &mut String::new(), &mut String::new())?;
+        new_bundle.disp_data =
+            DispData::from_csv_reader(&reader, &mut String::new(), &mut String::new())?;
         self.sars[sar_index].disp_data.push(new_bundle);
         Ok(())
     }
 
-    pub(crate) fn calibrate_model(&mut self, model_index: usize, sar_index: usize, sar_data_index: usize) -> Result<()> {
+    pub(crate) fn calibrate_model(
+        &mut self,
+        model_index: usize,
+        sar_index: usize,
+        sar_data_index: usize,
+    ) -> Result<()> {
         let model = &self.models[model_index];
         let sar_geom = &self.sars[sar_index];
         let sar_data = &sar_geom.disp_data[sar_data_index];
         let mut bundle = model.clone();
         let boundaries = model.boundaries.iter().map(|(a, b)| [*a, *b]).collect();
-        let result = DispProfile::from_solver(&self.dem.dem, &model.surfaces, &boundaries, &model.gradients, &sar_data.disp_data, &self.dem.section_geometry.clone().unwrap(), &sar_geom.sar_geometry);
+        let result = DispProfile::from_solver(
+            &self.dem.dem,
+            &model.surfaces,
+            &boundaries,
+            &model.gradients,
+            &sar_data.disp_data,
+            &self.dem.section_geometry.clone().unwrap(),
+            &sar_geom.sar_geometry,
+        );
 
         match result {
             Ok((profile, weights)) => {
@@ -164,7 +250,7 @@ impl Default for BundleDem {
             section_geometry: None,
             section_surface: true,
             min_bound: [0., 0.],
-            max_bound: [0., 0.]
+            max_bound: [0., 0.],
         }
     }
 }
@@ -174,7 +260,7 @@ pub(crate) struct BundleSurface {
     pub(crate) name: String,
     pub(crate) surface: Surface1D,
     pub(crate) section_surface: bool,
-    
+
     pub(crate) profile: DispProfile,
     pub(crate) section_arrow: bool,
     pub(crate) arrow_scaling_factor: f32,
@@ -242,8 +328,8 @@ pub(crate) struct BundleSar {
 pub(crate) struct BundleDispData {
     pub(crate) name: String,
     pub(crate) disp_data: DispData,
-    #[allow(dead_code)]  //
+    #[allow(dead_code)] //
     pub(crate) section_arrow: bool,
-    #[allow(dead_code)]  //
+    #[allow(dead_code)] //
     pub(crate) property_disp: bool,
 }

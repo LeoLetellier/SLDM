@@ -1,8 +1,8 @@
+use super::AppDM;
+use crate::app::action_panel::Panel;
+use crate::components::command::*;
 use eframe::egui;
 use egui_phosphor::regular as Phosphor;
-use super::AppDM;
-use crate::components::command::*;
-use crate::app::action_panel::Panel;
 
 impl AppDM {
     fn header(text: impl Into<String>) -> egui::RichText {
@@ -28,15 +28,24 @@ impl AppDM {
                 let header_dem = Self::header(Phosphor::LINE_SEGMENTS.to_string() + " DEM");
 
                 ui.menu_button(header_project, |ui| {
-                    if ui.button(Self::header(Phosphor::FOLDER_OPEN.to_string() + " Open")).clicked() {
+                    if ui
+                        .button(Self::header(Phosphor::FOLDER_OPEN.to_string() + " Open"))
+                        .clicked()
+                    {
                         self.load_project();
                         ui.close_menu();
                     }
-                    if ui.button(Self::header(Phosphor::FLOPPY_DISK.to_string() + " Save")).clicked() {
+                    if ui
+                        .button(Self::header(Phosphor::FLOPPY_DISK.to_string() + " Save"))
+                        .clicked()
+                    {
                         self.save_project();
                         ui.close_menu();
                     }
-                    if ui.button(Self::header(Phosphor::NOTE.to_string() + " Note")).clicked() {
+                    if ui
+                        .button(Self::header(Phosphor::NOTE.to_string() + " Note"))
+                        .clicked()
+                    {
                         self.open_command(ProjectCommand::Note(Note::default()));
                         ui.close_menu();
                     }
@@ -57,9 +66,12 @@ impl AppDM {
             // Menu Surface
             ui.menu_button(header_surface.strong(), |ui| {
                 ui.set_max_width(200.);
-                let header_from_file = Self::header(Phosphor::FILE_ARROW_DOWN.to_string() + " From file");
-                let header_from_geometry = Self::header(Phosphor::LINE_SEGMENT.to_string() + " From geometry");
-                let header_from_surfaces = Self::header(Phosphor::STACK_PLUS.to_string() + " From surfaces");
+                let header_from_file =
+                    Self::header(Phosphor::FILE_ARROW_DOWN.to_string() + " From file");
+                let header_from_geometry =
+                    Self::header(Phosphor::LINE_SEGMENT.to_string() + " From geometry");
+                let header_from_surfaces =
+                    Self::header(Phosphor::STACK_PLUS.to_string() + " From surfaces");
 
                 if ui.button(header_from_file).clicked() {
                     self.open_command(ProjectCommand::OpenSurface(OpenSurface::default()));
@@ -90,8 +102,10 @@ impl AppDM {
             // Menu Model
             ui.menu_button(header_model.strong(), |ui| {
                 ui.set_max_width(200.);
-                let header_new_model = Self::header(Phosphor::ROWS_PLUS_TOP.to_string() + " New model");
-                let header_calibrate_model = Self::header(Phosphor::TRAY_ARROW_DOWN.to_string() + " Calibrate model");
+                let header_new_model =
+                    Self::header(Phosphor::ROWS_PLUS_TOP.to_string() + " New model");
+                let header_calibrate_model =
+                    Self::header(Phosphor::TRAY_ARROW_DOWN.to_string() + " Calibrate model");
 
                 if ui.button(header_new_model).clicked() {
                     self.open_command(ProjectCommand::ModelNew(ModelNew::default()));
@@ -106,9 +120,11 @@ impl AppDM {
             // Menu Calibration
             ui.menu_button(header_calibration.strong(), |ui| {
                 ui.set_max_width(200.);
-                let header_new_satellite_geometry = Self::header(Phosphor::COMPASS_TOOL.to_string() + " New acquisition geometry");
-                let header_displacement_data = Self::header(Phosphor::ARROWS_OUT_CARDINAL.to_string() + " Displacement data");
-                
+                let header_new_satellite_geometry =
+                    Self::header(Phosphor::COMPASS_TOOL.to_string() + " New acquisition geometry");
+                let header_displacement_data =
+                    Self::header(Phosphor::ARROWS_OUT_CARDINAL.to_string() + " Displacement data");
+
                 if ui.button(header_new_satellite_geometry).clicked() {
                     self.open_command(ProjectCommand::SatGeometry(SatGeometry::default()));
                     ui.close_menu();
@@ -120,7 +136,7 @@ impl AppDM {
                     }
                 });
             });
-            
+
             if ui.button(header_about.strong()).clicked() {
                 self.is_about_open = true;
             }
@@ -144,14 +160,17 @@ impl AppDM {
         match &self.project.path {
             Some(_) => {
                 let _ = self.project.save();
-            },
+            }
             None => (),
         }
     }
 
     fn load_project(&mut self) {
         let project_path: String;
-        match rfd::FileDialog::new().add_filter("TOML", &["toml"]).pick_file() {
+        match rfd::FileDialog::new()
+            .add_filter("TOML", &["toml"])
+            .pick_file()
+        {
             Some(path) => {
                 project_path = path.display().to_string();
                 match self.project.load(&project_path) {
@@ -159,14 +178,14 @@ impl AppDM {
                         match &self.project.path {
                             Some(_) => {
                                 let _ = self.project.save();
-                            },
+                            }
                             None => (),
                         };
                         self.reset_with_project(project_loading);
-                    },
+                    }
                     Err(_) => (),
                 }
-            },
+            }
             None => (),
         };
     }

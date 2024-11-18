@@ -1,7 +1,7 @@
-use eframe::egui;
 use crate::{app::AppDM, project::BundleSar};
-use src_logic::prelude::*;
+use eframe::egui;
 use egui_phosphor::regular as Phosphor;
+use src_logic::prelude::*;
 
 #[derive(Debug, Default, Clone)]
 pub(crate) enum ProjectCommand {
@@ -24,44 +24,81 @@ pub(crate) enum ProjectCommand {
 impl AppDM {
     pub(crate) fn ui_command(&mut self, ui: &mut egui::Ui) {
         let dem_loaded = !self.project.dem.dem.x.is_empty();
-        ui.vertical(|ui| {
-            match &mut self.current_command {
-                ProjectCommand::NoCommand => self.ui_no_command(ui),
-                ProjectCommand::Note(_) => {self.ui_note(ui)},
-                ProjectCommand::OpenDem(_) => {self.ui_open_dem(ui)},
-                ProjectCommand::DemGeometry(_) => {
-                    if dem_loaded {self.ui_dem_geometry(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::OpenSurface(_) => {
-                    if dem_loaded {self.ui_open_surface(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::SlblExact(_) => {
-                    if dem_loaded {self.ui_slbl_exact(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::SlblRoutine(_) => {
-                    if dem_loaded {self.ui_slbl_routine(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::SurfaceMin(_) => {
-                    if dem_loaded {self.ui_surface_min(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::SurfaceMax(_) => {
-                    if dem_loaded {self.ui_surface_max(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::ModelNew(_) => {
-                    if dem_loaded {self.ui_model_new(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::SatGeometry(_) => {
-                    if dem_loaded {self.ui_sat_geometry(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::OpenDisp(_) => {
-                    if dem_loaded {self.ui_open_disp(ui)} else {self.ui_no_dem(ui)}
-                },
-                ProjectCommand::CalibrateModel(_) => {
-                    if dem_loaded {self.ui_calibrate_model(ui)} else {self.ui_no_dem(ui)}
-                },
+        ui.vertical(|ui| match &mut self.current_command {
+            ProjectCommand::NoCommand => self.ui_no_command(ui),
+            ProjectCommand::Note(_) => self.ui_note(ui),
+            ProjectCommand::OpenDem(_) => self.ui_open_dem(ui),
+            ProjectCommand::DemGeometry(_) => {
+                if dem_loaded {
+                    self.ui_dem_geometry(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
+            }
+            ProjectCommand::OpenSurface(_) => {
+                if dem_loaded {
+                    self.ui_open_surface(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
+            }
+            ProjectCommand::SlblExact(_) => {
+                if dem_loaded {
+                    self.ui_slbl_exact(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
+            }
+            ProjectCommand::SlblRoutine(_) => {
+                if dem_loaded {
+                    self.ui_slbl_routine(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
+            }
+            ProjectCommand::SurfaceMin(_) => {
+                if dem_loaded {
+                    self.ui_surface_min(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
+            }
+            ProjectCommand::SurfaceMax(_) => {
+                if dem_loaded {
+                    self.ui_surface_max(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
+            }
+            ProjectCommand::ModelNew(_) => {
+                if dem_loaded {
+                    self.ui_model_new(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
+            }
+            ProjectCommand::SatGeometry(_) => {
+                if dem_loaded {
+                    self.ui_sat_geometry(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
+            }
+            ProjectCommand::OpenDisp(_) => {
+                if dem_loaded {
+                    self.ui_open_disp(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
+            }
+            ProjectCommand::CalibrateModel(_) => {
+                if dem_loaded {
+                    self.ui_calibrate_model(ui)
+                } else {
+                    self.ui_no_dem(ui)
+                }
             }
         });
-        
     }
 }
 
@@ -274,7 +311,10 @@ impl AppDM {
         ui.add_space(10.);
         ui.label("Please load a DEM to continue...");
         ui.add_space(10.);
-        if ui.button(egui::RichText::new("Load DEM").size(16.)).clicked() {
+        if ui
+            .button(egui::RichText::new("Load DEM").size(16.))
+            .clicked()
+        {
             self.current_command = ProjectCommand::OpenDem(OpenDem::default());
         }
     }
@@ -289,22 +329,26 @@ impl AppDM {
     fn ui_note(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Note on the Current Project");
         let ProjectCommand::Note(_data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
-                ui.add_space(10.);
-                ui.horizontal(|ui| {
-                    ui.label("Project name: ");
-                    ui.text_edit_singleline(&mut self.project.name);
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::Center).with_cross_justify(true),
+            |ui| {
+                ui.vertical(|ui| {
+                    ui.label(title);
+                    ui.separator();
+                    ui.add_space(10.);
+                    ui.horizontal(|ui| {
+                        ui.label("Project name: ");
+                        ui.text_edit_singleline(&mut self.project.name);
+                    });
+                    ui.add_space(10.);
+                    ui.label("You can add here notes that describe the current project.");
+                    ui.text_edit_multiline(&mut self.project.note);
                 });
-                ui.add_space(10.);
-                ui.label("You can add here notes that describe the current project.");
-                ui.text_edit_multiline(&mut self.project.note);
-            });
-        });
+            },
+        );
         // self.ui_command_basis(&data, ui, String::from("Note on the current project"), |ui| {
         //     ui.horizontal(|ui| {
         //         ui.label("Project name: ");
@@ -319,10 +363,15 @@ impl AppDM {
     fn ui_open_dem(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Open DEM from File").heading();
         let ProjectCommand::OpenDem(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
-        if !self.project.surfaces.is_empty() | !self.project.models.is_empty() | !self.project.models.is_empty() | !self.project.sars.is_empty() {
+        if !self.project.surfaces.is_empty()
+            | !self.project.models.is_empty()
+            | !self.project.models.is_empty()
+            | !self.project.sars.is_empty()
+        {
             data.status = CommandStatus::Error(CommandError::ProjectInitialized);
         }
 
@@ -402,7 +451,8 @@ impl AppDM {
     fn ui_dem_geometry(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Set the Section Geometry").heading();
         let ProjectCommand::DemGeometry(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
         ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
@@ -421,32 +471,41 @@ impl AppDM {
 
         ui.add_space(10.);
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
-                CommandStatus::Error(CommandError::InvalidOrientation) => {ui.label("Invalid orientation");},
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+            |ui| match &data.status {
+                CommandStatus::Error(CommandError::InvalidOrientation) => {
+                    ui.label("Invalid orientation");
+                }
                 _ => (),
-            }
-        });
+            },
+        );
 
         ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
+            let apply_text = match data.status {
                 CommandStatus::Clean => egui::RichText::new("Apply"),
                 CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                 CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
             };
-            let apply_button= ui.button(apply_text.size(22.));
-            
+            let apply_button = ui.button(apply_text.size(22.));
+
             if apply_button.clicked() {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    let azimuth = if data.azimuth == 360. {0.} else {data.azimuth};
+                    let azimuth = if data.azimuth == 360. {
+                        0.
+                    } else {
+                        data.azimuth
+                    };
                     match Orientation::from_deg(azimuth, 90.) {
-                        Err(_) => data.status = CommandStatus::Error(CommandError::InvalidOrientation), // Should never reach
+                        Err(_) => {
+                            data.status = CommandStatus::Error(CommandError::InvalidOrientation)
+                        } // Should never reach
                         Ok(o) => {
                             self.project.dem.section_geometry = Some(o);
                             data.status = CommandStatus::Complete;
-                        },
+                        }
                     }
                 }
             }
@@ -456,7 +515,8 @@ impl AppDM {
     fn ui_open_surface(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Open an Existing Surface from File").heading();
         let ProjectCommand::OpenSurface(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
         ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
@@ -494,27 +554,26 @@ impl AppDM {
 
         ui.add_space(10.);
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
-                CommandStatus::Error(e) => {
-                    match e {
-                        CommandError::InvalidFile => ui.label("Invalid file"),
-                        CommandError::EmptyName => ui.label("Empty name"),
-                        _ => ui.label(""),
-                    }
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+            |ui| match &data.status {
+                CommandStatus::Error(e) => match e {
+                    CommandError::InvalidFile => ui.label("Invalid file"),
+                    CommandError::EmptyName => ui.label("Empty name"),
+                    _ => ui.label(""),
                 },
                 _ => ui.label(""),
-            }
-        });
+            },
+        );
 
         ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
+            let apply_text = match data.status {
                 CommandStatus::Clean => egui::RichText::new("Apply"),
                 CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                 CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
             };
-            let apply_button= ui.button(apply_text.size(22.));
-            
+            let apply_button = ui.button(apply_text.size(22.));
+
             if apply_button.clicked() {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
@@ -524,12 +583,18 @@ impl AppDM {
                             if f.is_empty() {
                                 data.status = CommandStatus::Error(CommandError::EmptyName);
                             } else {
-                                match self.project.open_surface_from_file(f.to_string(), data.surface_name.to_string()) {
-                                    Err(_) => data.status = CommandStatus::Error(CommandError::InvalidFile),
+                                match self.project.open_surface_from_file(
+                                    f.to_string(),
+                                    data.surface_name.to_string(),
+                                ) {
+                                    Err(_) => {
+                                        data.status =
+                                            CommandStatus::Error(CommandError::InvalidFile)
+                                    }
                                     _ => data.status = CommandStatus::Complete,
                                 }
                             }
-                        },
+                        }
                         None => data.status = CommandStatus::Error(CommandError::NoFile),
                     }
                 }
@@ -540,55 +605,83 @@ impl AppDM {
     fn ui_slbl_exact(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Generate a Surface from an Exact SLBL").heading();
         let ProjectCommand::SlblExact(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
-                ui.add_space(10.);
-                ui.label("Use this command to construct a new using using the SLBL matrix method.");
-                ui.add_space(5.);
-                ui.separator();
-                ui.add_space(15.);
-                let text_first = "First point at ".to_string() + self.project.dem.dem.x[data.first_pnt].to_string().as_str() + "m";
-                let text_last = "Last point at ".to_string() + self.project.dem.dem.x[data.last_pnt].to_string().as_str() + "m";
-                ui.add(egui::Slider::new(&mut data.first_pnt, 0..=(data.last_pnt - 1)).text(text_first));
-                ui.add_space(5.);
-                ui.add(egui::Slider::new(&mut data.last_pnt, (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1)).text(text_last));
-                ui.add_space(5.);
-                ui.add(egui::Slider::new(&mut data.tol, 0.0..=100.0).text("Tolerance").logarithmic(true));
-            });
-        });
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::Center).with_cross_justify(true),
+            |ui| {
+                ui.vertical(|ui| {
+                    ui.label(title);
+                    ui.separator();
+                    ui.add_space(10.);
+                    ui.label(
+                        "Use this command to construct a new using using the SLBL matrix method.",
+                    );
+                    ui.add_space(5.);
+                    ui.separator();
+                    ui.add_space(15.);
+                    let text_first = "First point at ".to_string()
+                        + self.project.dem.dem.x[data.first_pnt].to_string().as_str()
+                        + "m";
+                    let text_last = "Last point at ".to_string()
+                        + self.project.dem.dem.x[data.last_pnt].to_string().as_str()
+                        + "m";
+                    ui.add(
+                        egui::Slider::new(&mut data.first_pnt, 0..=(data.last_pnt - 1))
+                            .text(text_first),
+                    );
+                    ui.add_space(5.);
+                    ui.add(
+                        egui::Slider::new(
+                            &mut data.last_pnt,
+                            (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1),
+                        )
+                        .text(text_last),
+                    );
+                    ui.add_space(5.);
+                    ui.add(
+                        egui::Slider::new(&mut data.tol, 0.0..=100.0)
+                            .text("Tolerance")
+                            .logarithmic(true),
+                    );
+                });
+            },
+        );
 
         ui.add_space(10.);
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
-                CommandStatus::Error(e) => {
-                    match e {
-                        CommandError::MethodError => {ui.label("The method cannot perform with the given parameters.");},
-                        _ => (),
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+            |ui| match &data.status {
+                CommandStatus::Error(e) => match e {
+                    CommandError::MethodError => {
+                        ui.label("The method cannot perform with the given parameters.");
                     }
-                }
+                    _ => (),
+                },
                 _ => (),
-            }
-        });
+            },
+        );
 
         ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
+            let apply_text = match data.status {
                 CommandStatus::Clean => egui::RichText::new("Apply"),
                 CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                 CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
             };
-            let apply_button= ui.button(apply_text.size(22.));
-            
+            let apply_button = ui.button(apply_text.size(22.));
+
             if apply_button.clicked() {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    match self.project.surface_from_exact_slbl(data.first_pnt, data.last_pnt, data.tol) {
+                    match self.project.surface_from_exact_slbl(
+                        data.first_pnt,
+                        data.last_pnt,
+                        data.tol,
+                    ) {
                         Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
                         Ok(_) => data.status = CommandStatus::Complete,
                     }
@@ -600,68 +693,93 @@ impl AppDM {
     fn ui_slbl_routine(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Generate a Surface from a Routine SLBL");
         let ProjectCommand::SlblRoutine(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-            ui.vertical(|ui| {
-                ui.label(title);
-                ui.separator();
-                ui.add_space(10.);
-                ui.label("Use this command to create a surface from the SLBL routine.");
-                ui.add_space(5.);
-                ui.separator();
-                ui.add_space(5.);
-                let text_first = "First point at ".to_string() + self.project.dem.dem.x[data.first_pnt].to_string().as_str() + "m";
-                let text_last = "Last point at ".to_string() + self.project.dem.dem.x[data.last_pnt].to_string().as_str() + "m";
-                ui.add(egui::Slider::new(&mut data.first_pnt, 0..=(data.last_pnt - 1)).text(text_first));
-                ui.add_space(5.);
-                ui.add(egui::Slider::new(&mut data.last_pnt, (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1)).text(text_last));
-                ui.add_space(5.);
-                ui.add(egui::Slider::new(&mut data.tol, 0.0..=100.0).text("Tolerance"));
-                ui.add_space(5.);
-                ui.add(egui::Slider::new(&mut data.n_it, 10..=2000).text("Iterations number"));
-                ui.add_space(5.);
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::Center).with_cross_justify(true),
+            |ui| {
+                ui.vertical(|ui| {
+                    ui.label(title);
+                    ui.separator();
+                    ui.add_space(10.);
+                    ui.label("Use this command to create a surface from the SLBL routine.");
+                    ui.add_space(5.);
+                    ui.separator();
+                    ui.add_space(5.);
+                    let text_first = "First point at ".to_string()
+                        + self.project.dem.dem.x[data.first_pnt].to_string().as_str()
+                        + "m";
+                    let text_last = "Last point at ".to_string()
+                        + self.project.dem.dem.x[data.last_pnt].to_string().as_str()
+                        + "m";
+                    ui.add(
+                        egui::Slider::new(&mut data.first_pnt, 0..=(data.last_pnt - 1))
+                            .text(text_first),
+                    );
+                    ui.add_space(5.);
+                    ui.add(
+                        egui::Slider::new(
+                            &mut data.last_pnt,
+                            (data.first_pnt + 1)..=(self.project.dem.dem.x.len() - 1),
+                        )
+                        .text(text_last),
+                    );
+                    ui.add_space(5.);
+                    ui.add(egui::Slider::new(&mut data.tol, 0.0..=100.0).text("Tolerance"));
+                    ui.add_space(5.);
+                    ui.add(egui::Slider::new(&mut data.n_it, 10..=2000).text("Iterations number"));
+                    ui.add_space(5.);
 
-                ui.horizontal(|ui| {
-                    ui.label("Minimum elevation (m): ");
-                    ui.add(egui::DragValue::new(&mut data.min_elev));
+                    ui.horizontal(|ui| {
+                        ui.label("Minimum elevation (m): ");
+                        ui.add(egui::DragValue::new(&mut data.min_elev));
+                    });
+
+                    ui.add_space(5.);
+
+                    ui.horizontal(|ui| {
+                        ui.label("Maximum slope (°)");
+                        ui.add(egui::DragValue::new(&mut data.max_slope));
+                    });
                 });
+            },
+        );
 
-                ui.add_space(5.);
-
-                ui.horizontal(|ui| {
-                    ui.label("Maximum slope (°)");
-                    ui.add(egui::DragValue::new(&mut data.max_slope));
-                });
-            });
-        });
-
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
-                CommandStatus::Error(e) => {
-                    match e {
-                        CommandError::MethodError => {ui.label("The method cannot perform with the given parameters.");},
-                        _ => (),
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+            |ui| match &data.status {
+                CommandStatus::Error(e) => match e {
+                    CommandError::MethodError => {
+                        ui.label("The method cannot perform with the given parameters.");
                     }
-                }
+                    _ => (),
+                },
                 _ => (),
-            }
-        });
+            },
+        );
 
         ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
+            let apply_text = match data.status {
                 CommandStatus::Clean => egui::RichText::new("Apply"),
                 CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                 CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
             };
-            let apply_button= ui.button(apply_text.size(22.));
-            
+            let apply_button = ui.button(apply_text.size(22.));
+
             if apply_button.clicked() {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    match self.project.surface_from_routine_slbl(data.first_pnt, data.last_pnt, data.tol, data.n_it, data.min_elev, data.max_slope) {
+                    match self.project.surface_from_routine_slbl(
+                        data.first_pnt,
+                        data.last_pnt,
+                        data.tol,
+                        data.n_it,
+                        data.min_elev,
+                        data.max_slope,
+                    ) {
                         Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
                         Ok(_) => data.status = CommandStatus::Complete,
                     }
@@ -673,7 +791,8 @@ impl AppDM {
     fn ui_surface_min(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Define a Surface using Minimum Values").heading();
         let ProjectCommand::SurfaceMin(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
         let nb_surf = self.project.surfaces.len();
@@ -711,29 +830,35 @@ impl AppDM {
 
         ui.add_space(10.);
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+            |ui| match &data.status {
                 CommandStatus::Error(e) => match e {
-                    CommandError::MethodError => {ui.label("Method error");},
+                    CommandError::MethodError => {
+                        ui.label("Method error");
+                    }
                     _ => (),
-                }
+                },
                 _ => (),
-            }
-        });
+            },
+        );
 
         ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
+            let apply_text = match data.status {
                 CommandStatus::Clean => egui::RichText::new("Apply"),
                 CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                 CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
             };
-            let apply_button= ui.button(apply_text.size(22.));
-            
+            let apply_button = ui.button(apply_text.size(22.));
+
             if apply_button.clicked() {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    match self.project.surface_from_min(data.first_surface_index, data.second_surface_index) {
+                    match self
+                        .project
+                        .surface_from_min(data.first_surface_index, data.second_surface_index)
+                    {
                         Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
                         Ok(_) => data.status = CommandStatus::Complete,
                     }
@@ -745,7 +870,8 @@ impl AppDM {
     fn ui_surface_max(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Define a Surface using Maximum Values").heading();
         let ProjectCommand::SurfaceMax(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
         let nb_surf = self.project.surfaces.len();
@@ -783,29 +909,35 @@ impl AppDM {
 
         ui.add_space(10.);
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+            |ui| match &data.status {
                 CommandStatus::Error(e) => match e {
-                    CommandError::MethodError => {ui.label("Method error");},
+                    CommandError::MethodError => {
+                        ui.label("Method error");
+                    }
                     _ => (),
-                }
+                },
                 _ => (),
-            }
-        });
+            },
+        );
 
         ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
+            let apply_text = match data.status {
                 CommandStatus::Clean => egui::RichText::new("Apply"),
                 CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                 CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
             };
-            let apply_button= ui.button(apply_text.size(22.));
-            
+            let apply_button = ui.button(apply_text.size(22.));
+
             if apply_button.clicked() {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
                 } else {
-                    match self.project.surface_from_max(data.first_surface_index, data.second_surface_index) {
+                    match self
+                        .project
+                        .surface_from_max(data.first_surface_index, data.second_surface_index)
+                    {
                         Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
                         Ok(_) => data.status = CommandStatus::Complete,
                     }
@@ -817,7 +949,8 @@ impl AppDM {
     fn ui_model_new(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Create a New model from surfaces combination").heading();
         let ProjectCommand::ModelNew(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
         ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
@@ -908,25 +1041,30 @@ impl AppDM {
         if !self.project.surfaces.is_empty() {
             ui.add_space(10.);
 
-            ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-                match &data.status {
+            ui.with_layout(
+                egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+                |ui| match &data.status {
                     CommandStatus::Error(e) => match e {
-                        CommandError::MethodError => {ui.label("Method error");},
-                        CommandError::InputError => {ui.label("Please recheck your inputs");},
+                        CommandError::MethodError => {
+                            ui.label("Method error");
+                        }
+                        CommandError::InputError => {
+                            ui.label("Please recheck your inputs");
+                        }
                         _ => (),
-                    }
+                    },
                     _ => (),
-                }
-            });
+                },
+            );
 
             ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-                let apply_text= match data.status {
+                let apply_text = match data.status {
                     CommandStatus::Clean => egui::RichText::new("Apply"),
                     CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                     CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
                 };
-                let apply_button= ui.button(apply_text.size(22.));
-                
+                let apply_button = ui.button(apply_text.size(22.));
+
                 if apply_button.clicked() {
                     if data.status != CommandStatus::Clean {
                         data.status = CommandStatus::Clean;
@@ -949,8 +1087,13 @@ impl AppDM {
                         if !all_surf_diff | !all_index_ordered | !all_no_grad_dupli {
                             data.status = CommandStatus::Error(CommandError::InputError);
                         } else {
-                            match self.project.combine_unit_models(&data.name, &data.surface_params) {
-                                Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
+                            match self
+                                .project
+                                .combine_unit_models(&data.name, &data.surface_params)
+                            {
+                                Err(_) => {
+                                    data.status = CommandStatus::Error(CommandError::MethodError)
+                                }
                                 _ => data.status = CommandStatus::Complete,
                             };
                         }
@@ -963,7 +1106,8 @@ impl AppDM {
     fn ui_sat_geometry(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Set the Satellite Geometry").heading();
         let ProjectCommand::SatGeometry(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
         ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
@@ -989,24 +1133,27 @@ impl AppDM {
 
         ui.add_space(10.);
 
-        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-            match &data.status {
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+            |ui| match &data.status {
                 CommandStatus::Error(e) => match e {
-                    CommandError::MiscError => {ui.label("An error occured");},
+                    CommandError::MiscError => {
+                        ui.label("An error occured");
+                    }
                     _ => (),
-                }
+                },
                 _ => (),
-            }
-        });
+            },
+        );
 
         ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-            let apply_text= match data.status {
+            let apply_text = match data.status {
                 CommandStatus::Clean => egui::RichText::new("Apply"),
                 CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                 CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
             };
-            let apply_button= ui.button(apply_text.size(22.));
-            
+            let apply_button = ui.button(apply_text.size(22.));
+
             if apply_button.clicked() {
                 if data.status != CommandStatus::Clean {
                     data.status = CommandStatus::Clean;
@@ -1021,8 +1168,8 @@ impl AppDM {
                             self.project.sars.push(new_bundle);
 
                             data.status = CommandStatus::Complete;
-                        },
-                    }                    
+                        }
+                    }
                 }
             }
         });
@@ -1031,7 +1178,8 @@ impl AppDM {
     fn ui_open_disp(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Load Satellite Displacement Data").heading();
         let ProjectCommand::OpenDisp(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
         if self.project.sars.is_empty() {
@@ -1078,107 +1226,153 @@ impl AppDM {
 
             ui.add_space(10.);
 
-            ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-                match &data.status {
+            ui.with_layout(
+                egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+                |ui| match &data.status {
                     CommandStatus::Error(e) => match e {
-                        CommandError::MethodError => {ui.label("An error occured");},
+                        CommandError::MethodError => {
+                            ui.label("An error occured");
+                        }
                         _ => (),
-                    }
+                    },
                     _ => (),
-                }
-            });
-    
+                },
+            );
+
             ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-                let apply_text= match data.status {
+                let apply_text = match data.status {
                     CommandStatus::Clean => egui::RichText::new("Apply"),
                     CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                     CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
                 };
-                let apply_button= ui.button(apply_text.size(22.));
-                
+                let apply_button = ui.button(apply_text.size(22.));
+
                 if apply_button.clicked() {
                     if data.status != CommandStatus::Clean {
                         data.status = CommandStatus::Clean;
                     } else {
                         match &data.file_path {
                             Some(f) => {
-                                match self.project.new_sar_data(&data.name, data.sar_index, f.to_string()) {
-                                    Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
+                                match self.project.new_sar_data(
+                                    &data.name,
+                                    data.sar_index,
+                                    f.to_string(),
+                                ) {
+                                    Err(_) => {
+                                        data.status =
+                                            CommandStatus::Error(CommandError::MethodError)
+                                    }
                                     _ => data.status = CommandStatus::Complete,
                                 }
-                            },
+                            }
                             None => data.status = CommandStatus::Error(CommandError::NoFile),
                         }
                     }
                 }
             });
-        }        
+        }
     }
 
     fn ui_calibrate_model(&mut self, ui: &mut egui::Ui) {
         let title = egui::RichText::new("Calibrate a Model using Displacement Data").heading();
         let ProjectCommand::CalibrateModel(data) = &mut self.current_command else {
-            panic!("Wrong intern command assignation. Please report it if raised.") // Should never reach
+            panic!("Wrong intern command assignation. Please report it if raised.")
+            // Should never reach
         };
 
-        if !self.project.sars.is_empty() & !self.project.models.is_empty() & !self.project.dem.section_geometry.is_none() {
-            let sars: Vec<&BundleSar> = self.project.sars.iter().filter(|sar| !sar.disp_data.is_empty()).collect();
+        if !self.project.sars.is_empty()
+            & !self.project.models.is_empty()
+            & !self.project.dem.section_geometry.is_none()
+        {
+            let sars: Vec<&BundleSar> = self
+                .project
+                .sars
+                .iter()
+                .filter(|sar| !sar.disp_data.is_empty())
+                .collect();
             if !sars.is_empty() {
-                ui.with_layout(egui::Layout::top_down(egui::Align::Center).with_cross_justify(true), |ui| {
-                    ui.vertical(|ui| {
-                        ui.label(title);
-                        ui.separator();
-                        ui.add_space(10.);
-                        ui.label("Use this command to calibrate a model using InSAR data.");
-                        ui.add_space(5.);
-                        ui.separator();
-                        ui.add_space(15.);
-                        egui::ComboBox::from_label("On model")
-                            .selected_text(self.project.models[data.model].name.to_string())
-                            .show_ui(ui, |ui| {
-                                for k in 0..self.project.models.len() {
-                                    ui.selectable_value(&mut data.model, k, self.project.models[k].name.to_string());
-                                }
-                            });
-                        ui.add_space(10.);
-                        egui::ComboBox::from_label("With geometry")
-                            .selected_text(self.project.sars[data.sar_geom].name.to_string())
-                            .show_ui(ui, |ui| {
-                                for k in 0..self.project.sars.len() {
-                                    ui.selectable_value(&mut data.sar_geom, k, self.project.sars[k].name.to_string());
-                                }
-                            });
-                        if !self.project.sars[data.sar_geom].disp_data.is_empty() {
-                            egui::ComboBox::from_label("With data")
-                                .selected_text(self.project.sars[data.sar_geom].disp_data[data.sar_data].name.to_string())
+                ui.with_layout(
+                    egui::Layout::top_down(egui::Align::Center).with_cross_justify(true),
+                    |ui| {
+                        ui.vertical(|ui| {
+                            ui.label(title);
+                            ui.separator();
+                            ui.add_space(10.);
+                            ui.label("Use this command to calibrate a model using InSAR data.");
+                            ui.add_space(5.);
+                            ui.separator();
+                            ui.add_space(15.);
+                            egui::ComboBox::from_label("On model")
+                                .selected_text(self.project.models[data.model].name.to_string())
                                 .show_ui(ui, |ui| {
-                                    for k in 0..self.project.sars[data.sar_geom].disp_data.len() {
-                                        ui.selectable_value(&mut data.sar_data, k, self.project.sars[data.sar_geom].disp_data[k].name.to_string());
+                                    for k in 0..self.project.models.len() {
+                                        ui.selectable_value(
+                                            &mut data.model,
+                                            k,
+                                            self.project.models[k].name.to_string(),
+                                        );
                                     }
                                 });
-                        }
-                    });
-                });
-        
-                ui.with_layout(egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true), |ui| {
-                    match &data.status {
+                            ui.add_space(10.);
+                            egui::ComboBox::from_label("With geometry")
+                                .selected_text(self.project.sars[data.sar_geom].name.to_string())
+                                .show_ui(ui, |ui| {
+                                    for k in 0..self.project.sars.len() {
+                                        ui.selectable_value(
+                                            &mut data.sar_geom,
+                                            k,
+                                            self.project.sars[k].name.to_string(),
+                                        );
+                                    }
+                                });
+                            if !self.project.sars[data.sar_geom].disp_data.is_empty() {
+                                egui::ComboBox::from_label("With data")
+                                    .selected_text(
+                                        self.project.sars[data.sar_geom].disp_data[data.sar_data]
+                                            .name
+                                            .to_string(),
+                                    )
+                                    .show_ui(ui, |ui| {
+                                        for k in 0..self.project.sars[data.sar_geom].disp_data.len()
+                                        {
+                                            ui.selectable_value(
+                                                &mut data.sar_data,
+                                                k,
+                                                self.project.sars[data.sar_geom].disp_data[k]
+                                                    .name
+                                                    .to_string(),
+                                            );
+                                        }
+                                    });
+                            }
+                        });
+                    },
+                );
+
+                ui.with_layout(
+                    egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
+                    |ui| match &data.status {
                         CommandStatus::Error(e) => match e {
-                            CommandError::EmptySar => {ui.label("No data in selected sar geometry.");},
-                            CommandError::MethodError => {ui.label("An error occured with the solver.");},
+                            CommandError::EmptySar => {
+                                ui.label("No data in selected sar geometry.");
+                            }
+                            CommandError::MethodError => {
+                                ui.label("An error occured with the solver.");
+                            }
                             _ => (),
                         },
                         _ => (),
-                    }
-                });
-        
+                    },
+                );
+
                 ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-                    let apply_text= match data.status {
+                    let apply_text = match data.status {
                         CommandStatus::Clean => egui::RichText::new("Apply"),
                         CommandStatus::Complete => egui::RichText::new(Phosphor::CHECK),
                         CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
                     };
-                    let apply_button= ui.button(apply_text.size(22.));
-                    
+                    let apply_button = ui.button(apply_text.size(22.));
+
                     if apply_button.clicked() {
                         if data.status != CommandStatus::Clean {
                             data.status = CommandStatus::Clean;
@@ -1186,8 +1380,15 @@ impl AppDM {
                             if self.project.sars[data.sar_geom].disp_data.is_empty() {
                                 data.status = CommandStatus::Error(CommandError::EmptySar);
                             } else {
-                                match self.project.calibrate_model(data.model, data.sar_geom, data.sar_data) {
-                                    Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
+                                match self.project.calibrate_model(
+                                    data.model,
+                                    data.sar_geom,
+                                    data.sar_data,
+                                ) {
+                                    Err(_) => {
+                                        data.status =
+                                            CommandStatus::Error(CommandError::MethodError)
+                                    }
                                     Ok(_) => data.status = CommandStatus::Complete,
                                 };
                             }

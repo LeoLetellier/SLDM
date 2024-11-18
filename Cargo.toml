@@ -2,7 +2,7 @@
 name = "SLDM"
 version = "0.1.0"
 authors = ["Léo Letellier"]
-repository = "https://github.com/LeoLetellier/SLBL-FSA"
+repository = "https://github.com/LeoLetellier/SLDM"
 edition = "2021"
 
 [dependencies]

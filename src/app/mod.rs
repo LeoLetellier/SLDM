@@ -1,11 +1,11 @@
-pub(crate) mod context_menu;
 mod action_panel;
+pub(crate) mod context_menu;
 mod viewer;
 
+use crate::components::command::ProjectCommand;
+use crate::project::Project;
 use action_panel::Panel;
 use egui_phosphor::regular as Phosphor;
-use crate::project::Project;
-use crate::components::command::ProjectCommand;
 
 #[derive(Debug, Default)]
 pub(crate) struct AppDM {
@@ -43,9 +43,12 @@ impl eframe::App for AppDM {
                 });
         }
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center).with_cross_justify(true), |ui| {
-                self.ui_viewer(ui);
-            });
+            ui.with_layout(
+                egui::Layout::left_to_right(egui::Align::Center).with_cross_justify(true),
+                |ui| {
+                    self.ui_viewer(ui);
+                },
+            );
         });
         egui::Window::new(egui::RichText::new(Phosphor::INFO.to_string() + " About"))
             .fixed_size([200., 500.])
@@ -71,13 +74,13 @@ impl AppDM {
 
     fn ui_about(ui: &mut egui::Ui) {
         ui.label("Slow Landslide Displacement Model");
-                ui.separator();
-                ui.label("Version: ".to_owned() + Self::VERSION);
-                ui.label("Author: ".to_owned() + Self::AUTHORS);
-                ui.horizontal(|ui| {
-                    ui.label("Repository: ");
-                    ui.hyperlink_to("GitHub", Self::REPOSITORY);
-                });
+        ui.separator();
+        ui.label("Version: ".to_owned() + Self::VERSION);
+        ui.label("Author: ".to_owned() + Self::AUTHORS);
+        ui.horizontal(|ui| {
+            ui.label("Repository: ");
+            ui.hyperlink_to("GitHub", Self::REPOSITORY);
+        });
     }
 
     pub(crate) fn reset_with_project(&mut self, project: Project) {

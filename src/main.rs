@@ -18,8 +18,8 @@ fn main() {
     };
 
     let _ = eframe::run_native(
-        "sldm_app", 
-        native_options, 
-        Box::new(|cc| Ok(Box::new(AppDM::new(cc))))
+        "sldm_app",
+        native_options,
+        Box::new(|cc| Ok(Box::new(AppDM::new(cc)))),
     );
 }

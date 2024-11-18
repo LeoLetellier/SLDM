@@ -18,7 +18,7 @@
 //     proj.set_orientation(1.919);
 //     let sar = Orientation::new(4.974, 0.610);
 //     proj.model.as_mut().unwrap().compute_mdl_disp_in_los(proj.orientation.as_ref().unwrap(), &sar);
-    
+
 //     dbg!(&proj.slides[0]);
 //     //dbg!(&proj.slides[1]);
 //     dbg!(&proj.model);

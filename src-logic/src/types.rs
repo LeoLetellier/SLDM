@@ -1,15 +1,18 @@
 //! This module defines the types used to hold the information in this project.
 
-use std::f32::consts::PI;
-use crate::{data::vec_proj::{deg2rad, Vector2Rep, Vector3Rep}, profile::interpol_linear};
+use crate::{
+    data::vec_proj::{deg2rad, Vector2Rep, Vector3Rep},
+    profile::interpol_linear,
+};
 use eqsolver::SolverError;
+use std::f32::consts::PI;
 use thiserror::Error;
 
 /// The 1D Digital Elevation Model representation.
-/// 
+///
 /// It is one dimensional as it holds information in one axis only.
-/// 
-/// It defines the x sampling for all layers, the azimuth of 
+///
+/// It defines the x sampling for all layers, the azimuth of
 /// the 2D section (increasing x-axis), and the elevation value
 /// of th topography at each sampling points.
 #[derive(Default, Debug, Clone)]
@@ -23,10 +26,7 @@ pub struct Dem1D {
 #[derive(Debug, Error)]
 pub enum VectorInputError {
     #[error("Length of first ({vec1}) and second ({vec2}) vectors are not the same")]
-    InconsistentLen {
-        vec1: usize,
-        vec2: usize,
-    },
+    InconsistentLen { vec1: usize, vec2: usize },
     #[error("Input vectors are empty")]
     EmptyVecs,
     #[error("Error in pillar method")]
@@ -37,18 +37,21 @@ pub enum VectorInputError {
 
 impl Dem1D {
     /// Construct a new Dem1D from the 2D section orientation and the x/z data
-    /// 
+    ///
     /// # Errors
     /// * the length of the x and z vectors differ
     /// * the x and z vectors are empty
     pub(crate) fn new(x: Vec<f32>, z: Vec<f32>) -> Result<Self, VectorInputError> {
         if x.len() != z.len() {
-            Err(VectorInputError::InconsistentLen { vec1: x.len(), vec2: z.len() })
+            Err(VectorInputError::InconsistentLen {
+                vec1: x.len(),
+                vec2: z.len(),
+            })
         } else if x.is_empty() {
             Err(VectorInputError::EmptyVecs)
         } else {
             let surface = Surface1D::new(z);
-            Ok(Dem1D {x, surface})
+            Ok(Dem1D { x, surface })
         }
     }
 
@@ -63,7 +66,7 @@ pub struct Surface1D {
     /// Elevation property
     pub z: Vec<f32>,
     /// The slope (centered) of the elevation property
-    /// 
+    ///
     /// Need to be computed before using
     pub slope: Option<Vec<f32>>,
 }
@@ -76,9 +79,9 @@ impl Surface1D {
 }
 
 /// A 1D profile defining vectors and their positions on the 2D section
-/// 
+///
 /// The defined vectors represents the ground displacement at origin points
-/// 
+///
 /// The pillars representing the migration of the vectors from the failure surface
 /// to the ground can be represented by segments from the failure surface sampling
 /// to the said vectors origin points
@@ -92,18 +95,27 @@ pub struct DispProfile {
 
 impl DispProfile {
     /// Construct a new vector profile from its vectors and their origins
-    /// 
+    ///
     /// # Errors
     /// * the length of the vecs and origins vectors differ
     pub fn new(vecs: Vec<Vector2Rep>, origins: Vec<[f32; 2]>) -> Result<Self, VectorInputError> {
         if vecs.len() != origins.len() {
-            Err(VectorInputError::InconsistentLen { vec1: vecs.len(), vec2: origins.len() })
+            Err(VectorInputError::InconsistentLen {
+                vec1: vecs.len(),
+                vec2: origins.len(),
+            })
         } else {
             Ok(DispProfile { vecs, origins })
         }
     }
 
-    pub fn from_slope_params(slope: Vec<f32>, amplitude: Vec<f32>, ox: Vec<f32>, oz: Vec<f32>, is_facing_right: bool) -> Result<Self, VectorInputError> {
+    pub fn from_slope_params(
+        slope: Vec<f32>,
+        amplitude: Vec<f32>,
+        ox: Vec<f32>,
+        oz: Vec<f32>,
+        is_facing_right: bool,
+    ) -> Result<Self, VectorInputError> {
         let mut vecs: Vec<Vector2Rep> = vec![];
         let mut origins: Vec<[f32; 2]> = vec![];
 
@@ -120,10 +132,10 @@ impl DispProfile {
 }
 
 /// A 1D displacement data profile
-/// 
+///
 /// Contains displacement values along the 2D profile at positions that
 /// may differs from the dem sampling
-/// 
+///
 /// Must be associated with the acquisition orientation
 #[derive(Default, Debug, Clone)]
 pub struct DispData {
@@ -132,7 +144,7 @@ pub struct DispData {
     /// amplitude of the displacement
     pub amplitude: Vec<f32>,
     /// projection of the recorded displacement into a section
-    /// 
+    ///
     /// Can be used to display the displacement into a 2D section.
     /// Not projected if empty
     pub projected_vecs: Vec<Vector2Rep>,
@@ -142,11 +154,18 @@ impl DispData {
     /// Construct a new displacement data profile from x / amplitude values
     pub fn new(x: Vec<f32>, amplitude: Vec<f32>) -> Result<Self, VectorInputError> {
         if x.len() != amplitude.len() {
-            Err(VectorInputError::InconsistentLen { vec1: x.len(), vec2: amplitude.len() })
+            Err(VectorInputError::InconsistentLen {
+                vec1: x.len(),
+                vec2: amplitude.len(),
+            })
         } else if x.is_empty() {
             Err(VectorInputError::EmptyVecs)
         } else {
-            Ok(DispData { x, amplitude, projected_vecs: Vec::<Vector2Rep>::new() })
+            Ok(DispData {
+                x,
+                amplitude,
+                projected_vecs: Vec::<Vector2Rep>::new(),
+            })
         }
     }
 }
@@ -155,14 +174,14 @@ impl DispData {
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct Orientation {
     /// Azimuth angle
-    /// 
+    ///
     /// Represent the clockwise angle between the North and the azimuth of the acquisition sensor
-    pub azimuth : f32,
+    pub azimuth: f32,
     /// Incidence angle
-    /// 
+    ///
     /// Represent the angle between the perpendicular projection to the ground and the actual
     /// sensor inclination
-    pub incidence : f32,
+    pub incidence: f32,
 }
 
 impl From<Orientation> for Vector3Rep {
@@ -182,7 +201,7 @@ pub enum OrientationError {
 
 impl Orientation {
     /// Construct a new orientation based on azimuth and incidence angles
-    /// 
+    ///
     /// # Errors
     /// * the azimuth or incidence value is out of range
     pub fn new(azimuth: f32, incidence: f32) -> Result<Self, OrientationError> {
@@ -203,7 +222,7 @@ impl Orientation {
 }
 
 /// Check the range of the azimuth value.
-/// 
+///
 /// False if out of range
 fn check_azimuth_range(azimuth: f32) -> bool {
     match azimuth {
@@ -214,7 +233,7 @@ fn check_azimuth_range(azimuth: f32) -> bool {
 }
 
 /// Check the range of the incidence value.
-/// 
+///
 /// False if out of range
 fn check_incidence_range(incidence: f32) -> bool {
     match incidence {

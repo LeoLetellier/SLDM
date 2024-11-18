@@ -1,6 +1,6 @@
 use super::*;
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
-use anyhow::{Result, bail};
 use std::io::Write;
 use std::path::Path;
 use toml;
@@ -37,7 +37,7 @@ pub(crate) fn save_toml(project: &Project, root_folder: &String) -> Result<()> {
 
     let mut file = std::fs::File::create(root_folder.to_string() + "/project.toml")?;
     file.write_all(toml.as_bytes())?;
-    
+
     Ok(())
 }
 
@@ -61,12 +61,17 @@ pub(crate) fn save_all_csv(project: &Project, root_folder: &String) -> Result<()
 
     for m in 0..project.models.len() {
         let path = root_folder.to_string() + "/model_" + (m + 1).to_string().as_str() + ".csv";
-        project.models[m].to_csv(&path,&project.dem.dem.x)?;
+        project.models[m].to_csv(&path, &project.dem.dem.x)?;
     }
 
     for g in 0..project.sars.len() {
         for d in 0..project.sars[g].disp_data.len() {
-            let path = root_folder.to_string() + "/disp_" + (g + 1).to_string().as_str() + "_data_" + (d + 1).to_string().as_str() + ".csv";
+            let path = root_folder.to_string()
+                + "/disp_"
+                + (g + 1).to_string().as_str()
+                + "_data_"
+                + (d + 1).to_string().as_str()
+                + ".csv";
             project.sars[g].disp_data[d].to_csv(&path)?;
         }
     }
@@ -82,13 +87,9 @@ fn load_all_csv(project: &mut Project, project_file: &ProjectFile) -> Result<()>
 
     let root = Path::parent(Path::new(root));
     let root = match root {
-        Some(path) => {
-            match path.to_str() {
-                Some(path) => {
-                    path.to_string() + "\\"
-                },
-                None => bail!(""),
-            }
+        Some(path) => match path.to_str() {
+            Some(path) => path.to_string() + "\\",
+            None => bail!(""),
         },
         None => bail!("No parent folder. What have you done ?"),
     };
@@ -102,7 +103,7 @@ fn load_all_csv(project: &mut Project, project_file: &ProjectFile) -> Result<()>
                 let path = root.to_string() + surfaces[s].file_name.to_string().as_str();
                 project.surfaces[s].from_csv(&path, &project.dem.dem)?;
             }
-        },
+        }
         None => (),
     }
 
@@ -112,7 +113,7 @@ fn load_all_csv(project: &mut Project, project_file: &ProjectFile) -> Result<()>
                 let path = root.to_string() + models[m].file_name.to_string().as_str();
                 project.models[m].from_csv(&path, &project.dem.dem)?;
             }
-        },
+        }
         None => (),
     }
 
@@ -125,11 +126,11 @@ fn load_all_csv(project: &mut Project, project_file: &ProjectFile) -> Result<()>
                             let path = root.to_string() + datas[d].file_name.to_string().as_str();
                             project.sars[g].disp_data[d].from_csv(&path)?;
                         }
-                    },
+                    }
                     None => (),
                 }
             }
-        },
+        }
         None => (),
     }
 
@@ -163,7 +164,12 @@ impl ProjectFile {
             Some(DispGeomRelated::from_project(&app_project.sars))
         };
 
-        Self { project, surface, model, disp_data }
+        Self {
+            project,
+            surface,
+            model,
+            disp_data,
+        }
     }
 
     fn to_project(&self, root_folder: &String) -> Project {
@@ -174,7 +180,7 @@ impl ProjectFile {
                 for surface_related in s {
                     SurfaceRelated::to_project(&surface_related, &mut project);
                 }
-            },
+            }
             None => (),
         }
 
@@ -183,7 +189,7 @@ impl ProjectFile {
                 for model_related in m {
                     ModelRelated::to_project(&model_related, &mut project);
                 }
-            },
+            }
             None => (),
         }
 
@@ -192,7 +198,7 @@ impl ProjectFile {
                 for disp_related in d {
                     DispGeomRelated::to_project(&disp_related, &mut project);
                 }
-            },
+            }
             None => (),
         }
 
@@ -222,7 +228,12 @@ impl ProjectRelated {
             None => None,
         };
 
-        Self {name, note, dem_file_name, dem_azimuth}
+        Self {
+            name,
+            note,
+            dem_file_name,
+            dem_azimuth,
+        }
     }
 
     fn to_project(&self, root_folder: &String) -> Project {
@@ -241,7 +252,15 @@ impl ProjectRelated {
             None => None,
         };
 
-        Project { name, path, note, dem, surfaces: vec![], models: vec![], sars: vec![] }
+        Project {
+            name,
+            path,
+            note,
+            dem,
+            surfaces: vec![],
+            models: vec![],
+            sars: vec![],
+        }
     }
 }
 
@@ -288,7 +307,13 @@ impl ModelRelated {
             let weights = models[k].weights.clone();
             let boundaries = models[k].boundaries.clone();
             let gradients = models[k].gradients.clone();
-            let model_related = Self {name, file_name, weights, boundaries, gradients};
+            let model_related = Self {
+                name,
+                file_name,
+                weights,
+                boundaries,
+                gradients,
+            };
             relateds.push(model_related);
         }
         relateds
@@ -309,7 +334,7 @@ struct DispGeomRelated {
     name: String,
     azimuth: f32,
     incidence: f32,
-    datas: Option<Vec<DispDataRelated>>
+    datas: Option<Vec<DispDataRelated>>,
 }
 
 impl DispGeomRelated {
@@ -324,8 +349,13 @@ impl DispGeomRelated {
             } else {
                 Some(DispDataRelated::from_project(&sar[k].disp_data, k))
             };
-            let geom_related = Self { name, azimuth, incidence, datas };
-            relateds.push(geom_related);            
+            let geom_related = Self {
+                name,
+                azimuth,
+                incidence,
+                datas,
+            };
+            relateds.push(geom_related);
         }
         relateds
     }
@@ -333,14 +363,15 @@ impl DispGeomRelated {
     fn to_project(&self, project: &mut Project) {
         let mut bundle = BundleSar::default();
         bundle.name = self.name.to_string();
-        bundle.sar_geometry = Orientation::from_deg(self.azimuth, self.incidence).unwrap_or_default();
+        bundle.sar_geometry =
+            Orientation::from_deg(self.azimuth, self.incidence).unwrap_or_default();
         let mut sub_bundles = vec![];
         match &self.datas {
             Some(data) => {
                 for d in data {
                     sub_bundles.push(DispDataRelated::to_project(&d));
                 }
-            },
+            }
             None => (),
         }
         bundle.disp_data = sub_bundles;
@@ -359,9 +390,13 @@ impl DispDataRelated {
         let mut relateds = vec![];
         for k in 0..data.len() {
             let name = data[k].name.to_string();
-            let file_name = "disp".to_string() + "_" + (geom_index + 1).to_string().as_str() 
-            + "_data_" + (k + 1).to_string().as_str() + ".csv";
-            let data_related = Self {name, file_name};
+            let file_name = "disp".to_string()
+                + "_"
+                + (geom_index + 1).to_string().as_str()
+                + "_data_"
+                + (k + 1).to_string().as_str()
+                + ".csv";
+            let data_related = Self { name, file_name };
             relateds.push(data_related);
         }
         relateds
@@ -430,7 +465,13 @@ impl BundleModel {
             self.surfaces.push(surface);
         }
         let boundaries = self.boundaries.iter().map(|(a, b)| [*a, *b]).collect();
-        self.resulting_profile = DispProfile::from_surfaces(dem, &mut self.surfaces, &boundaries, &self.gradients, &self.weights)?;
+        self.resulting_profile = DispProfile::from_surfaces(
+            dem,
+            &mut self.surfaces,
+            &boundaries,
+            &self.gradients,
+            &self.weights,
+        )?;
         Ok(())
     }
 
@@ -478,46 +519,94 @@ mod tests {
     #[test]
     fn test_toml_empty() {
         let project = ProjectFile {
-            project: ProjectRelated { name: String::from("A Sample Project"), note: None, dem_file_name: String::from("dem.csv"), dem_azimuth: None},
+            project: ProjectRelated {
+                name: String::from("A Sample Project"),
+                note: None,
+                dem_file_name: String::from("dem.csv"),
+                dem_azimuth: None,
+            },
             surface: None,
             model: None,
             disp_data: None,
         };
         let toml = toml::to_string(&project).unwrap();
-        let mut file = std::fs::File::create("src-logic/test_data/project_files/empty_project.toml").unwrap();
+        let mut file =
+            std::fs::File::create("src-logic/test_data/project_files/empty_project.toml").unwrap();
         file.write_all(toml.as_bytes()).unwrap();
     }
 
     #[test]
     fn test_toml() {
         let proj = ProjectFile {
-            project: ProjectRelated { name: String::from("My dear little project"), 
-                note: Some(String::from("Usefull data I want to remember about my project")), 
+            project: ProjectRelated {
+                name: String::from("My dear little project"),
+                note: Some(String::from(
+                    "Usefull data I want to remember about my project",
+                )),
                 dem_file_name: String::from("dem.csv"),
                 dem_azimuth: Some(289.),
             },
-            surface: Some(vec![SurfaceRelated{name: String::from("surf1"), file_name: String::from("surf1.csv")},
-            SurfaceRelated{name: String::from("surf2"), file_name: String::from("surf2.csv")}]),
-            model: Some(vec![ModelRelated{name: String::from("model one"), file_name: String::from("model1.csv"), weights: vec![], boundaries: vec![], gradients: vec![]},
-            ModelRelated{name: String::from("model two"), file_name: String::from("model2.csv"), weights: vec![], boundaries: vec![], gradients: vec![]},
-            ModelRelated{name: String::from("model three"), file_name: String::from("model3.csv"), weights: vec![], boundaries: vec![], gradients: vec![]}]),
-            disp_data: Some(vec![DispGeomRelated{
-                name: String::from("sat_geometry"),
-                azimuth: 260.,
-                incidence: 35.,
-                datas: Some(vec![DispDataRelated{name: String::from("data one"), file_name: String::from("data1.csv")},
-                DispDataRelated{name: String::from("data two"), file_name: String::from("data2.csv")}])
-            },
-            DispGeomRelated{
-                name: String::from("sat_geometry2"),
-                azimuth: 260.,
-                incidence: 35.,
-                datas: None,
-            }]),
+            surface: Some(vec![
+                SurfaceRelated {
+                    name: String::from("surf1"),
+                    file_name: String::from("surf1.csv"),
+                },
+                SurfaceRelated {
+                    name: String::from("surf2"),
+                    file_name: String::from("surf2.csv"),
+                },
+            ]),
+            model: Some(vec![
+                ModelRelated {
+                    name: String::from("model one"),
+                    file_name: String::from("model1.csv"),
+                    weights: vec![],
+                    boundaries: vec![],
+                    gradients: vec![],
+                },
+                ModelRelated {
+                    name: String::from("model two"),
+                    file_name: String::from("model2.csv"),
+                    weights: vec![],
+                    boundaries: vec![],
+                    gradients: vec![],
+                },
+                ModelRelated {
+                    name: String::from("model three"),
+                    file_name: String::from("model3.csv"),
+                    weights: vec![],
+                    boundaries: vec![],
+                    gradients: vec![],
+                },
+            ]),
+            disp_data: Some(vec![
+                DispGeomRelated {
+                    name: String::from("sat_geometry"),
+                    azimuth: 260.,
+                    incidence: 35.,
+                    datas: Some(vec![
+                        DispDataRelated {
+                            name: String::from("data one"),
+                            file_name: String::from("data1.csv"),
+                        },
+                        DispDataRelated {
+                            name: String::from("data two"),
+                            file_name: String::from("data2.csv"),
+                        },
+                    ]),
+                },
+                DispGeomRelated {
+                    name: String::from("sat_geometry2"),
+                    azimuth: 260.,
+                    incidence: 35.,
+                    datas: None,
+                },
+            ]),
         };
         let toml = toml::to_string(&proj).unwrap();
         println!("toml:\n{}", toml);
-        let mut file = std::fs::File::create("src-logic/test_data/project_files/project_file.toml").unwrap();
+        let mut file =
+            std::fs::File::create("src-logic/test_data/project_files/project_file.toml").unwrap();
         file.write_all(toml.as_bytes()).unwrap();
     }
 }
