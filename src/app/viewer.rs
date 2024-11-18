@@ -58,11 +58,11 @@ impl AppDM {
                         }
                         data
                     });
-                    let line = line.name("Surface Elevation");
-                    match surf.color_surface {
-                        Some(c) => surface_lines.push(line.color(c)),
-                        None => surface_lines.push(line),
+                    let mut line = line.name("Surface Elevation");
+                    if let Some(c) = surf.color_surface {
+                        line = line.color(egui::Color32::from_rgb(c[0], c[1], c[2]));
                     }
+                    surface_lines.push(line);
                 }
                 // Plot surface unit model vectors
                 if !surf.profile.vecs.is_empty() & surf.section_arrow {
@@ -79,11 +79,11 @@ impl AppDM {
                                 (origins[1] + coords.1 * surf.arrow_scaling_factor) as f64]
                             );
                         });
-                    let arrow = Arrows::new(base, tip).name("Displacement Vectors");
-                    match surf.color_arrow {
-                        Some(c) => arrows.push(arrow.color(c)),
-                        None => arrows.push(arrow),
+                    let mut arrow = Arrows::new(base, tip).name("Displacement Vectors");
+                    if let Some(c) = surf.color_arrow {
+                        arrow = arrow.color(egui::Color32::from_rgb(c[0], c[1], c[2]));
                     }
+                    arrows.push(arrow);
                 }
                 // Plot surface unit model pillars
                 if !surf.profile.vecs.is_empty() & surf.section_pillar {
@@ -115,11 +115,11 @@ impl AppDM {
                                 (origins[1] + coords.1 * model.arrow_scaling_factor) as f64]
                             );
                         });
-                    let arrow = Arrows::new(base, tip).name("Displacement Vectors");
-                    match model.arrow_color {
-                        Some(c) => arrows.push(arrow.color(c)),
-                        None => arrows.push(arrow),
+                    let mut arrow = Arrows::new(base, tip).name("Displacement Vectors");
+                    if let Some(c) = model.color_arrow {
+                        arrow = arrow.color(egui::Color32::from_rgb(c[0], c[1], c[2]));
                     }
+                    arrows.push(arrow);
                 }
             }
         }

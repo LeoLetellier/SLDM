@@ -37,7 +37,7 @@ impl AppDM {
             .show(ui, |ui| {
                 (0..self.project.surfaces.len()).for_each(|k| {
                     let bundle = &mut self.project.surfaces[k];
-                    ui.push_id(k, |ui|{
+                    ui.push_id(k, |ui| {
                         egui::CollapsingHeader::new(bundle.name.clone())
                             .default_open(true)
                             .show(ui, |ui| {
@@ -53,6 +53,26 @@ impl AppDM {
                                         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_surface)).clicked() {
                                             bundle.section_surface = !bundle.section_surface;
                                         };
+                                        if bundle.section_surface {
+                                            ui.menu_button(egui::RichText::new(Phosphor::PALETTE), |ui| {
+                                                ui.vertical(|ui| {
+                                                    let mut checked = bundle.color_surface.is_none();
+                                                    ui.horizontal(|ui| {
+                                                        ui.checkbox(&mut checked, "auto");
+                                                        match checked {
+                                                            false if bundle.color_surface.is_none() => bundle.color_surface = Some([0, 0, 0]),
+                                                            false => {
+                                                                if let Some(arrow_color) = &mut bundle.color_surface {
+                                                                    egui::color_picker::color_edit_button_srgb(ui, arrow_color);
+                                                                };
+                                                            },
+                                                            true if bundle.color_surface.is_some() => bundle.color_surface = None,
+                                                            true => (),
+                                                        }
+                                                    });
+                                                });
+                                            });
+                                        }
                                     });
                                 });
                                 ui.horizontal(|ui| {
@@ -67,8 +87,23 @@ impl AppDM {
                                         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_arrow)).clicked() {
                                             bundle.section_arrow = !bundle.section_arrow;
                                         }
-                                        if ui.button(egui::RichText::new(Phosphor::GEAR)).clicked() {
-                                            
+                                        if bundle.section_arrow {
+                                            ui.menu_button(egui::RichText::new(Phosphor::PALETTE), |ui| {
+                                                let mut checked = bundle.color_arrow.is_none();
+                                                ui.horizontal(|ui| {
+                                                    ui.checkbox(&mut checked, "auto");
+                                                    match checked {
+                                                        false if bundle.color_arrow.is_none() => bundle.color_arrow = Some([0, 0, 0]),
+                                                        false => {
+                                                            if let Some(arrow_color) = &mut bundle.color_arrow {
+                                                                egui::color_picker::color_edit_button_srgb(ui, arrow_color);
+                                                            };
+                                                        },
+                                                        true if bundle.color_arrow.is_some() => bundle.color_arrow = None,
+                                                        true => (),
+                                                    }
+                                                });
+                                            });
                                         }
                                     });
                                 });
@@ -86,9 +121,6 @@ impl AppDM {
                                         }
                                         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_pillar)).clicked() {
                                             bundle.section_pillar = !bundle.section_pillar;
-                                        }
-                                        if ui.button(egui::RichText::new(Phosphor::GEAR)).clicked() {
-                                            
                                         }
                                     });
                                 });
@@ -121,8 +153,23 @@ impl AppDM {
                                         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.section_arrow)).clicked() {
                                             bundle.section_arrow = !bundle.section_arrow;
                                         }
-                                        if ui.button(egui::RichText::new(Phosphor::GEAR)).clicked() {
-
+                                        if bundle.section_arrow {
+                                            ui.menu_button(egui::RichText::new(Phosphor::PALETTE), |ui| {
+                                                let mut checked = bundle.color_arrow.is_none();
+                                                ui.horizontal(|ui| {
+                                                    ui.checkbox(&mut checked, "auto");
+                                                    match checked {
+                                                        false if bundle.color_arrow.is_none() => bundle.color_arrow = Some([0, 0, 0]),
+                                                        false => {
+                                                            if let Some(arrow_color) = &mut bundle.color_arrow {
+                                                                egui::color_picker::color_edit_button_srgb(ui, arrow_color);
+                                                            };
+                                                        },
+                                                        true if bundle.color_arrow.is_some() => bundle.color_arrow = None,
+                                                        true => (),
+                                                    }
+                                                });
+                                            });
                                         }
                                     });
                                 });
@@ -157,18 +204,18 @@ impl AppDM {
                                         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|{
                                             ui.label(bundle.disp_data[i].name.to_owned());
                                         });
-                                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                            ui.set_width(ui.available_width());
-                                            if self.is_viewer_properties {
-                                                if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.disp_data[i].section_arrow)).clicked() {
-                                                    bundle.disp_data[i].section_arrow = !bundle.disp_data[i].section_arrow;
-                                                };
-                                            } else {
-                                                if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.disp_data[i].property_disp)).clicked() {
-                                                    bundle.disp_data[i].property_disp = !bundle.disp_data[i].property_disp;
-                                                };
-                                            }
-                                        });
+                                        // ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        //     ui.set_width(ui.available_width());
+                                        //     if self.is_viewer_properties {
+                                        //         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.disp_data[i].section_arrow)).clicked() {
+                                        //             bundle.disp_data[i].section_arrow = !bundle.disp_data[i].section_arrow;
+                                        //         };
+                                        //     } else {
+                                        //         if ui.button(Self::get_display_icon(true, !self.is_viewer_properties, bundle.disp_data[i].property_disp)).clicked() {
+                                        //             bundle.disp_data[i].property_disp = !bundle.disp_data[i].property_disp;
+                                        //         };
+                                        //     }
+                                        // });
                                     });
                                 }
                             });

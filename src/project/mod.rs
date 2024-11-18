@@ -179,8 +179,8 @@ pub(crate) struct BundleSurface {
     pub(crate) section_arrow: bool,
     pub(crate) arrow_scaling_factor: f32,
     pub(crate) section_pillar: bool,
-    pub(crate) color_surface: Option<egui::Color32>,
-    pub(crate) color_arrow: Option<egui::Color32>,
+    pub(crate) color_surface: Option<[u8; 3]>,
+    pub(crate) color_arrow: Option<[u8; 3]>,
 }
 
 impl Default for BundleSurface {
@@ -212,7 +212,7 @@ pub(crate) struct BundleModel {
 
     pub(crate) section_arrow: bool,
     pub(crate) arrow_scaling_factor: f32,
-    pub(crate) arrow_color: Option<egui::Color32>,
+    pub(crate) color_arrow: Option<[u8; 3]>,
 }
 
 impl Default for BundleModel {
@@ -226,7 +226,7 @@ impl Default for BundleModel {
             resulting_profile: DispProfile::default(),
             section_arrow: true,
             arrow_scaling_factor: 10.0,
-            arrow_color: None,
+            color_arrow: None,
         }
     }
 }
@@ -242,6 +242,8 @@ pub(crate) struct BundleSar {
 pub(crate) struct BundleDispData {
     pub(crate) name: String,
     pub(crate) disp_data: DispData,
+    #[allow(dead_code)]  //
     pub(crate) section_arrow: bool,
+    #[allow(dead_code)]  //
     pub(crate) property_disp: bool,
 }
