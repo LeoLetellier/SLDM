@@ -35,7 +35,7 @@ jobs:
       - name: Patch Ubuntu Setup
         if: matrix.os == 'ubuntu-24.04'
         run: |
-          sudo apt-get update && apt-get install -y build-essential
+          sudo apt-get update && apt-get install -y font-config
       - uses: dtolnay/rust-toolchain@stable
       - name: Build
         run: cargo build --release
