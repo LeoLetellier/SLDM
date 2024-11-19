@@ -1625,6 +1625,8 @@ impl AppDM {
                             data.amp_in_los = profile.projected_amplitude_onto(geom.sar_geometry.to_owned(), section_geom.to_owned());
 
                             data.rmse = rmse(&data.amp_in_los, &data.amp_data);
+                            
+                            self.is_viewer_properties = true;
                         }
                         ui.label(format!("Model: {}", model.name.to_owned()));
                         ui.add_space(2.);
@@ -1678,7 +1680,6 @@ impl AppDM {
                                 }
                             }
                         });
-                        self.is_viewer_properties = true;
                     }
                 } else {
                     ui.label("No section geometry defined");
