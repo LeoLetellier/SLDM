@@ -32,14 +32,14 @@ jobs:
     needs: ci
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build
-        run: cargo build --release
       - name: Patch Ubuntu Setup
         if: matrix.os == 'ubuntu-24.04'
         run: |
-        apt-get update && apt-get install -y curl
-        apt-get install build-essential -y
+          apt-get update && apt-get install -y curl
+          apt-get install build-essential -y
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build --release
       - name: Upload binaries
         uses: svenstaro/upload-release-action@2.9.0
         with:
