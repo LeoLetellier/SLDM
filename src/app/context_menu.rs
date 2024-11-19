@@ -72,6 +72,8 @@ impl AppDM {
                     Self::header(Phosphor::LINE_SEGMENT.to_string() + " From geometry");
                 let header_from_surfaces =
                     Self::header(Phosphor::STACK_PLUS.to_string() + " From surfaces");
+                let header_export = 
+                    Self::header(Phosphor::BOX_ARROW_UP.to_string() + " Export");
 
                 if ui.button(header_from_file).clicked() {
                     self.open_command(ProjectCommand::OpenSurface(OpenSurface::default()));
@@ -97,6 +99,10 @@ impl AppDM {
                         ui.close_menu();
                     }
                 });
+                if ui.button(header_export).clicked() {
+                    self.open_command(ProjectCommand::SurfaceExport(SurfaceExport::default()));
+                    ui.close_menu();
+                }
             });
 
             // Menu Model
@@ -106,6 +112,8 @@ impl AppDM {
                     Self::header(Phosphor::ROWS_PLUS_TOP.to_string() + " New model");
                 let header_calibrate_model =
                     Self::header(Phosphor::TRAY_ARROW_DOWN.to_string() + " Calibrate model");
+                let header_analysis =
+                    Self::header(Phosphor::MAGNIFYING_GLASS_PLUS.to_string() + " Analyse & Export");
 
                 if ui.button(header_new_model).clicked() {
                     self.open_command(ProjectCommand::ModelNew(ModelNew::default()));
@@ -113,6 +121,10 @@ impl AppDM {
                 }
                 if ui.button(header_calibrate_model).clicked() {
                     self.open_command(ProjectCommand::CalibrateModel(CalibrateModel::default()));
+                    ui.close_menu();
+                }
+                if ui.button(header_analysis).clicked() {
+                    self.open_command(ProjectCommand::ModelAnalysis(ModelAnalysis::default()));
                     ui.close_menu();
                 }
             });

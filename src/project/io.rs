@@ -245,7 +245,7 @@ impl ProjectRelated {
         };
         let mut dem = BundleDem::default();
         dem.section_geometry = match self.dem_azimuth {
-            Some(az) => match Orientation::from_deg(az, 90.) {
+            Some(az) => match Orientation::new(az, std::f32::consts::PI / 2.0) {
                 Err(_) => None,
                 Ok(o) => Some(o),
             },
@@ -364,7 +364,7 @@ impl DispGeomRelated {
         let mut bundle = BundleSar::default();
         bundle.name = self.name.to_string();
         bundle.sar_geometry =
-            Orientation::from_deg(self.azimuth, self.incidence).unwrap_or_default();
+            Orientation::new(self.azimuth, self.incidence).unwrap_or_default();
         let mut sub_bundles = vec![];
         match &self.datas {
             Some(data) => {
@@ -446,10 +446,24 @@ impl BundleSurface {
         writer.write(path, None)?;
         Ok(())
     }
+    
+    pub(crate) fn export_values(&mut self, path: &String, dem: &Dem1D) -> Result<()> {
+        if self.surface.slope.is_none() {
+            self.surface.get_slope(dem);
+        }
+        let origins = self.profile.origins.clone();
+        let vecs = self.profile.vecs.clone();
 
-    #[allow(dead_code)]
-    fn export_values(&self, _path: &String) -> Result<()> {
-        todo!()
+        let datas = vec![dem.x.clone(), self.surface.z.clone(), self.surface.slope.clone().unwrap(), 
+        origins.iter().map(|[a, _]| *a).collect(), origins.iter().map(|[_, b]| *b).collect(),
+        vecs.iter().map(|v| v.coords().0).collect(), vecs.iter().map(|v| v.coords().1).collect()];
+
+        let headers = vec!["x".to_string(), "z".to_string(), "slope".to_string(), "ox".to_string(),
+        "oz".to_string(), "vx".to_string(), "vz".to_string()];
+
+        let writer = CsvWriter::from_datas_headers(datas, headers)?;
+        writer.write(path, None)?;
+        Ok(())
     }
 }
 
@@ -486,10 +500,25 @@ impl BundleModel {
         writer.write(path, None)?;
         Ok(())
     }
+    
+    pub(crate) fn export_values(&self, path: &String, amp_los: &Vec<f32>) -> Result<()> {
+        let origins = self.resulting_profile.origins.clone();
+        let vecs = self.resulting_profile.vecs.clone();
 
-    #[allow(dead_code)]
-    fn export_values(&self, _path: &String) -> Result<()> {
-        todo!()
+        let mut datas = vec![origins.iter().map(|[a, _]| *a).collect(), origins.iter().map(|[_, b]| *b).collect(),
+        vecs.iter().map(|v| v.coords().0).collect(), vecs.iter().map(|v| v.coords().1).collect(), 
+        vecs.iter().map(|v| v.angle_rad()).collect(), vecs.iter().map(|v| v.amplitude()).collect()];
+        let mut headers = vec!["ox".to_string(), "oz".to_string(),
+        "vx".to_string(), "vz".to_string(), "slope".to_string(), "amplitude".to_string()];
+
+        if !amp_los.is_empty() {
+            datas.push(amp_los.clone());
+            headers.push("amp_in_los".to_string());
+        }
+        
+        let writer = CsvWriter::from_datas_headers(datas, headers)?;
+        writer.write(path, None)?;
+        Ok(())
     }
 }
 

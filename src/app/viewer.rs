@@ -1,7 +1,7 @@
-use super::AppDM;
+use super::{AppDM, ProjectCommand};
 use eframe::egui;
 use egui_phosphor::regular as Phosphor;
-use egui_plot::{Arrows, Line, Plot, PlotBounds};
+use egui_plot::{Arrows, Line, Plot, PlotBounds, Points};
 
 impl AppDM {
     pub(super) fn ui_viewer(&mut self, ui: &mut egui::Ui) {
@@ -34,7 +34,10 @@ impl AppDM {
                     }
                 }
                 if button_properties.on_hover_text("Properties").clicked() {
-                    // self.is_viewer_properties = true;
+                    match self.current_command {
+                        ProjectCommand::ModelAnalysis(_) => self.is_viewer_properties = true,
+                        _ => ()
+                    }
                 }
             });
         });
@@ -206,17 +209,53 @@ impl AppDM {
             });
     }
 
-    fn ui_viewer_properties(&mut self, _ui: &mut egui::Ui) {
-        // let data = vec![[0., 2.], [1., 1.], [2., 1.], [3., 2.]];
-        // let tips = vec![[1., 3.], [2., 2.], [3., 2.], [4., 3.]];
-        // let line = Line::new(data.to_owned());
-        // let arrows = Arrows::new(data.to_owned(), tips);
-        // Plot::new("Section plot")
-        //     .width(ui.available_width() - 64.)
-        //     .height(ui.available_height())
-        //     .show(ui, |plot_ui| {
-        //         plot_ui.line(line);
-        //         plot_ui.arrows(arrows);
-        //     });
+    fn ui_viewer_properties(&mut self, ui: &mut egui::Ui) {
+        let mut lines = vec![];
+        let mut points = vec![];
+
+        match &self.current_command {
+            ProjectCommand::ModelAnalysis(data) => {
+                if !data.amp_in_los.is_empty() {
+                    let full_x = self.project.dem.dem.x.clone();
+                    let data_x = data.data_x.to_owned();
+
+                    let full_amp_line = Line::new(
+                        full_x.iter().zip(data.full_amp.to_owned().iter())
+                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                    let full_amp_los_line = Line::new(
+                        full_x.iter().zip(data.full_amp_in_los.to_owned().iter())
+                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                    lines.push(full_amp_line.name("Model Amplitude").width(2.));
+                    lines.push(full_amp_los_line.name("Model in LOS").width(2.));
+
+                    let amp_points = Points::new(
+                        data_x.iter().zip(data.amp.to_owned().iter())
+                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                    let amp_los_points = Points::new(
+                        data_x.iter().zip(data.amp_in_los.to_owned().iter())
+                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                    let data_points = Points::new(
+                        data_x.iter().zip(data.amp_data.to_owned().iter())
+                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                    points.push(amp_points.name("Model Amplitude").radius(4.));
+                    points.push(amp_los_points.name("Model in LOS").radius(4.));
+                    points.push(data_points.name("Displacement Data").radius(5.));
+                }
+            },
+            _ => (),
+        }
+
+        Plot::new("Section plot")
+            .width(ui.available_width() - 64.)
+            .height(ui.available_height())
+            .legend(egui_plot::Legend::default())
+            .show(ui, |plot_ui| {
+                for line in lines {
+                    plot_ui.line(line);
+                }
+                for point in points {
+                    plot_ui.points(point);
+                }
+            });
     }
 }

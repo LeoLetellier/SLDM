@@ -140,7 +140,7 @@ fn tridiag_matrix_non_conservative(
 }
 
 impl Surface1D {
-    pub(crate) fn get_slope(&mut self, dem: &Dem1D) -> &Self {
+    pub fn get_slope(&mut self, dem: &Dem1D) -> &Self {
         self.slope = Some(slope1d(&dem.x, &self.z));
         self
     }

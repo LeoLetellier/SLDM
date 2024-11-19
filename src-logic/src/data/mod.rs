@@ -23,7 +23,7 @@ impl DispData {
     }
 }
 
-fn rmse(prediction: &[f32], observation: &[f32]) -> f32 {
+pub fn rmse(prediction: &[f32], observation: &[f32]) -> f32 {
     debug_assert_eq!(prediction.len(), observation.len());
     let len = prediction.len();
     (0..len)
