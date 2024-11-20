@@ -36,7 +36,7 @@ impl AppDM {
                 if button_properties.on_hover_text("Properties").clicked() {
                     match self.current_command {
                         ProjectCommand::ModelAnalysis(_) => self.is_viewer_properties = true,
-                        _ => ()
+                        _ => (),
                     }
                 }
             });
@@ -220,28 +220,48 @@ impl AppDM {
                     let data_x = data.data_x.to_owned();
 
                     let full_amp_line = Line::new(
-                        full_x.iter().zip(data.full_amp.to_owned().iter())
-                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                        full_x
+                            .iter()
+                            .zip(data.full_amp.to_owned().iter())
+                            .map(|(a, b)| [*a as f64, *b as f64])
+                            .collect::<Vec<[f64; 2]>>(),
+                    );
                     let full_amp_los_line = Line::new(
-                        full_x.iter().zip(data.full_amp_in_los.to_owned().iter())
-                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                        full_x
+                            .iter()
+                            .zip(data.full_amp_in_los.to_owned().iter())
+                            .map(|(a, b)| [*a as f64, *b as f64])
+                            .collect::<Vec<[f64; 2]>>(),
+                    );
                     lines.push(full_amp_line.name("Model Amplitude").width(2.));
                     lines.push(full_amp_los_line.name("Model in LOS").width(2.));
 
                     let amp_points = Points::new(
-                        data_x.iter().zip(data.amp.to_owned().iter())
-                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                        data_x
+                            .iter()
+                            .zip(data.amp.to_owned().iter())
+                            .map(|(a, b)| [*a as f64, *b as f64])
+                            .collect::<Vec<[f64; 2]>>(),
+                    );
                     let amp_los_points = Points::new(
-                        data_x.iter().zip(data.amp_in_los.to_owned().iter())
-                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                        data_x
+                            .iter()
+                            .zip(data.amp_in_los.to_owned().iter())
+                            .map(|(a, b)| [*a as f64, *b as f64])
+                            .collect::<Vec<[f64; 2]>>(),
+                    );
                     let data_points = Points::new(
-                        data_x.iter().zip(data.amp_data.to_owned().iter())
-                        .map(|(a, b)| [*a as f64, *b as f64]).collect::<Vec<[f64; 2]>>());
+                        data_x
+                            .iter()
+                            .zip(data.amp_data.to_owned().iter())
+                            .map(|(a, b)| [*a as f64, *b as f64])
+                            .collect::<Vec<[f64; 2]>>(),
+                    );
                     points.push(amp_points.name("Model Amplitude").radius(4.));
                     points.push(amp_los_points.name("Model in LOS").radius(4.));
                     points.push(data_points.name("Displacement Data").radius(5.));
                 }
-            },
+            }
             _ => (),
         }
 

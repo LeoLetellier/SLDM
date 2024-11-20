@@ -1410,8 +1410,7 @@ impl AppDM {
             // Should never reach
         };
 
-        if !self.project.surfaces.is_empty()
-        {
+        if !self.project.surfaces.is_empty() {
             ui.with_layout(
                 egui::Layout::top_down(egui::Align::Center).with_cross_justify(true),
                 |ui| {
@@ -1428,7 +1427,11 @@ impl AppDM {
                             .selected_text(self.project.surfaces[data.surface].name.to_owned())
                             .show_ui(ui, |ui| {
                                 for k in 0..self.project.surfaces.len() {
-                                    ui.selectable_value(&mut data.surface, k, self.project.surfaces[k].name.to_owned());
+                                    ui.selectable_value(
+                                        &mut data.surface,
+                                        k,
+                                        self.project.surfaces[k].name.to_owned(),
+                                    );
                                 }
                             });
                         if ui.button("Export at").clicked() {
@@ -1455,10 +1458,10 @@ impl AppDM {
                     CommandStatus::Error(e) => match e {
                         CommandError::NoFile => {
                             ui.label("No file selected");
-                        },
+                        }
                         CommandError::MethodError => {
                             ui.label("An error occured with the export.");
-                        },
+                        }
                         _ => (),
                     },
                     _ => (),
@@ -1478,8 +1481,12 @@ impl AppDM {
                         data.status = CommandStatus::Clean;
                     } else {
                         if let Some(path) = &data.file_path {
-                            match self.project.surfaces[data.surface].export_values(path, &self.project.dem.dem) {
-                                Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
+                            match self.project.surfaces[data.surface]
+                                .export_values(path, &self.project.dem.dem)
+                            {
+                                Err(_) => {
+                                    data.status = CommandStatus::Error(CommandError::MethodError)
+                                }
                                 Ok(_) => data.status = CommandStatus::Complete,
                             }
                         } else {
@@ -1536,7 +1543,9 @@ impl AppDM {
                                     });
                                 ui.add_space(10.);
                                 egui::ComboBox::from_label("With geometry")
-                                    .selected_text(self.project.sars[data.sar_geom].name.to_string())
+                                    .selected_text(
+                                        self.project.sars[data.sar_geom].name.to_string(),
+                                    )
                                     .show_ui(ui, |ui| {
                                         for k in 0..self.project.sars.len() {
                                             ui.selectable_value(
@@ -1549,12 +1558,14 @@ impl AppDM {
                                 if !self.project.sars[data.sar_geom].disp_data.is_empty() {
                                     egui::ComboBox::from_label("With data")
                                         .selected_text(
-                                            self.project.sars[data.sar_geom].disp_data[data.sar_data]
+                                            self.project.sars[data.sar_geom].disp_data
+                                                [data.sar_data]
                                                 .name
                                                 .to_string(),
                                         )
                                         .show_ui(ui, |ui| {
-                                            for k in 0..self.project.sars[data.sar_geom].disp_data.len()
+                                            for k in
+                                                0..self.project.sars[data.sar_geom].disp_data.len()
                                             {
                                                 ui.selectable_value(
                                                     &mut data.sar_data,
@@ -1569,7 +1580,7 @@ impl AppDM {
                             });
                         },
                     );
-    
+
                     ui.with_layout(
                         egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
                         |ui| match &data.analyse_status {
@@ -1582,7 +1593,7 @@ impl AppDM {
                             _ => (),
                         },
                     );
-    
+
                     ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
                         let apply_text = match data.analyse_status {
                             CommandStatus::Clean => egui::RichText::new("Analyse"),
@@ -1590,42 +1601,56 @@ impl AppDM {
                             CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
                         };
                         let apply_button = ui.button(apply_text.size(22.));
-    
+
                         if apply_button.clicked() {
                             if data.analyse_status != CommandStatus::Clean {
                                 data.analyse_status = CommandStatus::Clean;
                                 data.amp_in_los = vec![];
                             } else {
                                 if self.project.sars[data.sar_geom].disp_data.is_empty() {
-                                    data.analyse_status = CommandStatus::Error(CommandError::EmptySar);
+                                    data.analyse_status =
+                                        CommandStatus::Error(CommandError::EmptySar);
                                 } else {
                                     data.analyse_status = CommandStatus::Complete;
                                 }
                             }
                         }
                     });
-    
+
                     if data.analyse_status == CommandStatus::Complete {
                         let model = &self.project.models[data.model];
                         let geom = &self.project.sars[data.sar_geom];
                         let sar_data = &geom.disp_data[data.sar_data];
                         if data.amp_in_los.is_empty() {
                             data.amp_data = sar_data.disp_data.amplitude.to_owned();
-                            data.full_amp = model.resulting_profile.vecs.iter().map(|v| v.amplitude()).collect();
-                            data.full_amp_in_los = model.resulting_profile.projected_amplitude_onto(geom.sar_geometry.to_owned(), section_geom.to_owned());
+                            data.full_amp = model
+                                .resulting_profile
+                                .vecs
+                                .iter()
+                                .map(|v| v.amplitude())
+                                .collect();
+                            data.full_amp_in_los =
+                                model.resulting_profile.projected_amplitude_onto(
+                                    geom.sar_geometry.to_owned(),
+                                    section_geom.to_owned(),
+                                );
 
                             // interpolate profile to match sar points
                             let los_x = sar_data.disp_data.x.to_owned();
                             data.data_x = los_x.to_owned();
                             let los_y = self.project.dem.dem.interpolate_elevation_on_x(&los_x);
-                            let los_origins = &(0..los_x.len()).map(|k| [los_x[k], los_y[k]]).collect();
+                            let los_origins =
+                                &(0..los_x.len()).map(|k| [los_x[k], los_y[k]]).collect();
                             let mut profile = model.resulting_profile.clone();
                             profile.interpolate_on_origins(los_origins);
                             data.amp = profile.vecs.iter().map(|v| v.amplitude()).collect();
-                            data.amp_in_los = profile.projected_amplitude_onto(geom.sar_geometry.to_owned(), section_geom.to_owned());
+                            data.amp_in_los = profile.projected_amplitude_onto(
+                                geom.sar_geometry.to_owned(),
+                                section_geom.to_owned(),
+                            );
 
                             data.rmse = rmse(&data.amp_in_los, &data.amp_data);
-                            
+
                             self.is_viewer_properties = true;
                         }
                         ui.label(format!("Model: {}", model.name.to_owned()));
@@ -1635,7 +1660,11 @@ impl AppDM {
                         ui.add_space(5.);
                         ui.label(format!("Geometry: {}", geom.name.to_owned()));
                         ui.add_space(2.);
-                        ui.label(format!("az: {}° ; i: {}°", rad2deg(geom.sar_geometry.azimuth), rad2deg(geom.sar_geometry.incidence)));
+                        ui.label(format!(
+                            "az: {}° ; i: {}°",
+                            rad2deg(geom.sar_geometry.azimuth),
+                            rad2deg(geom.sar_geometry.incidence)
+                        ));
                         ui.add_space(5.);
                         ui.label(format!("Data: {}", sar_data.name.to_owned()));
                         ui.add_space(5.);
@@ -1664,18 +1693,22 @@ impl AppDM {
                                 CommandStatus::Error(_) => egui::RichText::new(Phosphor::WARNING),
                             };
                             let apply_button = ui.button(apply_text.size(22.));
-        
+
                             if apply_button.clicked() {
                                 if data.export_status != CommandStatus::Clean {
                                     data.export_status = CommandStatus::Clean;
                                 } else {
                                     if let Some(path) = &data.file_path {
                                         match model.export_values(path, &data.amp_in_los) {
-                                            Err(_) => data.export_status = CommandStatus::Error(CommandError::MethodError),
+                                            Err(_) => {
+                                                data.export_status =
+                                                    CommandStatus::Error(CommandError::MethodError)
+                                            }
                                             Ok(_) => data.export_status = CommandStatus::Complete,
                                         }
                                     } else {
-                                        data.export_status = CommandStatus::Error(CommandError::EmptyName);
+                                        data.export_status =
+                                            CommandStatus::Error(CommandError::EmptyName);
                                     }
                                 }
                             }

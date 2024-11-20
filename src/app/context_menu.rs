@@ -72,8 +72,7 @@ impl AppDM {
                     Self::header(Phosphor::LINE_SEGMENT.to_string() + " From geometry");
                 let header_from_surfaces =
                     Self::header(Phosphor::STACK_PLUS.to_string() + " From surfaces");
-                let header_export = 
-                    Self::header(Phosphor::BOX_ARROW_UP.to_string() + " Export");
+                let header_export = Self::header(Phosphor::BOX_ARROW_UP.to_string() + " Export");
 
                 if ui.button(header_from_file).clicked() {
                     self.open_command(ProjectCommand::OpenSurface(OpenSurface::default()));
