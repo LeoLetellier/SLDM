@@ -16,7 +16,7 @@ Binaries are compiled for Windows, Ubuntu and MacOS, and tested on Windows 11 an
 
 ## Example project
 
-An example project is available [here]().
+An example project is available [here](https://github.com/LeoLetellier/SLDM-examples).
 
 ## Features
 
