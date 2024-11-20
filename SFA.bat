@@ -1,1 +1,0 @@
-%UserProfile%\Miniconda3\envs\slbl_env\python.exe src\ui_main_window.py

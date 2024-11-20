@@ -1,0 +1,36 @@
+[project]
+name = "Demo project"
+note = "This project is for test purposes. Hope this work!"
+dem_file_name = "dem.csv"
+dem_azimuth = 4.363323211669922
+
+[[surface]]
+name = "SLBL_E_1_5_2"
+file_name = "surface_1.csv"
+
+[[surface]]
+name = "SLBL_E_1_3_2"
+file_name = "surface_2.csv"
+
+[[model]]
+name = "my sublime model"
+file_name = "model_1.csv"
+weights = [1.0, 2.0]
+boundaries = [[1, 5], [1, 3]]
+gradients = [[[1, 1.0], [5, 0.5]], []]
+
+[[model]]
+name = "Calibrated_my sublime model"
+file_name = "model_2.csv"
+weights = [2.131518840789795, -0.11591784656047821]
+boundaries = [[1, 5], [1, 3]]
+gradients = [[[1, 1.0], [5, 0.5]], []]
+
+[[disp_data]]
+name = "sat geom"
+azimuth = 3.665191650390625
+incidence = 0.6108652949333191
+
+[[disp_data.datas]]
+name = "sat data"
+file_name = "disp_1_data_1.csv"

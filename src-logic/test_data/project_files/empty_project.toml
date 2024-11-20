@@ -1,0 +1,3 @@
+[project]
+name = "A Sample Project"
+dem_file_name = "dem.csv"

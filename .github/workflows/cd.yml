@@ -1,0 +1,44 @@
+name: cd
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+  
+  publish:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: SLDM
+            asset_name: SLDM-linux-amd64
+          - os: windows-latest
+            artifact_name: SLDM.exe
+            asset_name: SLDM-windows-amd64.exe
+          - os: macos-latest
+            artifact_name: SLDM
+            asset_name: SLDM-macos-amd64
+
+    needs: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build --release
+      - name: Upload binaries
+        uses: svenstaro/upload-release-action@2.9.0
+        with:
+          repo_token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          file: ./target/release/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
