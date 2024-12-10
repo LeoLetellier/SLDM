@@ -334,13 +334,13 @@ impl Vector3Rep {
     /// Get the spherical angles of the vector in radians
     pub fn angle_rad(&self) -> (f32, f32) {
         let (ux, uy, uz) = self.get_unit();
-
-        let mut azimuth = -(ux / uy).atan();
-        match (ux, uy) {
-            (_vx, vy) if (vy < 0.) => azimuth += 3. * PI / 2.,
-            (_vx, vy) if (vy > 0.) => azimuth += PI / 2.,
-            (vx, vy) if (vy == 0.) & (vx < 0.) => azimuth = PI,
-            _ => azimuth = 0.,
+        
+        let azimuth = if uy != 0.0 {
+            -(ux / uy).atan() + PI - uy.signum() * PI / 2.0
+        } else if ux < 0.0 {
+            PI
+        } else {
+            0.0
         };
 
         let dip = uz.asin();
