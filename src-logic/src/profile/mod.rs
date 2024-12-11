@@ -13,6 +13,7 @@ impl DispProfile {
 
     /// Interpolate the vectors on a new set of origin points
     pub fn interpolate_on_origins(&mut self, origins: &Vec<[f32; 2]>) -> &Self {
+        log::trace!("interpolate on origins");
         let new_origins = origins.to_owned();
         let mut x_old = vec![];
         let mut vx_old = vec![];
@@ -40,6 +41,7 @@ impl DispProfile {
 
     /// Interpolate n vectors from the existing vectors to condition the display
     pub fn interpolate_n_vec(&mut self, n_vec: usize) -> &Self {
+        log::trace!("interpolate n vec");
         let x_step =
             (self.origins.last().unwrap()[0] - self.origins.first().unwrap()[0]) / (n_vec as f32);
         let old_x = self.origins.iter().map(|[x, _y]| *x).collect();
@@ -59,8 +61,10 @@ impl DispProfile {
         first_x: usize,
         last_x: usize,
     ) -> Result<Self, VectorInputError> {
+        log::trace!("Construct a disp profile directly from a surface, slope can be undefined");
         if surface.slope.is_none() {
             surface.get_slope(dem);
+            log::debug!("slope defined");
         }
         Self::from_surface_with_slope(surface, dem, first_x, last_x)
     }
@@ -72,11 +76,14 @@ impl DispProfile {
         first_x: usize,
         last_x: usize,
     ) -> Result<Self, VectorInputError> {
+        log::trace!("Try constructing a disp profile from surface");
         let slope = surface.slope.clone().unwrap();
         let len = slope.len();
-        let origin = match pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z)
-        {
-            Err(_) => return Err(VectorInputError::PillarError),
+        let origin = match pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z) {
+            Err(_) => {
+                log::error!("Failed to construct disp profile from surface");
+                return Err(VectorInputError::PillarError)
+            },
             Ok(o) => o,
         };
         let mut amplitude: Vec<f32> = Vec::new();
@@ -95,6 +102,7 @@ impl DispProfile {
         surface: &mut Surface1D,
         dem: &Dem1D,
     ) -> Result<Self, VectorInputError> {
+        log::trace!("disp from surface direct / all points");
         Self::from_surface(surface, dem, 1, dem.x.len() - 2)
     }
 
@@ -115,6 +123,7 @@ impl DispProfile {
         gradient: &Vec<Vec<(usize, f32)>>,
         weights: &Vec<f32>,
     ) -> Result<Self, VectorInputError> {
+        log::trace!("profile from surfaces combination");
         let regul_origins: Vec<[f32; 2]> = (0..dem.x.len())
             .map(|k| [dem.x[k], dem.surface.z[k]])
             .collect();
@@ -161,6 +170,7 @@ impl DispProfile {
         section_orientation: &Orientation,
         los_orientation: &Orientation,
     ) -> Result<(Self, Vec<f32>), VectorInputError> {
+        log::trace!("profile using particule swarm solver for weight optimiz");
         let regul_origins: Vec<[f32; 2]> = (0..dem.x.len())
             .map(|k| [dem.x[k], dem.surface.z[k]])
             .collect();
@@ -223,6 +233,7 @@ impl DispProfile {
 
 /// Direct linear interpolation between an old sampling to a new one
 pub(crate) fn interpol_linear(x_old: &Vec<f32>, y_old: &Vec<f32>, x_new: &Vec<f32>) -> Vec<f32> {
+    log::trace!("linear interpolation");
     let length = x_old.len();
     assert_eq!(x_old.len(), y_old.len());
 

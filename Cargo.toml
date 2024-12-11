@@ -1,6 +1,6 @@
 [package]
 name = "SLDM"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Léo Letellier"]
 repository = "https://github.com/LeoLetellier/SLDM"
 edition = "2021"
@@ -14,6 +14,7 @@ egui_commonmark = { version = "0.18.0", features = ["macros"] }
 egui_plot = "0.29.0"
 env_logger = "0.11.5"
 image = "0.25.5"
+log = "0.4.22"
 rfd = "0.15.0"
 serde = { version = "1.0.214", features = ["derive"] }
 toml = "0.8.19"

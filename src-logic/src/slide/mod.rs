@@ -6,6 +6,7 @@ use crate::{
 use assert_approx_eq::assert_approx_eq;
 
 pub fn slbl_matrix(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32) -> Vec<f32> {
+    log::trace!("START: slbl_matrix");
     let dim: usize = last_pnt - first_pnt - 1;
     let sub_diag: Vec<f32> = vec![-0.5; dim - 1];
     let mut main_diag: Vec<f32> = vec![1.; dim];
@@ -56,6 +57,7 @@ fn slbl_routine_thresholds(
     elevation_min: Option<f32>,
     slope_max: Option<(f32, f32)>,
 ) -> (Vec<f32>, usize) {
+    log::trace!("START: slbl_routine");
     let mut z_slbl = z_topo.to_owned();
     let mut current_it: usize = 0;
     'routine: while current_it < n_it {
@@ -88,6 +90,7 @@ fn slbl_routine_thresholds(
 
 /// Compute the slope between two succesive points, given their respective values and the spacing between them
 fn local_slope(first_point: f32, second_point: f32, spacing: f32) -> f32 {
+    log::trace!("local_slope");
     let local_vec = Vector2Rep::new(spacing, second_point - first_point);
     local_vec.angle_rad()
 }
@@ -105,6 +108,7 @@ fn tridiag_matrix_non_conservative(
     upp_d: &Vec<f32>,
     rhs: &mut Vec<f32>,
 ) -> Vec<f32> {
+    log::trace!("tridiag matrix equation solver");
     // Check that the sizes are matching
     assert_eq!(
         low_d.len(),
@@ -151,6 +155,7 @@ impl Surface1D {
     // }
 
     pub fn from_slbl_exact(dem: &Dem1D, first_pnt: usize, last_pnt: usize, tol: f32) -> Self {
+        log::trace!("surface from slbl exact");
         let z_slbl = slbl_matrix(dem, first_pnt, last_pnt, tol);
         Surface1D::new(z_slbl)
     }
@@ -164,6 +169,7 @@ impl Surface1D {
         elevation_min: Option<f32>,
         slope_max: Option<f32>,
     ) -> Self {
+        log::trace!("surface from slbl routine");
         debug_assert!(first_pnt < last_pnt);
         debug_assert!(last_pnt <= dem.x.len());
         let x_spacing =
@@ -183,6 +189,7 @@ impl Surface1D {
     }
 
     pub fn from_min_surf(surf1: &Surface1D, surf2: &Surface1D) -> Surface1D {
+        log::trace!("surface from surf min");
         let mut new_z = Vec::with_capacity(surf1.z.len());
         for k in 0..surf1.z.len() {
             if surf1.z[k] < surf2.z[k] {
@@ -195,6 +202,7 @@ impl Surface1D {
     }
 
     pub fn from_max_surf(surf1: &Surface1D, surf2: &Surface1D) -> Surface1D {
+        log::trace!("surface from surf max");
         let mut new_z = Vec::with_capacity(surf1.z.len());
         for k in 0..surf1.z.len() {
             if surf1.z[k] > surf2.z[k] {
@@ -209,6 +217,7 @@ impl Surface1D {
 
 /// Computes the slope of a property along the section and the given DEM
 pub(super) fn slope1d(x: &Vec<f32>, z: &Vec<f32>) -> Vec<f32> {
+    log::trace!("slope 1d");
     assert_eq!(x.len(), z.len());
     let len = x.len();
     let mut slope_v: Vec<f32> = vec![];

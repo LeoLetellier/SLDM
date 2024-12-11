@@ -1,4 +1,5 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "window"]
+#![windows_subsystem = "console"]
 
 mod app;
 mod components;
@@ -6,6 +7,12 @@ mod project;
 use app::AppDM;
 
 fn main() {
+    std::env::set_var("RUST_LOG", "SLDM=trace,src_logic=trace");
+    // std::env::set_var("RUST_LOG", "trace,wgpu_hal=off,wgpu_core=off,eframe=off,naga=off");
+    env_logger::init();
+    log::info!("Logger initialized");
+    log::trace!("at trace level");
+
     let viewport = egui::ViewportBuilder::default()
         .with_title("Slow Landslide Displacement Model")
         .with_inner_size([1280., 720.])

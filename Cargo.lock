@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "SLDM"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "eframe",
@@ -14,6 +14,7 @@ dependencies = [
  "egui_plot",
  "env_logger",
  "image 0.25.5",
+ "log",
  "rfd",
  "serde",
  "src-logic",
@@ -3732,7 +3733,7 @@ dependencies = [
 
 [[package]]
 name = "src-logic"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "approx",
@@ -3741,6 +3742,7 @@ dependencies = [
  "env_logger",
  "eqsolver",
  "image 0.25.5",
+ "log",
  "nalgebra",
  "plotters",
  "plotters-arrows",

@@ -21,20 +21,17 @@ pub fn pillar_slope(
 ) -> Result<(Vec<f32>, Vec<f32>), PillarError> {
     let mut ground_proj_x = x.clone();
     let mut ground_proj_z = z.clone();
+    println!("slide elevation {:?}", slide_z);
 
+    let xx: (f32, f32) = (x.first().unwrap().to_owned(), x.last().unwrap().to_owned());
     for k in (first_x + 1)..last_x {
         if (slide_z[k] - z[k]).abs() > 1e-6_f32 {
-            println!("enter in the matter");
             let coeff_dir = slope[k].to_owned();
             let coeff_dir = match coeff_dir {
                 // convert slope to perpendicular slope
                 a if a >= 0. => a - PI / 2.,
-                a if a < 0. => a + PI / 2.,
-                _ => {
-                    return Err(PillarError::InvalidSlope);
-                }
+                a => a + PI / 2.
             };
-            let xx: (f32, f32) = (x.first().unwrap().to_owned(), x.last().unwrap().to_owned());
             let zz: (f32, f32) = (
                 slide_z[k] + coeff_dir.tan() * (xx.0 - x[k]),
                 slide_z[k] + coeff_dir.tan() * (xx.1 - x[k]),
@@ -43,7 +40,10 @@ pub fn pillar_slope(
             let intercept = match intercept {
                 Some(i) => i,
                 None => {
-                    return Err(PillarError::NoIntersection);
+                    log::error!("pillar slope: No intersection found (xx: {}, {}, zz: {}, {}), (cd {}, x0 {}, z0 {}, slope: {})",
+                     xx.0, xx.1, zz.0, zz.1, coeff_dir, x[k], slide_z[k], slope[k]);
+                    // return Err(PillarError::NoIntersection);
+                    (x[k], slide_z[k])
                 }
             };
             ground_proj_x[k] = intercept.0;
@@ -54,24 +54,26 @@ pub fn pillar_slope(
 }
 
 /// Compute the intersection between two segments, if exist
+/// 
+/// [stackoverflow](https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect)
 fn get_intersection_point(
-    xk: (f32, f32),
-    zk: (f32, f32),
-    xx: (f32, f32),
-    zz: (f32, f32),
+    (x1, x2): (f32, f32),
+    (y1, y2): (f32, f32),
+    (x3, x4): (f32, f32),
+    (y3, y4): (f32, f32),
 ) -> Option<(f32, f32)> {
-    let (x1, y1, x2, y2): (f32, f32, f32, f32) = (xk.0, zk.0, xk.1, zk.1);
-    let (x3, y3, x4, y4): (f32, f32, f32, f32) = (xx.0, zz.0, xx.1, zz.1);
+    let dx1 = x2 - x1;
+    let dy1 = y2 - y1;
+    let dx2 = x4 - x3;
+    let dy2 = y4 - y3;
+    
+    let s = (-dy1 * (x1 - x3) + dx1 * (y1 - y3)) / (-dx2 * dy1 + dx1 * dy2);
+    let t = ( dx2 * (y1 - y3) - dy2 * (x1 - x3)) / (-dx2 * dy1 + dx1 * dy2);
 
-    let denominator = (x1 - x2) * (y3 - y4) - (x3 - x4) * (y1 - y2);
-    assert_ne!(0., denominator, "tested segments are parallels");
-    let intersection_x =
-        ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denominator;
-    let intersection_y =
-        ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denominator;
-    match intersection_x {
-        x if (x > xk.0 && x < xk.1) => Some((intersection_x, intersection_y)),
-        _ => None,
+    if s < 0.0 && s > 1.0 && t < 0.0 && t > 1.0 {
+        None
+    } else {
+        Some((x1 + t * dx1, y1 + (t * dy1)))
     }
 }
 
@@ -119,6 +121,14 @@ mod tests {
     fn test_intercept() {
         let res = get_intersection_point((1., 2.), (1., 2.), (1., 2.), (2., 1.));
         let expect = Some((1.5, 1.5));
+        assert_eq!(res, expect);
+    }
+
+    #[test]
+    fn test_intercept_on_point() {
+        let res = get_intersection_point((1., 2.), (1., 2.), (1., 2.), (1., 3.));
+        assert!(res.is_some());
+        let expect = Some((1., 1.));
         assert_eq!(res, expect);
     }
 

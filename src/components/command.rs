@@ -682,7 +682,10 @@ impl AppDM {
                         data.last_pnt,
                         data.tol,
                     ) {
-                        Err(_) => data.status = CommandStatus::Error(CommandError::MethodError),
+                        Err(_) => {
+                            log::error!("Cannot perform exact SLBL");
+                            data.status = CommandStatus::Error(CommandError::MethodError)
+                        },
                         Ok(_) => data.status = CommandStatus::Complete,
                     }
                 }

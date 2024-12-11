@@ -61,8 +61,11 @@ impl Project {
         last_pnt: usize,
         tol: f32,
     ) -> Result<()> {
+        log::debug!("Try exact SLBL");
         let mut surface = Surface1D::from_slbl_exact(&self.dem.dem, first_pnt, last_pnt, tol);
+        log::debug!("Surface created");
         let profile = DispProfile::from_surface(&mut surface, &self.dem.dem, first_pnt, last_pnt)?;
+        log::debug!("profile created");
         let mut bundle = BundleSurface::default();
         bundle.surface = surface;
         bundle.profile = profile;

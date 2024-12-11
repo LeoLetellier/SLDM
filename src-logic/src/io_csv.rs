@@ -22,6 +22,7 @@ enum CsvReadError {
 
 impl CsvReader {
     pub fn read(file_path: String, delimiter: Option<u8>) -> Result<Self> {
+        log::trace!("Read file at {file_path}");
         let delimiter = match delimiter {
             Some(d) => d,
             _ => b';',
@@ -84,6 +85,7 @@ impl CsvWriter {
     }
 
     pub fn write(self, file_path: &String, delimiter: Option<u8>) -> Result<()> {
+        log::trace!("Write file at {file_path}");
         let delimiter = match delimiter {
             Some(d) => d,
             _ => b';',
