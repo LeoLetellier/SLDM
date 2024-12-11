@@ -21,7 +21,6 @@ pub fn pillar_slope(
 ) -> Result<(Vec<f32>, Vec<f32>), PillarError> {
     let mut ground_proj_x = x.clone();
     let mut ground_proj_z = z.clone();
-    println!("slide elevation {:?}", slide_z);
 
     let xx: (f32, f32) = (x.first().unwrap().to_owned(), x.last().unwrap().to_owned());
     for k in (first_x + 1)..last_x {
@@ -70,7 +69,7 @@ fn get_intersection_point(
     let s = (-dy1 * (x1 - x3) + dx1 * (y1 - y3)) / (-dx2 * dy1 + dx1 * dy2);
     let t = ( dx2 * (y1 - y3) - dy2 * (x1 - x3)) / (-dx2 * dy1 + dx1 * dy2);
 
-    if s < 0.0 && s > 1.0 && t < 0.0 && t > 1.0 {
+    if (s < 0.0) | (s > 1.0) | (t < 0.0) | (t > 1.0) {
         None
     } else {
         Some((x1 + t * dx1, y1 + (t * dy1)))
@@ -122,6 +121,26 @@ mod tests {
         let res = get_intersection_point((1., 2.), (1., 2.), (1., 2.), (2., 1.));
         let expect = Some((1.5, 1.5));
         assert_eq!(res, expect);
+    }
+
+    #[test]
+    fn multiple_test_intercept() {
+        let res = get_intersection_point((0., 6.), (1., 1.), (1., 5.), (0., 2.));
+        let expect = Some((3., 1.));
+        assert_eq!(res, expect);
+
+        let res = get_intersection_point((1., 4.), (0., 3.), (0., 5.), (1., 2.));
+        let expect = Some((2.5, 1.5));
+        assert_eq!(res, expect);
+    }
+
+    #[test]
+    fn no_intercept() {
+        let res = get_intersection_point((0., 6.), (1., 1.), (7., 9.), (0., 2.));
+        assert!(res.is_none());
+
+        let res = get_intersection_point((0., 6.), (1., 1.), (2., 9.), (2., 2.));
+        assert!(res.is_none());
     }
 
     #[test]
