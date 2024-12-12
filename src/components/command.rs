@@ -685,7 +685,7 @@ impl AppDM {
                         Err(_) => {
                             log::error!("Cannot perform exact SLBL");
                             data.status = CommandStatus::Error(CommandError::MethodError)
-                        },
+                        }
                         Ok(_) => data.status = CommandStatus::Complete,
                     }
                 }

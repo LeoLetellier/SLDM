@@ -334,7 +334,7 @@ impl Vector3Rep {
     /// Get the spherical angles of the vector in radians
     pub fn angle_rad(&self) -> (f32, f32) {
         let (ux, uy, uz) = self.get_unit();
-        
+
         let azimuth = if uy != 0.0 {
             -(ux / uy).atan() + PI - uy.signum() * PI / 2.0
         } else if ux < 0.0 {

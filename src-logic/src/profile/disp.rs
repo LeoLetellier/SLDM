@@ -29,7 +29,7 @@ pub fn pillar_slope(
             let coeff_dir = match coeff_dir {
                 // convert slope to perpendicular slope
                 a if a >= 0. => a - PI / 2.,
-                a => a + PI / 2.
+                a => a + PI / 2.,
             };
             let zz: (f32, f32) = (
                 slide_z[k] + coeff_dir.tan() * (xx.0 - x[k]),
@@ -53,7 +53,7 @@ pub fn pillar_slope(
 }
 
 /// Compute the intersection between two segments, if exist
-/// 
+///
 /// [stackoverflow](https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect)
 fn get_intersection_point(
     (x1, x2): (f32, f32),
@@ -65,9 +65,9 @@ fn get_intersection_point(
     let dy1 = y2 - y1;
     let dx2 = x4 - x3;
     let dy2 = y4 - y3;
-    
+
     let s = (-dy1 * (x1 - x3) + dx1 * (y1 - y3)) / (-dx2 * dy1 + dx1 * dy2);
-    let t = ( dx2 * (y1 - y3) - dy2 * (x1 - x3)) / (-dx2 * dy1 + dx1 * dy2);
+    let t = (dx2 * (y1 - y3) - dy2 * (x1 - x3)) / (-dx2 * dy1 + dx1 * dy2);
 
     if (s < 0.0) | (s > 1.0) | (t < 0.0) | (t > 1.0) {
         None

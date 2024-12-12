@@ -79,11 +79,12 @@ impl DispProfile {
         log::trace!("Try constructing a disp profile from surface");
         let slope = surface.slope.clone().unwrap();
         let len = slope.len();
-        let origin = match pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z) {
+        let origin = match pillar_slope(first_x, last_x, &surface.z, &slope, &dem.x, &dem.surface.z)
+        {
             Err(_) => {
                 log::error!("Failed to construct disp profile from surface");
-                return Err(VectorInputError::PillarError)
-            },
+                return Err(VectorInputError::PillarError);
+            }
             Ok(o) => o,
         };
         let mut amplitude: Vec<f32> = Vec::new();
